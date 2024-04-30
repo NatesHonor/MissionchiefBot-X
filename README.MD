@@ -62,7 +62,7 @@ Replace your_username and your_password with your actual MissionChief credential
 [Click HERE](KnownBugs.MD)
 
 ## 🆘 Need Support?
-Visit this link tree link and join my discord for any questions or support!
+Visit this link [HERE](https://linktr.ee/honorablenate) link and join my discord for any questions or support!
 
 ## ⚠️ Disclaimer
 Please note that using automation tools to interact with websites may violate the terms of service of MissionChief. Make sure to use this bot responsibly and in compliance with the website’s policies.
