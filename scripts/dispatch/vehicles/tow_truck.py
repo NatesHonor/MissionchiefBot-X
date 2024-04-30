@@ -38,7 +38,7 @@ def dispatch_recovery_vehicle(driver, vehicle_pool, recovery_vehicle_type, crash
                     driver.execute_script("arguments[0].click();", checkbox)
                     print(f"Vehicle {recovery_vehicle_type}:{vehicle_id} selected.")
                     dispatched_recovery_vehicles += 1
-                    print(f"Dispatched vehicles: {dispatched_recovery_vehicles}, Crashed cars: {crashed_cars}")  # Add this line
+                    print(f"Dispatched vehicles: {dispatched_recovery_vehicles}, Crashed cars: {crashed_cars}")
                     del vehicle_pool[vehicle_id]
                     if dispatched_recovery_vehicles >= crashed_cars:
                         break
