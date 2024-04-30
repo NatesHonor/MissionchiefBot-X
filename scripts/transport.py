@@ -13,7 +13,7 @@ def transport_submit(driver):
         return
 
     try:
-        transport_requests = driver.find_elements(By.XPATH, "//li[contains(@class, 'radio_message_vehicle_')]")
+        transport_requests = driver.find_elements(By.XPATH, "//li[starts-with(@class, 'radio_message_vehicle_')]")
     except Exception as e:
         print(f"Error finding transport requests: {e}")
         return
@@ -38,8 +38,9 @@ def transport_submit(driver):
             print(f"btn_approach not found for vehicle {vehicle_id}, checking for btn_success: {e}")
             try:
                 success_button = WebDriverWait(driver, 10).until(
-                    ec.presence_of_element_located((By.CLASS_NAME, 'btn_success')))
-                success_button.click()
+                    ec.presence_of_all_elements_located((By.CLASS_NAME, 'btn-success')))
+                choice = random.choice(success_button)
+                choice.click()
                 print(f"Clicked btn_success for vehicle {vehicle_id}.")
             except (NoSuchElementException, TimeoutException) as e:
                 print(f"Exception occurred while clicking btn_success for vehicle {vehicle_id}: {e}")
