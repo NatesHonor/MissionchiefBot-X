@@ -1,6 +1,7 @@
 # 🚒 MissionChief Bot
 This is a MissionChief bot that automates the process of logging into your account and completing your missions using the Chromium driver.
 
+# CURRENTLY ONLY WORKS ON NA
 
 ## 🕒 Timing
 1. Runs every 30 seconds
