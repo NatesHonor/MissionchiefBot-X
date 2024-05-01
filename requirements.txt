@@ -1,5 +1,6 @@
-selenium
-configparser
-pyfiglet
-termcolor
-colorama
+selenium~=4.19.0
+configparser~=7.0.0
+colorama~=0.4.6
+termcolor~=2.4.0
+pyfiglet~=1.0.2
+requests~=2.31.0

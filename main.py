@@ -2,6 +2,12 @@ import time
 import json
 import os
 import threading
+import sys
+import requests
+
+from colorama import init
+from termcolor import cprint
+from pyfiglet import figlet_format
 
 from data.vehicle_mapping import vehicle_map
 from data.personnel_mapping import personnel_map
@@ -16,6 +22,32 @@ from scripts.dispatch.dispatcher import dispatch_vehicles
 
 vehicle_dispatch_mapping = vehicle_map
 personnel_dispatch_mapping = personnel_map
+with open('data/bot_info.json', 'r') as t:
+    botdata = json.load(t)
+
+version = botdata.get('Version')
+beta = botdata.get('Beta')
+
+init(strip=not sys.stdout.isatty())
+cprint(figlet_format(f'v{version}', font='5lineoblique'),
+       'yellow', 'on_red', attrs=['bold'])
+if beta:
+    cprint(figlet_format(f'This is a beta version!', font='5lineoblique'),
+           'red', 'on_red', attrs=['bold'])
+
+
+def check_version():
+    response = requests.get('https://api.github.com/repos/NatesHonor/MissionchiefBot/releases/latest')
+    latest_version = response.json()['tag_name']
+
+    latest_version = latest_version.lstrip('v')
+
+    if version != latest_version:
+        print(f"New version available! Please update to  v{latest_version}"
+              f" for code improvements and better functionality!")
+
+
+check_version()
 
 
 def transport_loop():
