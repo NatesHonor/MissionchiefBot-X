@@ -6,3 +6,5 @@ data/vehicle_data.json
 ./data/vehicle_data.json
 config.ini
 ./config.ini
+output.log
+./output.log
