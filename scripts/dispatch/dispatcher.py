@@ -36,16 +36,16 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
     dispatch_ems(patients, vehicle_dispatch_mapping, vehicle_pool, driver)
 
     for requirement, required_count in mission_requirements.items():
+        if (requirement == "K-9 Unit" or requirement == "K-9 Units") and required_count > 2:
+            print(f"Dispatching K-9 Carrier instead of K-9 Unit for mission {mission_id}.")
+            vehicle_type_name = vehicle_dispatch_mapping["K-9 Carrier"]
+            required_count = 1
+        else:
+            vehicle_type_name = vehicle_dispatch_mapping[requirement]
         dispatched_count = 0
-        vehicle_type_name = vehicle_dispatch_mapping.get(requirement)
         if not vehicle_type_name:
             print(f"No mapping found for requirement: {requirement}")
             continue
-
-        if (vehicle_type_name == "K-9 Unit" or vehicle_type_name == "K-9 Units") and required_count > 2:
-            print(f"Dispatching K-9 Carrier instead of K-9 Unit for mission {mission_id}.")
-            vehicle_type_name = "K-9 Carrier"
-
         matching_vehicles = {vehicle_id: info for vehicle_id, info in vehicle_pool.copy().items() if
                              info['name'] == vehicle_type_name}
         vehicle_ids_to_delete = []

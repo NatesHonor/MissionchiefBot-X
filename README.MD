@@ -16,10 +16,14 @@ This is a MissionChief bot that automates the process of logging into your accou
 6. Automatically Dispatches EMS Chief if patients > or = 10
 7. Automatically dispatches Wrecker or Flatbed Carrier based on Crashed cars in a mission
 8. Automatically dispatches a Prisoner Transport Van if the amount of prisoners is greater than 1
+9. Leave patient at scene if no transport locations are available
 
 ## 🎯 Missions
 1. Ignores Missions in-progress (yellow or green)
 2. Grabs mission data of missing vehicles
+3. Grabs only missing personnel
+
+
 ## 📋 Prerequisites
 Before running the bot, make sure you have the following installed:
 

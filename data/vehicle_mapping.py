@@ -51,7 +51,7 @@ vehicle_map = {
     "FBI Surveillance Drone": "FBI Surveillance Drone",
     "K-9 Units": "K-9 Unit",
     "K-9 Unit": "K-9 Unit",
-    "K-9 Carriers": "Large K9 Carrier",
+    "K-9 Carrier": "Large K9 Carrier",
     "Traffic Controls": "Police Traffic Control Unit",
     "Traffic Control": "Police Traffic Control Unit",
     "Riot Police Units": "Riot Police Bus",
@@ -84,4 +84,5 @@ vehicle_map = {
     "SWAT or Patrol Car": "Patrol car",
     "Warden Trucks": "Warden's Truck",
     "Warden Truck": "Warden's Truck",
+    "ARFF": "Large ARFF Crash Tender",
 }

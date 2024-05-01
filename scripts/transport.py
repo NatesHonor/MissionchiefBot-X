@@ -35,13 +35,20 @@ def transport_submit(driver):
                 ec.presence_of_all_elements_located((By.XPATH, "//a[starts-with(@id, 'btn_approach_')]")))
             random.choice(transport_buttons).click()
         except (NoSuchElementException, TimeoutException) as e:
-            print(f"btn_approach not found for vehicle {vehicle_id}, checking for btn_success: {e}")
+            print(f"Ambulance dispatch button not found {vehicle_id}, Trying police dispatch button.")
             try:
                 success_button = WebDriverWait(driver, 10).until(
                     ec.presence_of_all_elements_located((By.CLASS_NAME, 'btn-success')))
                 choice = random.choice(success_button)
                 choice.click()
-                print(f"Clicked btn_success for vehicle {vehicle_id}.")
+                print(f"Running Police Transport for {vehicle_id}.")
             except (NoSuchElementException, TimeoutException) as e:
-                print(f"Exception occurred while clicking btn_success for vehicle {vehicle_id}: {e}")
-                continue
+                print(f"Exception occurred while running police transport for {vehicle_id}: {e}")
+                try:
+                    leave_without_transport_button = WebDriverWait(driver, 10).until(
+                        ec.element_to_be_clickable((By.ID, 'leave_without_transport_no_compensation')))
+                    leave_without_transport_button.click()
+                    print(f"Detected 0 available transport locations, leaving civilian at scene...")
+                except (NoSuchElementException, TimeoutException) as e:
+                    print(f"Exception occurred while leaving patient at scene {vehicle_id}: {e}")
+                    continue

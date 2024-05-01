@@ -7,7 +7,7 @@ from selenium.common.exceptions import NoSuchElementException, ElementClickInter
 def dispatch_ems(patients, vehicle_dispatch_mapping, vehicle_pool, driver):
     ems_chief_type = vehicle_dispatch_mapping.get('EMS Chiefs')
     if patients >= 10:
-        for vehicle_id in list(vehicle_pool.keys()):  # Create a copy of the keys for iteration
+        for vehicle_id in list(vehicle_pool.keys()):
             vehicle_info = vehicle_pool[vehicle_id]
             if vehicle_info['name'] == ems_chief_type:
                 checkbox_id = f"vehicle_checkbox_{vehicle_id}"
@@ -18,9 +18,9 @@ def dispatch_ems(patients, vehicle_dispatch_mapping, vehicle_pool, driver):
                         driver.execute_script("arguments[0].click();", checkbox)
                         print(f"Selected {ems_chief_type}:{vehicle_id}")
                         del vehicle_pool[vehicle_id]
+                        break
                 except (NoSuchElementException, ElementClickInterceptedException, TimeoutException):
                     print(f"{ems_chief_type}:{vehicle_id} Already dispatched, continuing...")
-
     als_ambulance_type = vehicle_dispatch_mapping.get('ambulances', 'Default Ambulance Type')
     for vehicle_id in list(vehicle_pool.keys()):
         vehicle_info = vehicle_pool[vehicle_id]
