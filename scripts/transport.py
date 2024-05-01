@@ -3,9 +3,33 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 import random
+import json
 
 
 def transport_submit(driver):
+    with open('data/vehicle_data.json', 'r') as f:
+        vehicle_data = json.load(f)
+
+    prisoner_van_ids = [vehicle_id for vehicle_id, info in vehicle_data.items() if
+                        info['name'] == 'Police Prisoner Van']
+
+    for vehicle_id in prisoner_van_ids:
+        try:
+            print(f"{vehicle_id}: Checking for transport request for {vehicle_id}.")
+            vehicle_url = f"https://www.missionchief.com/vehicles/{vehicle_id}"
+            driver.get(vehicle_url)
+        except Exception as e:
+            print(f"Error navigating to vehicle {vehicle_id} page: {e}")
+            continue
+        try:
+            success_button = WebDriverWait(driver, 10).until(
+                ec.presence_of_all_elements_located((By.CLASS_NAME, 'btn-success')))
+            transport = random.choice(success_button)
+            transport.click()
+            print(f"Found transport request for {vehicle_id}.")
+        except (NoSuchElementException, TimeoutException):
+            print(f"No transport request found for {vehicle_id}. Checking next vehicle.")
+            continue
     try:
         driver.get("https://www.missionchief.com")
     except Exception as e:
@@ -34,7 +58,7 @@ def transport_submit(driver):
             transport_buttons = WebDriverWait(driver, 10).until(
                 ec.presence_of_all_elements_located((By.XPATH, "//a[starts-with(@id, 'btn_approach_')]")))
             random.choice(transport_buttons).click()
-        except (NoSuchElementException, TimeoutException) as e:
+        except (NoSuchElementException, TimeoutException):
             print(f"Ambulance dispatch button not found {vehicle_id}, Trying police dispatch button.")
             try:
                 success_button = WebDriverWait(driver, 10).until(

@@ -16,7 +16,7 @@ from scripts.logon import login
 from scripts.clean import mission_cleaner
 from scripts.transport import transport_submit
 from scripts.vehicle_data import gather_vehicle_data
-from scripts.mission_data import gather_mission_data
+from scripts.missions.mission_data import gather_mission_data
 from scripts.gather_missions import total_number_of_missions
 from scripts.dispatch.dispatcher import dispatch_vehicles
 
