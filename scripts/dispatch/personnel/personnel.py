@@ -15,12 +15,16 @@ def dispatch_personnel(driver, mission_id, vehicle_pool, mission_data_file, pers
 
     if "personnel" in current_mission_data:
         for personnel, required_count in current_mission_data["personnel"].items():
-            vehicle_type_name = personnel_dispatch_mapping.get(personnel)
+            if personnel == "EMS Mobile Command":
+                vehicle_type_name = personnel_dispatch_mapping.get("EMS Mobile Command")
+                required_vehicles = math.ceil(required_count / 3)
+            else:
+                vehicle_type_name = personnel_dispatch_mapping.get(personnel)
+                required_vehicles = math.ceil(required_count / 6)
+
             if not vehicle_type_name:
                 print(f"No mapping found for personnel: {personnel}")
                 continue
-
-            required_vehicles = math.ceil(required_count / 6)  # Round up if not a whole number
             dispatched_count = 0
             print(f"required vehicles required_vehicles: {required_vehicles}")
             for vehicle_id in list(vehicle_pool.keys()):
