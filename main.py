@@ -37,14 +37,17 @@ if beta:
 
 
 def check_version():
-    response = requests.get('https://api.github.com/repos/NatesHonor/MissionchiefBot/releases/latest')
-    latest_version = response.json()['tag_name']
+    if not beta:
+        response = requests.get('https://api.github.com/repos/NatesHonor/MissionchiefBot/releases/latest')
+        latest_version = response.json()['tag_name']
 
-    latest_version = latest_version.lstrip('v')
+        latest_version = latest_version.lstrip('v')
 
-    if version != latest_version:
-        print(f"New version available! Please update to  v{latest_version}"
-              f" for code improvements and better functionality!")
+        if version != latest_version:
+            print(f"New version available! Please update to  v{latest_version}"
+                  f" for code improvements and better functionality!")
+    else:
+        print("This is a beta version so we wont check for updates!")
 
 
 check_version()
