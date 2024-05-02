@@ -32,7 +32,7 @@ def dispatch_personnel(driver, mission_id, vehicle_pool, mission_data_file, pers
                 if vehicle_info['name'] == vehicle_type_name and dispatched_count < required_vehicles:
                     checkbox_id = f"vehicle_checkbox_{vehicle_id}"
                     try:
-                        checkbox = WebDriverWait(driver, 10).until(ec.element_to_be_clickable((By.ID, checkbox_id)))
+                        checkbox = WebDriverWait(driver, 1).until(ec.element_to_be_clickable((By.ID, checkbox_id)))
                         driver.execute_script("arguments[0].scrollIntoView(true);", checkbox)
                         driver.execute_script("arguments[0].click();", checkbox)
                         dispatched_count += 1
