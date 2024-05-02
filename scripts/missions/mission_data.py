@@ -67,7 +67,11 @@ def gather_mission_data(driver, mission_numbers):
                         skip = True
                         for vehicle in vehicles:
                             number, vehicle_type = vehicle.split(" ", 1)
-                            number_of_vehicles = int(number)
+                            number = ''.join(filter(str.isdigit, vehicle))
+                            if number:
+                                number_of_vehicles = int(number)
+                            else:
+                                number_of_vehicles = 1
                             mission_data["vehicles"][vehicle_type] = number_of_vehicles
                             skip = True
                 if ambulancealert:

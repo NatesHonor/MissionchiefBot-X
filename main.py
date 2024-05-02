@@ -31,13 +31,13 @@ beta = botdata.get('Beta')
 init(strip=not sys.stdout.isatty())
 cprint(figlet_format(f'v{version}', font='5lineoblique'),
        'yellow', 'on_red', attrs=['bold'])
-if beta:
+if beta == 'True':
     cprint(figlet_format(f'This is a beta version!', font='5lineoblique'),
            'red', 'on_red', attrs=['bold'])
 
 
 def check_version():
-    if not beta:
+    if beta == 'False':
         response = requests.get('https://api.github.com/repos/NatesHonor/MissionchiefBot/releases/latest')
         latest_version = response.json()['tag_name']
 
@@ -46,7 +46,7 @@ def check_version():
         if version != latest_version:
             print(f"New version available! Please update to  v{latest_version}"
                   f" for code improvements and better functionality!")
-    else:
+    elif beta == 'True':
         print("This is a beta version so we wont check for updates!")
 
 
@@ -59,6 +59,7 @@ def transport_loop():
     while True:
         print("Transporting prisoners and patients...")
         transport_submit(transport_driver)
+        print("Sleeping for 30s...")
         time.sleep(30)
 
 

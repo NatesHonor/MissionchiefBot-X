@@ -34,6 +34,8 @@ vehicle_map = {
     "Heavy Rescue Vehicle": "Rescue Engine",
     "Rescue Engines": "Rescue Engine",
     "Rescue Engine": "Rescue Engine",
+    "Rescue or Plattform Truck": "Rescue Engine",
+    "Rescue or Plattform Trucks": "Rescue Engine",
     "Police Cars": "Patrol car",
     "Mobile Air": "Mobile air",
     "Police Car": "Patrol car",

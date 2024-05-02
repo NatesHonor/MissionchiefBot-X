@@ -22,7 +22,7 @@ def transport_submit(driver):
             print(f"Error navigating to vehicle {vehicle_id} page: {e}")
             continue
         try:
-            success_button = WebDriverWait(driver, 10).until(
+            success_button = WebDriverWait(driver, 1).until(
                 ec.presence_of_all_elements_located((By.CLASS_NAME, 'btn-success')))
             transport = random.choice(success_button)
             transport.click()
@@ -55,13 +55,13 @@ def transport_submit(driver):
             continue
 
         try:
-            transport_buttons = WebDriverWait(driver, 10).until(
+            transport_buttons = WebDriverWait(driver, 1).until(
                 ec.presence_of_all_elements_located((By.XPATH, "//a[starts-with(@id, 'btn_approach_')]")))
             random.choice(transport_buttons).click()
         except (NoSuchElementException, TimeoutException):
             print(f"Ambulance dispatch button not found {vehicle_id}, Trying police dispatch button.")
             try:
-                success_button = WebDriverWait(driver, 10).until(
+                success_button = WebDriverWait(driver, 1).until(
                     ec.presence_of_all_elements_located((By.CLASS_NAME, 'btn-success')))
                 choice = random.choice(success_button)
                 choice.click()
@@ -69,9 +69,9 @@ def transport_submit(driver):
             except (NoSuchElementException, TimeoutException) as e:
                 print(f"Exception occurred while running police transport for {vehicle_id}: {e}")
                 try:
-                    leave_without_transport_button = WebDriverWait(driver, 10).until(
-                        ec.element_to_be_clickable((By.ID, 'leave_without_transport_no_compensation')))
-                    leave_without_transport_button.click()
+                    wait = WebDriverWait(driver, 1)
+                    button = wait.until(ec.element_to_be_clickable((By.CLASS_NAME, 'btn btn-default btn-sm')))
+                    button.click()
                     print(f"Detected 0 available transport locations, leaving civilian at scene...")
                 except (NoSuchElementException, TimeoutException) as e:
                     print(f"Exception occurred while leaving patient at scene {vehicle_id}: {e}")
