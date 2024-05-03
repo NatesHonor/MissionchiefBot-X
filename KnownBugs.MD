@@ -5,5 +5,6 @@
 - Bot not leaving patients at scene when needed
 - Multiple tow trucks being dispatched than needed
 - Transport logic causing mission to have random units
+- Duplicate EMS Units being dispatched
 - 
 ## We appreciate your patience as we work to resolve these issues. Your feedback helps us improve! 🙌
