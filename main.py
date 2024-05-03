@@ -46,6 +46,7 @@ def check_version():
         if version != latest_version:
             print(f"New version available! Please update to  v{latest_version}"
                   f" for code improvements and better functionality!")
+            print("https://github.com/NatesHonor/MissionchiefBot/releases/latest")
     elif beta == 'True':
         print("This is a beta version so we wont check for updates!")
 

@@ -13,15 +13,20 @@ def dispatch_tow_truck(crashed_cars, vehicle_dispatch_mapping, vehicle_pool, dri
         else:
             recovery_vehicle_type = [vehicle_dispatch_mapping['Wreckers'], vehicle_dispatch_mapping['Flatbed Carriers']]
 
+        dispatched_recovery_vehicles = 0
         for vehicle_id in list(vehicle_pool.keys()):
+            if dispatched_recovery_vehicles >= crashed_cars:
+                break
             vehicle_info = vehicle_pool[vehicle_id]
             if isinstance(recovery_vehicle_type, list):
                 for recovery_type in recovery_vehicle_type:
                     if vehicle_info['name'] == recovery_type:
-                        dispatch_recovery_vehicle(driver, vehicle_pool, recovery_vehicle_type, crashed_cars)
+                        dispatch_recovery_vehicle(driver, vehicle_pool, recovery_type, crashed_cars)
+                        dispatched_recovery_vehicles += 1
             else:
                 if vehicle_info['name'] == recovery_vehicle_type:
                     dispatch_recovery_vehicle(driver, vehicle_pool, recovery_vehicle_type, crashed_cars)
+                    dispatched_recovery_vehicles += 1
 
 
 def dispatch_recovery_vehicle(driver, vehicle_pool, recovery_vehicle_type, crashed_cars):
