@@ -4,6 +4,7 @@ import os
 import threading
 import sys
 import requests
+import configparser
 
 from colorama import init
 from termcolor import cprint
@@ -19,6 +20,9 @@ from scripts.vehicle_data import gather_vehicle_data
 from scripts.missions.mission_data import gather_mission_data
 from scripts.gather_missions import total_number_of_missions
 from scripts.dispatch.dispatcher import dispatch_vehicles
+
+config = configparser.ConfigParser()
+config.read('config.ini')
 
 vehicle_dispatch_mapping = vehicle_map
 personnel_dispatch_mapping = personnel_map
@@ -53,19 +57,19 @@ def check_version():
 
 check_version()
 
-
-def transport_loop():
-    time.sleep(10)
-    transport_driver = login()
-    while True:
-        print("Transporting prisoners and patients...")
-        transport_submit(transport_driver)
-        print("Sleeping for 30s...")
-        time.sleep(30)
-
-
-transport_thread = threading.Thread(target=transport_loop)
-transport_thread.start()
+handletransportrequests = config.getboolean('missions', 'should_handle_transport_requests', fallback=False)
+handletransportrequeststime = config.getint('missions', 'should_handle_transport_requests_time', fallback=0)
+if handletransportrequests:
+    def transport_loop():
+        time.sleep(10)
+        transport_driver = login()
+        while True:
+            print("Transporting prisoners and patients...")
+            transport_submit(transport_driver)
+            print("Sleeping for 30s...")
+            time.sleep(handletransportrequeststime)
+    transport_thread = threading.Thread(target=transport_loop)
+    transport_thread.start()
 
 print("Logging in...")
 driver = login()
@@ -96,6 +100,10 @@ while True:
         json.dump(missions_data, f)
 
     for m_number, mission_info in missions_data.items():
+        missionsleep = config.getboolean('missions', 'should_wait_before_missions', fallback=False)
+        missionsleeptime = config.getint('missions', 'should_wait_before_missions_time', fallback=False)
+        if missionsleep:
+            time.sleep(missionsleeptime)
         try:
             mission_requirements = mission_info['vehicles']
             max_patients = mission_info.get('patients', 0)

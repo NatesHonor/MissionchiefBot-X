@@ -31,7 +31,6 @@ def gather_mission_data(driver, mission_numbers):
 
                 missing_personnel = driver.find_elements(By.XPATH, '//div[@data-requirement-type="personnel"]')
                 missing_vehicles = driver.find_elements(By.XPATH, '//div[@data-requirement-type="vehicles"]')
-                patient_elements = driver.find_elements(By.CLASS_NAME, "mission_patient")
                 ambulancealert = driver.find_elements(By.XPATH,
                                                       '//div[@class="alert alert-danger" and contains(text(), '
                                                       '"We need: Ambulance")]')
@@ -39,17 +38,6 @@ def gather_mission_data(driver, mission_numbers):
                                                      '//div[@class="alert alert-danger" and contains(text(), '
                                                      '"We need: EMS Chief")]')
                 skip = False
-                for patient in patient_elements:
-                    try:
-                        missing_text = patient.find_element(By.XPATH, ".//div[@class='alert alert-danger']").text
-                        if "Ambulance" in missing_text:
-                            mission_data["vehicles"]["Ambulance"] = mission_data["vehicles"].get("Ambulance", 0) + 1
-                            break
-                        elif "EMS Chief" in missing_text:
-                            mission_data["vehicles"]["EMS Chief"] = mission_data["vehicles"].get("EMS Chief", 0) + 1
-                            break
-                    except NoSuchElementException:
-                        continue
 
                 if missing_personnel:
                     for personnel_element in missing_personnel:
