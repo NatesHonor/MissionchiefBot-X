@@ -90,5 +90,9 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
         driver.execute_script("arguments[0].scrollIntoView();", dispatch_button)
         driver.execute_script("arguments[0].click();", dispatch_button)
         print("Dispatched all selected vehicles.")
+    except TimeoutException:
+        dispatch_button = WebDriverWait(driver, 10).until(ec.element_to_be_clickable((By.ID, 'alert_btn')))
+        driver.execute_script("arguments[0].scrollIntoView();", dispatch_button)
+        driver.execute_script("arguments[0].click();", dispatch_button)
     except NoSuchElementException:
         print(f"Could not find dispatch button for mission {mission_id}.")
