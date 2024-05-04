@@ -1,5 +1,5 @@
 import json
-
+import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
@@ -9,7 +9,7 @@ from selenium.common.exceptions import NoSuchElementException
 def gather_vehicle_data(driver):
     print("Gathering vehicle data...")
     driver.get('https://missionchief.com/leitstellenansicht')
-
+    time.sleep(10)
     vehicle_urls = [link.get_attribute('href')
                     for link in driver.find_elements(By.CSS_SELECTOR,
                                                      'a.lightbox-open.list-group-item[href*="/vehicles/"]')]
