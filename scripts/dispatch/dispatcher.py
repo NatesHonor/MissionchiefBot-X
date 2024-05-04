@@ -1,3 +1,4 @@
+import configparser
 
 from data.mission_utils import remove_mission
 from scripts.dispatch.vehicles.tow_truck import dispatch_tow_truck
@@ -9,6 +10,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, ElementClickInterceptedException
+
+config = configparser.ConfigParser()
+config.read('config.ini')
 
 
 def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, patients,
@@ -64,6 +68,7 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
                     print(f"Skipping {vehicle_type_name}:{vehicle_id}.")
                     continue
                 except ElementClickInterceptedException:
+                    checkbox = WebDriverWait(driver, 0).until(ec.element_to_be_clickable((By.ID, checkbox_id)))
                     print(
                         f"ElementClickInterceptedException for vehicle ID {vehicle_id},"
                         f" trying alternative click method.")
@@ -77,7 +82,11 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
             del vehicle_pool[vehicle_id]
 
     try:
-        dispatch_button = WebDriverWait(driver, 10).until(ec.element_to_be_clickable((By.ID, 'alert_btn')))
+        if config.get('dispatches', 'dispatch_type') == "alliance":
+            dispatch_button = WebDriverWait(driver, 10).until(
+                ec.element_to_be_clickable((By.CSS_SELECTOR, '.btn.btn-success.alert_next_alliance')))
+        else:
+            dispatch_button = WebDriverWait(driver, 10).until(ec.element_to_be_clickable((By.ID, 'alert_btn')))
         driver.execute_script("arguments[0].scrollIntoView();", dispatch_button)
         driver.execute_script("arguments[0].click();", dispatch_button)
         print("Dispatched all selected vehicles.")
