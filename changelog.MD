@@ -13,7 +13,7 @@
 - Better logging readability
 - Enhanced mission speed
 - EMS And chief Batch Dispatches
-- 
+
 ## 🐞 Bug Fixes:
 - Duplicate ambulance dispatches when redispatching to missions with missing ambulances
 - Missions with more than one personnel cause the bot to crash
