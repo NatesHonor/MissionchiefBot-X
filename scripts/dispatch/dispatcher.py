@@ -1,4 +1,5 @@
 import configparser
+import logging
 
 from data.mission_utils import remove_mission
 from scripts.dispatch.vehicles.tow_truck import dispatch_tow_truck
@@ -11,8 +12,28 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, ElementClickInterceptedException
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+
 config = configparser.ConfigParser()
 config.read('config.ini')
+
+
+def dispatch_vehicle(driver, vehicle_id, vehicle_type_name):
+    checkbox_id = f"vehicle_checkbox_{vehicle_id}"
+    try:
+        checkbox = driver.find_element(By.ID, checkbox_id)
+        if checkbox.is_displayed() and checkbox.is_enabled():
+            driver.execute_script("arguments[0].scrollIntoView(true);", checkbox)
+            driver.execute_script("arguments[0].click();", checkbox)
+            logging.info(f"Selected {vehicle_type_name}:{vehicle_id}")
+            return True
+        else:
+            logging.info(f"Skipping {vehicle_type_name}:{vehicle_id} as it's not clickable.")
+            return False
+    except NoSuchElementException:
+        logging.info(f"Skipping {vehicle_type_name}:{vehicle_id} as it's already dispatched.")
+        return False
 
 
 def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, patients,
@@ -23,7 +44,7 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
     try:
         transport_needed_alert = driver.find_element(By.XPATH, "//*[contains(text(), 'Transport is needed!')]")
         if transport_needed_alert:
-            print(f"Skipping mission {mission_id} because it has a transport request.")
+            logging.info(f"Skipping mission {mission_id} because it has a transport request.")
             return
     except NoSuchElementException:
         pass
@@ -41,45 +62,24 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
 
     for requirement, required_count in mission_requirements.items():
         if (requirement == "K-9 Unit" or requirement == "K-9 Units") and required_count > 2:
-            print(f"Dispatching K-9 Carrier instead of K-9 Unit for mission {mission_id}.")
+            logging.info(f"Dispatching K-9 Carrier instead of K-9 Unit for mission {mission_id}.")
             vehicle_type_name = vehicle_dispatch_mapping["K-9 Carrier"]
             required_count = 1
         else:
             vehicle_type_name = vehicle_dispatch_mapping[requirement]
         dispatched_count = 0
         if not vehicle_type_name:
-            print(f"No mapping found for requirement: {requirement}")
+            logging.info(f"No mapping found for requirement: {requirement}")
             continue
         matching_vehicles = {vehicle_id: info for vehicle_id, info in vehicle_pool.copy().items() if
                              info['name'] == vehicle_type_name}
-        vehicle_ids_to_delete = []
+
         for vehicle_id, vehicle_info in matching_vehicles.items():
             if dispatched_count < required_count:
-                checkbox_id = f"vehicle_checkbox_{vehicle_id}"
-                try:
-                    checkbox = WebDriverWait(driver, 0).until(ec.element_to_be_clickable((By.ID, checkbox_id)))
-                    driver.execute_script("arguments[0].scrollIntoView(true);", checkbox)
-                    driver.execute_script("arguments[0].click();", checkbox)
+                if dispatch_vehicle(driver, vehicle_id, vehicle_type_name):
                     dispatched_count += 1
-                    print(f"Selected {vehicle_type_name}:{vehicle_id}")
                     if dispatched_count == required_count:
                         break
-                except TimeoutException:
-                    print(f"Skipping {vehicle_type_name}:{vehicle_id}.")
-                    continue
-                except ElementClickInterceptedException:
-                    checkbox = WebDriverWait(driver, 0).until(ec.element_to_be_clickable((By.ID, checkbox_id)))
-                    print(
-                        f"ElementClickInterceptedException for vehicle ID {vehicle_id},"
-                        f" trying alternative click method.")
-                    driver.execute_script("arguments[0].click();", checkbox)
-                except (NoSuchElementException, TimeoutException):
-                    print(f"Skipping {vehicle_type_name}:{vehicle_id}.")
-                    continue
-                vehicle_ids_to_delete.append(vehicle_id)
-
-        for vehicle_id in vehicle_ids_to_delete:
-            del vehicle_pool[vehicle_id]
 
     try:
         if config.get('dispatches', 'dispatch_type') == "alliance":
@@ -89,10 +89,10 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
             dispatch_button = WebDriverWait(driver, 10).until(ec.element_to_be_clickable((By.ID, 'alert_btn')))
         driver.execute_script("arguments[0].scrollIntoView();", dispatch_button)
         driver.execute_script("arguments[0].click();", dispatch_button)
-        print("Dispatched all selected vehicles.")
+        logging.info("Dispatched all selected vehicles.")
     except TimeoutException:
         dispatch_button = WebDriverWait(driver, 10).until(ec.element_to_be_clickable((By.ID, 'alert_btn')))
         driver.execute_script("arguments[0].scrollIntoView();", dispatch_button)
         driver.execute_script("arguments[0].click();", dispatch_button)
     except NoSuchElementException:
-        print(f"Could not find dispatch button for mission {mission_id}.")
+        logging.info(f"Could not find dispatch button for mission {mission_id}.")

@@ -31,8 +31,6 @@ def dispatch_tow_truck(crashed_cars, vehicle_dispatch_mapping, vehicle_pool, dri
 
 def dispatch_recovery_vehicle(driver, vehicle_pool, recovery_vehicle_type, crashed_cars):
     dispatched_recovery_vehicles = 0
-    if dispatched_recovery_vehicles >= crashed_cars:
-        return
     for vehicle_id in list(vehicle_pool.keys()):
         vehicle_info = vehicle_pool[vehicle_id]
         if vehicle_info['name'] == recovery_vehicle_type:
@@ -43,11 +41,19 @@ def dispatch_recovery_vehicle(driver, vehicle_pool, recovery_vehicle_type, crash
                     driver.execute_script("arguments[0].scrollIntoView(true);", checkbox)
                     driver.execute_script("arguments[0].click();", checkbox)
                     print(f"Vehicle {recovery_vehicle_type}:{vehicle_id} selected.")
-                    dispatched_recovery_vehicles += 1
+                    if recovery_vehicle_type == 'Flatbed Carrier':
+                        dispatched_recovery_vehicles += 2
+                    else:
+                        dispatched_recovery_vehicles += 1
                     print(f"Dispatched vehicles: {dispatched_recovery_vehicles}, Crashed cars: {crashed_cars}")
-                    del vehicle_pool[vehicle_id]
-                    if dispatched_recovery_vehicles >= crashed_cars:
-                        break
-            except (NoSuchElementException, ElementClickInterceptedException, TimeoutException):
-                print(f"Skipping {recovery_vehicle_type}:{vehicle_id}.")
+                if dispatched_recovery_vehicles >= crashed_cars:
+                    break
+            except NoSuchElementException:
+                print(f"Skipping {recovery_vehicle_type}:{vehicle_id}. Element not found.")
+                continue
+            except ElementClickInterceptedException:
+                print(f"Skipping {recovery_vehicle_type}:{vehicle_id}. Element not clickable.")
+                continue
+            except TimeoutException:
+                print(f"Skipping {recovery_vehicle_type}:{vehicle_id}. Timeout exceeded.")
                 continue

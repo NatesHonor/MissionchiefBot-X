@@ -40,6 +40,7 @@ def gather_mission_data(driver, mission_numbers):
                 skip = False
 
                 if missing_personnel:
+                    skip = True
                     for personnel_element in missing_personnel:
                         requirement = personnel_element.text.strip().replace("Missing Personnel: ", "")
                         personnels = requirement.split(", ")
@@ -49,10 +50,11 @@ def gather_mission_data(driver, mission_numbers):
                             number_of_personnel = int(number)
                             mission_data["personnel"][personnel_type] = number_of_personnel
                 if missing_vehicles:
+                    skip = True
+
                     for vehicle_element in missing_vehicles:
                         requirement = vehicle_element.text.strip().replace("Missing Vehicles: ", "")
                         vehicles = requirement.split(", ")
-                        skip = True
                         for vehicle in vehicles:
                             number, vehicle_type = vehicle.split(" ", 1)
                             number = ''.join(filter(str.isdigit, vehicle))
@@ -61,7 +63,6 @@ def gather_mission_data(driver, mission_numbers):
                             else:
                                 number_of_vehicles = 1
                             mission_data["vehicles"][vehicle_type] = number_of_vehicles
-                            skip = True
                 if ambulancealert:
                     skip = True
                     for _ in ambulancealert:
