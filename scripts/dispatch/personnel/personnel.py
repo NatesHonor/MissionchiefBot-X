@@ -29,14 +29,11 @@ def dispatch_personnel(driver, mission_id, vehicle_pool, mission_data_file, pers
             if not vehicle_type_names:
                 print(f"No mapping found for personnel: {personnel}")
                 continue
-
-            print(f"required vehicles required_vehicles: {required_vehicles}")
             dispatched_count = 0
 
             for vehicle_id in list(vehicle_pool.keys()):
                 vehicle_info = vehicle_pool[vehicle_id]
                 if vehicle_info['name'] in vehicle_type_names and dispatched_count < required_vehicles:
-                    print(f"Attempting to select {vehicle_info['name']} for {personnel}")
                     checkbox_id = f"vehicle_checkbox_{vehicle_id}"
 
                     try:

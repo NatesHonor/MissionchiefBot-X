@@ -1,6 +1,7 @@
 vehicle_map = {
     "Ambulance": "ALS Ambulance",
     "Ambulances": "ALS Ambulance",
+    "ARFFs or Firetrucks": "Type 1 fire engine",
     "Firetrucks": "Type 1 fire engine",
     "Firetruck": "Type 1 fire engine",
     "firetrucks": "Type 1 fire engine",
@@ -13,8 +14,8 @@ vehicle_map = {
     "Battalion chief unit": "Battalion chief unit",
     "Fire Traffic Blocker Units": "Fire Traffic Blocker Unit",
     "Fire Traffic Blocker Unit": "Fire Traffic Blocker Unit",
-    "FBI Units": "FBI Unit",
-    "FBI Unit": "FBI Unit",
+    "FBI Units": ["FBI Unit", "FBI Investigation Unit"],
+    "FBI Unit": ["FBI Unit", "FBI Investigation Unit"],
     "FBI Investigation Wagons": "FBI Investigation Wagon",
     "FBI Investigation Wagon": "FBI Investigation Wagon",
     "FBI Drone"
