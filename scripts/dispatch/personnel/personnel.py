@@ -3,7 +3,7 @@ import math
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
-from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, NoSuchElementException
 
 
 def dispatch_personnel(driver, mission_id, vehicle_pool, mission_data_file, personnel_dispatch_mapping):
@@ -18,30 +18,40 @@ def dispatch_personnel(driver, mission_id, vehicle_pool, mission_data_file, pers
             if personnel == "EMS Mobile Command":
                 vehicle_type_names = personnel_dispatch_mapping.get("EMS Mobile Command")
                 required_vehicles = math.ceil(required_count / 3)
-            elif personnel == "Sharpshooter":
-                continue
+            elif personnel == "SWAT Personnel (In SWAT Vehicles)":
+                vehicle_type_names = [personnel_dispatch_mapping.get("SWAT Personnel (In SWAT Vehicles)")]
+                required_vehicles = math.ceil(required_count / 6)
             else:
                 vehicle_type_names = personnel_dispatch_mapping.get(personnel)
                 required_vehicles = math.ceil(required_count / 6)
+
+            print(vehicle_type_names)
             if not vehicle_type_names:
                 print(f"No mapping found for personnel: {personnel}")
                 continue
+
             print(f"required vehicles required_vehicles: {required_vehicles}")
-            for vehicle_type_name in vehicle_type_names:
-                dispatched_count = 0
-                for vehicle_id in list(vehicle_pool.keys()):
-                    vehicle_info = vehicle_pool[vehicle_id]
-                    if vehicle_info['name'] == vehicle_type_name and dispatched_count < required_vehicles:
-                        checkbox_id = f"vehicle_checkbox_{vehicle_id}"
-                        try:
-                            checkbox = WebDriverWait(driver, 1).until(ec.element_to_be_clickable((By.ID, checkbox_id)))
+            dispatched_count = 0
+
+            for vehicle_id in list(vehicle_pool.keys()):
+                vehicle_info = vehicle_pool[vehicle_id]
+                if vehicle_info['name'] in vehicle_type_names and dispatched_count < required_vehicles:
+                    print(f"Attempting to select {vehicle_info['name']} for {personnel}")
+                    checkbox_id = f"vehicle_checkbox_{vehicle_id}"
+
+                    try:
+                        checkbox = WebDriverWait(driver, 1).until(ec.element_to_be_clickable((By.ID, checkbox_id)))
+
+                        if not checkbox.is_selected():
                             driver.execute_script("arguments[0].scrollIntoView(true);", checkbox)
                             driver.execute_script("arguments[0].click();", checkbox)
+                            print(f"Selected {vehicle_info['name']}:{vehicle_id}")
                             dispatched_count += 1
-                            print(f"Vehicle {vehicle_type_name}:{vehicle_id} selected.")
                             del vehicle_pool[vehicle_id]
-                        except TimeoutException:
-                            print(f"Skipping {vehicle_type_name}:{vehicle_id}.")
-                            continue
-                        except ElementClickInterceptedException:
-                            print(f"ElementClickInterceptedException for vehicle ID {vehicle_id},")
+                        else:
+                            print(f"{vehicle_info['name']} already selected for {personnel}")
+                    except (NoSuchElementException, ElementClickInterceptedException, TimeoutException):
+                        print(f"Skipping {vehicle_info['name']}:{vehicle_id}")
+
+                if dispatched_count >= required_vehicles:
+                    break
