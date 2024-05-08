@@ -14,7 +14,6 @@ def process_mission_data(driver, mission_data):
         if ("Required" in requirement and "Station" not in requirement
                 and "Riot Police Extensions" not in requirement
                 and "Fire Marshal's Offices" not in requirement
-                and "SWAT Personnel (In SWAT Vehicles) " not in requirement
                 and "Airport Extensions" not in requirement
                 and "Personnel" not in requirement):
             if requirement == "Required Personnel Available":

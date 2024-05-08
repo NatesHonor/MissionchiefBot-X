@@ -20,7 +20,7 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 
 
-def dispatch_vehicle(driver, vehicle_id, vehicle_type_name):
+def select_vehicle(driver, vehicle_id, vehicle_type_name):
     checkbox_id = f"vehicle_checkbox_{vehicle_id}"
     try:
         checkbox = driver.find_element(By.ID, checkbox_id)
@@ -90,7 +90,7 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
 
         for vehicle_id, vehicle_info in matching_vehicles.items():
             if dispatched_count < required_count:
-                if dispatch_vehicle(driver, vehicle_id, vehicle_type_name):
+                if select_vehicle(driver, vehicle_id, vehicle_type_name):
                     dispatched_count += 1
                     if dispatched_count == required_count:
                         break

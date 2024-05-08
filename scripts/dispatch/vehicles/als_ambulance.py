@@ -1,13 +1,31 @@
+import logging
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
+
+
+def select_vehicle(driver, vehicle_id, vehicle_type_name):
+    checkbox_id = f"vehicle_checkbox_{vehicle_id}"
+    try:
+        checkbox = driver.find_element(By.ID, checkbox_id)
+        if checkbox.is_displayed() and checkbox.is_enabled():
+            driver.execute_script("arguments[0].scrollIntoView(true);", checkbox)
+            driver.execute_script("arguments[0].click();", checkbox)
+            logging.info(f"Selected {vehicle_type_name}:{vehicle_id}")
+            return True
+        else:
+            logging.info(f"Skipping {vehicle_type_name}:{vehicle_id} as it's not clickable.")
+            return False
+    except NoSuchElementException:
+        logging.info(f"Skipping {vehicle_type_name}:{vehicle_id} as it's already dispatched.")
+        return False
 
 
 def dispatch_ems(patients, vehicle_dispatch_mapping, vehicle_pool, driver):
     ems_chief_type = vehicle_dispatch_mapping.get('EMS Chiefs')
-    als_ambulance_type = vehicle_dispatch_mapping.get('ambulances', 'Default Ambulance Type')
-
+    als_ambulance_type = vehicle_dispatch_mapping.get('ambulances')
     if patients >= 10 and ems_chief_type in vehicle_pool.values():
         for vehicle_id, vehicle_info in vehicle_pool.items():
             if vehicle_info['name'] == ems_chief_type:
@@ -17,29 +35,18 @@ def dispatch_ems(patients, vehicle_dispatch_mapping, vehicle_pool, driver):
                     if not checkbox.is_selected():
                         driver.execute_script("arguments[0].scrollIntoView(true);", checkbox)
                         driver.execute_script("arguments[0].click();", checkbox)
-                        del vehicle_pool[vehicle_id]
-                        patients -= 10
                         print(f"Selected {ems_chief_type}:{vehicle_id}")
                         break
-                except (NoSuchElementException, TimeoutException):
+                except TimeoutException:
                     print(f"Skipping {ems_chief_type}:{vehicle_id} as it's not clickable.")
 
-    available_ambulances = [vehicle_id for vehicle_id, vehicle_info in vehicle_pool.items()
-                            if vehicle_info['name'] == als_ambulance_type]
-
-    ambulances_to_dispatch = min(patients, len(available_ambulances))
-    if ambulances_to_dispatch > 0:
-        try:
-            checkboxes = WebDriverWait(driver, 1).until(ec.visibility_of_all_elements_located(
-                (By.XPATH, "//input[@type='checkbox' and contains(@id, 'vehicle_checkbox')]")))
-            for vehicle_id in available_ambulances[:ambulances_to_dispatch]:
-                checkbox_id = f"vehicle_checkbox_{vehicle_id}"
-                checkbox = next((cb for cb in checkboxes if cb.get_attribute("id") == checkbox_id), None)
-                if checkbox and not checkbox.is_selected():
-                    driver.execute_script("arguments[0].scrollIntoView(true);", checkbox)
-                    checkbox.click()
-                    print(f"Selected {als_ambulance_type}:{vehicle_id}")
-        except TimeoutException:
-            print("No checkboxes found or not clickable.")
-
-    patients -= ambulances_to_dispatch
+    dispatched_count = 0
+    available_ambulances = {vehicle_id: info for vehicle_id, info in vehicle_pool.copy().items() if
+                            info['name'] == als_ambulance_type}
+    if available_ambulances:
+        for vehicle_id, vehicle_info in available_ambulances.items():
+            if dispatched_count < patients:
+                if select_vehicle(driver, vehicle_id, als_ambulance_type):
+                    dispatched_count += 1
+                    if dispatched_count == patients:
+                        break

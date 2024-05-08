@@ -14,8 +14,8 @@ vehicle_map = {
     "Battalion chief unit": "Battalion chief unit",
     "Fire Traffic Blocker Units": "Fire Traffic Blocker Unit",
     "Fire Traffic Blocker Unit": "Fire Traffic Blocker Unit",
-    "FBI Units": "FBI Unit",
-    "FBI Unit": "FBI Unit",
+    "FBI Units": ["FBI Unit", "FBI Investigation Wagon"],
+    "FBI Unit": ["FBI Unit", "FBI Investigation Wagon"],
     "FBI Investigation Wagons": "FBI Investigation Wagon",
     "FBI Investigation Wagon": "FBI Investigation Wagon",
     "FBI Drone"
@@ -60,6 +60,7 @@ vehicle_map = {
     "FBI Investigation wagon": "FBI Investigation Wagon",
     "FBI Surveillance Drones": "FBI Surveillance Drone",
     "FBI Surveillance Drone": "FBI Surveillance Drone",
+    "FBI Drones or FBI Investigation Wagons": "FBI Investigation Wagon",
     "K-9 Units": "K-9 Unit",
     "K-9 Unit": "K-9 Unit",
     "K-9 Carrier": "Large K9 Carrier",
