@@ -1,4 +1,4 @@
-# 🚀 Updates (v1.0.7A) - EMS HOTFIX
+# 🚀 Updates (v1.1A) - EMS HOTFIX
 
 ## 🎉 New Features:
 
