@@ -13,7 +13,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
-# Set up logging
 logging.basicConfig(level=logging.INFO)
 
 config = configparser.ConfigParser()
@@ -84,23 +83,40 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
             logging.info(f"No mapping found for requirement: {requirement}")
             continue
 
-        dispatched_count = 0
-        matching_vehicles = {vehicle_id: info for vehicle_id, info in vehicle_pool.copy().items() if
-                             info['name'] == vehicle_type_name}
+        if isinstance(vehicle_type_name, list):
+            dispatched_count = 0
+            for v_type_name in vehicle_type_name:
+                matching_vehicles = {vehicle_id: info for vehicle_id, info in vehicle_pool.copy().items() if
+                                     info['name'] == v_type_name}
 
-        for vehicle_id, vehicle_info in matching_vehicles.items():
-            if dispatched_count < required_count:
-                if select_vehicle(driver, vehicle_id, vehicle_type_name):
-                    dispatched_count += 1
-                    if dispatched_count == required_count:
-                        break
+                for vehicle_id, vehicle_info in matching_vehicles.items():
+                    if dispatched_count < required_count:
+                        if select_vehicle(driver, vehicle_id, v_type_name):
+                            dispatched_count += 1
+                            break
+                else:
+                    logging.info(f"Dispatched {dispatched_count} out of {required_count} for {v_type_name}")
+                    break
+        else:
+            dispatched_count = 0
+            matching_vehicles = {vehicle_id: info for vehicle_id, info in vehicle_pool.copy().items() if
+                                 info['name'] == vehicle_type_name}
+
+            for vehicle_id, vehicle_info in matching_vehicles.items():
+                if dispatched_count < required_count:
+                    if select_vehicle(driver, vehicle_id, vehicle_type_name):
+                        dispatched_count += 1
+                        if dispatched_count == required_count:
+                            break
+            else:
+                logging.info(f"Dispatched {dispatched_count} out of {required_count} for {vehicle_type_name}")
 
     try:
         if config.get('dispatches', 'dispatch_type') == "alliance":
             dispatch_button = WebDriverWait(driver, 10).until(
                 ec.element_to_be_clickable((By.CSS_SELECTOR, '.btn.btn-success.alert_next_alliance')))
         else:
-            dispatch_button = WebDriverWait(driver, 10).until(ec.element_to_be_clickable((By.ID, 'alert_btn')))
+            dispatch_button = WebDriverWait(driver, 3).until(ec.element_to_be_clickable((By.ID, 'alert_btn')))
         driver.execute_script("arguments[0].scrollIntoView();", dispatch_button)
         driver.execute_script("arguments[0].click();", dispatch_button)
         logging.info("Dispatched all selected vehicles.")
