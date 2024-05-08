@@ -69,7 +69,3 @@ while True:
         except KeyError as e:
             logging.error(f"Error processing mission {m_number}: {e}")
     logging.info("Completed all basic mission dispatches!")
-
-    logging.info("Now attempting to clean up missions")
-    for m_number in mission_numbers:
-        mission_cleaner(driver, m_number)
