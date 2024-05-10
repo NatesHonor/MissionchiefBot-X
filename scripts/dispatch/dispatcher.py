@@ -2,7 +2,6 @@ import configparser
 import logging
 import math
 
-from data.mission_utils import remove_mission
 from scripts.dispatch.vehicles.tow_truck import dispatch_tow_truck
 from scripts.dispatch.vehicles.als_ambulance import dispatch_ems
 from scripts.dispatch.vehicles.prisoner_transport import dispatch_police_transport
@@ -28,7 +27,7 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
 
     transport_needed(driver, mission_id)
     prisoner_needed(driver, mission_id)
-    wait_for_element(driver, By.ID, 'all')
+    wait_for_element(driver, 'all')
 
     dispatch_personnel(driver, mission_id, vehicle_pool, mission_data_file, personnel_dispatch_mapping)
     dispatch_tow_truck(crashed_cars, vehicle_dispatch_mapping, vehicle_pool, driver)
@@ -36,15 +35,18 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
     dispatch_ems(patients, vehicle_dispatch_mapping, vehicle_pool, driver)
 
     for requirement, required_count in mission_requirements.items():
+        requirement = requirement.lower()
+        if requirement.endswith('s'):
+            requirement = requirement[:-1]
         vehicle_type_names = None
-        if (requirement == "K-9 Unit" or requirement == "K-9 Units") and required_count > 2:
+        if (requirement == "k-9 unit" or requirement == "k-9 unit") and required_count > 2:
             logging.info(f"Dispatching K-9 Carrier instead of K-9 Unit for mission {mission_id}.")
-            vehicle_type_names = vehicle_dispatch_mapping.get("K-9 Carrier")
+            vehicle_type_names = vehicle_dispatch_mapping.get("k-9 carrier")
             required_count = 1
-        elif requirement == "ARFF Unit" or requirement == "ARFF Units" and required_count >= 2:
+        elif requirement == "arff unit" or requirement == "arff units" and required_count >= 2:
             temp_count = math.ceil(required_count / 2)
             required_count = temp_count
-        elif requirement == "SWAT Personnel (In SWAT Vehicles)":
+        elif requirement == "swat personnel (in swat vehicles)":
             temp_count = math.ceil(required_count / 6)
             required_count = temp_count
         else:
@@ -94,3 +96,4 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
             logging.error("Timeout exception occurred. Dispatch button not found within 3 seconds")
     except NoSuchElementException:
         logging.info(f"Could not find dispatch button for mission {mission_id}.")
+

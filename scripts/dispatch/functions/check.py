@@ -3,7 +3,15 @@ import logging
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException, StaleElementReferenceException
+
+
+def wait_for_element(driver, selector, timeout=10):
+    try:
+        WebDriverWait(driver, timeout).until(ec.presence_of_element_located((By.ID, selector)))
+    except TimeoutException:
+        return False
+    return True
 
 
 def transport_needed(driver, mission_id):
@@ -35,17 +43,19 @@ def click_non_danger_buttons_under_prisoner_element(driver):
         prisoner_element = driver.find_element(By.CLASS_NAME, 'vehicle_prisoner_select')
         prisoner_buttons = prisoner_element.find_elements(By.TAG_NAME, 'a')
         for button in prisoner_buttons:
-            button_class = button.get_attribute('class')
-            if 'btn-danger' not in button_class:
-                button.click()
-                logging.info(f"Clicked non-danger button under prisoner element.")
+            while True:
+                try:
+                    button_class = button.get_attribute('class')
+                    if 'btn-danger' not in button_class and "btn-default" not in button_class:
+                        driver.execute_script("arguments[0].scrollIntoView(true);", button)
+                        button.click()
+                        logging.info(f"Clicked non-danger button under prisoner element.")
+                    break
+                except StaleElementReferenceException:
+                    logging.info("Stale element reference exception occurred. Re-locating the prisoner buttons.")
+                    prisoner_element = driver.find_element(By.CLASS_NAME, 'vehicle_prisoner_select')
+                    prisoner_buttons = prisoner_element.find_elements(By.TAG_NAME, 'a')
+                    button = prisoner_buttons[prisoner_buttons.index(button)]  # Re-assign the button
     except NoSuchElementException:
         logging.info("Prisoner element not found on the page.")
 
-
-def wait_for_element(driver, selector, timeout=10):
-    try:
-        WebDriverWait(driver, timeout).until(ec.presence_of_element_located((By.ID, selector)))
-    except TimeoutException:
-        return False
-    return True
