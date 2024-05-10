@@ -1,7 +1,11 @@
 # 🚀 Updates (v1.1.1) - MAPPING/TRANSPORT/DISPATCH UPDATE
 
 ## 🎉 New Features:
-
+- Minimized Code
+- New support for prisoner transports
+- Minimized mapping
+- Multi Unit Dispatching
+- Faster Unit Solving
 
 
 ## 🐞 Bug Fixes:
