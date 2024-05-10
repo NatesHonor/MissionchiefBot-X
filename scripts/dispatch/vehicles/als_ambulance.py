@@ -24,8 +24,8 @@ def select_vehicle(driver, vehicle_id, vehicle_type_name):
 
 
 def dispatch_ems(patients, vehicle_dispatch_mapping, vehicle_pool, driver):
-    ems_chief_type = vehicle_dispatch_mapping.get('EMS Chiefs')
-    als_ambulance_type = vehicle_dispatch_mapping.get('ambulances')
+    ems_chief_type = vehicle_dispatch_mapping.get('ems chief')
+    als_ambulance_type = vehicle_dispatch_mapping.get('ambulance')
     if patients >= 10 and ems_chief_type in vehicle_pool.values():
         for vehicle_id, vehicle_info in vehicle_pool.items():
             if vehicle_info['name'] == ems_chief_type:

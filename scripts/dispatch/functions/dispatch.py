@@ -43,18 +43,18 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
 
     for requirement, required_count in mission_requirements.items():
         vehicle_type_names = None
-        if (requirement == "K-9 Unit" or requirement == "K-9 Units") and required_count > 2:
+        if requirement == "K-9 Unit" and required_count > 2:
             logging.info(f"Dispatching K-9 Carrier instead of K-9 Unit for mission {mission_id}.")
-            vehicle_type_names = vehicle_dispatch_mapping.get("K-9 Carrier")
+            vehicle_type_names = vehicle_dispatch_mapping.get("k-9 carrier")
             required_count = 1
-        elif requirement == "ARFF Unit" or requirement == "ARFF Units" and required_count >= 2:
+        elif requirement == "ARFF Unit" and required_count >= 2:
             temp_count = math.ceil(required_count / 2)
             required_count = temp_count
         elif requirement == "SWAT Personnel (In SWAT Vehicles)":
             temp_count = math.ceil(required_count / 6)
             required_count = temp_count
         else:
-            vehicle_type_names = vehicle_dispatch_mapping.get(requirement)
+            vehicle_type_names = vehicle_dispatch_mapping.get(requirement.lower())
 
         if not vehicle_type_names:
             logging.info(f"No mapping found for requirement: {requirement}. Trying the second mapping...")

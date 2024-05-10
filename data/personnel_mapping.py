@@ -1,6 +1,6 @@
 personnel_map = {
-    "SWAT Personnel (In SWAT Vehicles)": "SWAT Armoured Vehicle",
-    "Traffic Control": ["Police Traffic Blocker Unit", "Fire Traffic Blocker Unit"],
-    "EMS Mobile Command": "EMS Mobile Command Unit",
-    "USAR": "Fire Traffic Blocker",
+    "swat personnel (in swat vehicles)": "SWAT Armoured Vehicle",
+    "traffic control": ["police traffic blocker unit", "fire traffic blocker unit"],
+    "ems mobile command": "EMS Mobile Command Unit",
+    "usar": "Fire Traffic Blocker",
 }

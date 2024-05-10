@@ -16,10 +16,10 @@ def dispatch_personnel(driver, mission_id, vehicle_pool, mission_data_file, pers
     if "personnel" in current_mission_data:
         for personnel, required_count in current_mission_data["personnel"].items():
             if personnel == "EMS Mobile Command":
-                vehicle_type_names = personnel_dispatch_mapping.get("EMS Mobile Command")
+                vehicle_type_names = personnel_dispatch_mapping.get("ems mobile command")
                 required_vehicles = math.ceil(required_count / 3)
             elif personnel == "SWAT Personnel (In SWAT Vehicles)":
-                vehicle_type_names = [personnel_dispatch_mapping.get("SWAT Personnel (In SWAT Vehicles)")]
+                vehicle_type_names = [personnel_dispatch_mapping.get("swat personnel (in swat vehicles)")]
                 required_vehicles = math.ceil(required_count / 6)
             else:
                 vehicle_type_names = personnel_dispatch_mapping.get(personnel)

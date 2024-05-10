@@ -31,31 +31,28 @@ def prisoner_needed(driver, mission_id):
         if prisoner_needed_alert:
             logging.warning(f"Skipping mission {mission_id} because it has a prisoner request.")
             logging.info(f"Handling prisoner request on mission {mission_id}.")
-            click_non_danger_buttons_under_prisoner_element(driver)
+            click_non_danger_buttons_under_prisoner_element(driver, mission_id)
             return True
     except NoSuchElementException:
         pass
     return False
 
 
-def click_non_danger_buttons_under_prisoner_element(driver):
+def click_non_danger_buttons_under_prisoner_element(driver, mission_id):
     try:
         prisoner_element = driver.find_element(By.CLASS_NAME, 'vehicle_prisoner_select')
         prisoner_buttons = prisoner_element.find_elements(By.TAG_NAME, 'a')
         for button in prisoner_buttons:
-            while True:
-                try:
-                    button_class = button.get_attribute('class')
-                    if 'btn-danger' not in button_class and "btn-default" not in button_class:
-                        driver.execute_script("arguments[0].scrollIntoView(true);", button)
-                        button.click()
-                        logging.info(f"Clicked non-danger button under prisoner element.")
-                    break
-                except StaleElementReferenceException:
-                    logging.info("Stale element reference exception occurred. Re-locating the prisoner buttons.")
-                    prisoner_element = driver.find_element(By.CLASS_NAME, 'vehicle_prisoner_select')
-                    prisoner_buttons = prisoner_element.find_elements(By.TAG_NAME, 'a')
-                    button = prisoner_buttons[prisoner_buttons.index(button)]  # Re-assign the button
+            try:
+                button_class = button.get_attribute('class')
+                if 'btn-danger' not in button_class and "btn-default" not in button_class:
+                    driver.execute_script("arguments[0].scrollIntoView(true);", button)
+                    button.click()
+                    logging.info(f"Clicked non-danger button under prisoner element.")
+                    driver.get("https://www.missionchief.com/missions/" + mission_id)
+            except StaleElementReferenceException:
+                logging.info(f"Finished transports on mission {mission_id}.")
+                pass
     except NoSuchElementException:
         logging.info("Prisoner element not found on the page.")
-
+        pass

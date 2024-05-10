@@ -7,11 +7,11 @@ from selenium.webdriver.support import expected_conditions as ec
 def dispatch_tow_truck(crashed_cars, vehicle_dispatch_mapping, vehicle_pool, driver):
     if crashed_cars > 0:
         if crashed_cars == 1:
-            recovery_vehicle_type = vehicle_dispatch_mapping['Wreckers']
+            recovery_vehicle_type = vehicle_dispatch_mapping['wrecker']
         elif crashed_cars == 2:
-            recovery_vehicle_type = vehicle_dispatch_mapping['Flatbed Carriers']
+            recovery_vehicle_type = vehicle_dispatch_mapping['flatbed carrier']
         else:
-            recovery_vehicle_type = [vehicle_dispatch_mapping['Wreckers'], vehicle_dispatch_mapping['Flatbed Carriers']]
+            recovery_vehicle_type = [vehicle_dispatch_mapping['wrecker'], vehicle_dispatch_mapping['flatbed carrier']]
 
         dispatched_recovery_vehicles = 0
         for vehicle_id in list(vehicle_pool.keys()):

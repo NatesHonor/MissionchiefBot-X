@@ -9,7 +9,7 @@ from selenium.webdriver.support import expected_conditions as ec
 
 def dispatch_police_transport(prisoners, vehicle_dispatch_mapping, vehicle_pool, driver):
     if prisoners > 1:
-        prisoner_vehicle = vehicle_dispatch_mapping['Prisoner Transports']
+        prisoner_vehicle = vehicle_dispatch_mapping['prisoner transport']
         required_vehicles = math.ceil(prisoners / 6)
 
         dispatched_count = 0
