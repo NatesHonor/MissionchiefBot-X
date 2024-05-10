@@ -61,7 +61,8 @@ vehicle_map = {
     "FBI Unit": ["FBI Unit", "FBI Investigation Wagon"],
     "FBI Investigation Wagons": "FBI Investigation Wagon",
     "FBI Investigation Wagon": "FBI Investigation Wagon",
-    "FBI Drone"
+    "FBI Drone": "FBI Surveillance Drone",
+    "FBI Drones": "FBI Surveillance Drone",
     "K-9 Units": "K-9 Unit",
     "K-9 Unit": "K-9 Unit",
     "K-9 Carrier": "Large K9 Carrier",
