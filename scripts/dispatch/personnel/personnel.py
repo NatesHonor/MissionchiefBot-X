@@ -22,7 +22,7 @@ def dispatch_personnel(driver, mission_id, vehicle_pool, mission_data_file, pers
                 vehicle_type_names = [personnel_dispatch_mapping.get("swat personnel (in swat vehicles)")]
                 required_vehicles = math.ceil(required_count / 6)
             else:
-                vehicle_type_names = personnel_dispatch_mapping.get(personnel)
+                vehicle_type_names = personnel_dispatch_mapping.get(personnel.lower())
                 required_vehicles = math.ceil(required_count / 6)
 
             print(vehicle_type_names)
@@ -33,7 +33,8 @@ def dispatch_personnel(driver, mission_id, vehicle_pool, mission_data_file, pers
 
             for vehicle_id in list(vehicle_pool.keys()):
                 vehicle_info = vehicle_pool[vehicle_id]
-                if vehicle_info['name'] in vehicle_type_names and dispatched_count < required_vehicles:
+                if vehicle_info['name'].lower() in [v.lower() for v in
+                                                    vehicle_type_names] and dispatched_count < required_vehicles:
                     checkbox_id = f"vehicle_checkbox_{vehicle_id}"
 
                     try:

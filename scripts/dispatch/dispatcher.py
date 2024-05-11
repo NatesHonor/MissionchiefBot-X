@@ -36,8 +36,9 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
 
     for requirement, required_count in mission_requirements.items():
         requirement = requirement.lower()
-        if requirement.endswith('s'):
-            requirement = requirement[:-1]
+        words = requirement.split()
+        processed_words = [word[:-1] if word.endswith('s') else word for word in words]
+        requirement = ' '.join(processed_words)
         vehicle_type_names = None
         if (requirement == "k-9 unit" or requirement == "k-9 unit") and required_count > 2:
             logging.info(f"Dispatching K-9 Carrier instead of K-9 Unit for mission {mission_id}.")
@@ -64,7 +65,6 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
             vehicle_types = vehicle_type_names
         else:
             vehicle_types = [vehicle_type_names]
-
         for vehicle_type in vehicle_types:
             dispatched_count = 0
             matching_vehicles = {vehicle_id: info for vehicle_id, info in vehicle_pool.copy().items() if
@@ -78,22 +78,28 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
                             break
             else:
                 logging.info(f"Dispatched {dispatched_count} out of {required_count} for {vehicle_type}")
+            if dispatched_count == required_count:
+                break
+
     try:
         if config.get('dispatches', 'dispatch_type') == "alliance":
             dispatch_button = WebDriverWait(driver, 10).until(
                 ec.element_to_be_clickable((By.CSS_SELECTOR, '.btn.btn-success.alert_next_alliance')))
         else:
-            dispatch_button = WebDriverWait(driver, 3).until(ec.element_to_be_clickable((By.ID, 'alert_btn')))
+            dispatch_button = WebDriverWait(driver, 10).until(ec.element_to_be_clickable((By.ID, 'alert_btn')))
         driver.execute_script("arguments[0].scrollIntoView();", dispatch_button)
         driver.execute_script("arguments[0].click();", dispatch_button)
         logging.info("Dispatched all selected vehicles.")
     except TimeoutException:
+        logging.error("Timeout exception occurred. Dispatch button not found within the expected time.")
+
         if config.get('dispatches', 'dispatch_type') == "alliance":
+            logging.info("Alliance dispatch already pressed, using regular dispatch for vehicles...")
             dispatch_button = WebDriverWait(driver, 10).until(ec.element_to_be_clickable((By.ID, 'alert_btn')))
             driver.execute_script("arguments[0].scrollIntoView();", dispatch_button)
             driver.execute_script("arguments[0].click();", dispatch_button)
         else:
-            logging.error("Timeout exception occurred. Dispatch button not found within 3 seconds")
+            logging.warning("Dispatch button not pressable")
+            pass
     except NoSuchElementException:
         logging.info(f"Could not find dispatch button for mission {mission_id}.")
-
