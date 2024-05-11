@@ -1,7 +1,7 @@
 vehicle_map = {
     "ambulance": "ALS Ambulance",
     "arff": "Large ARFF Crash Tender",
-    "arffs or firetrucks": "Type 1 fire engine",
+    "arffs or firetrucks": ["Type 1 fire engine", "Large ARFF Crash Tender"],
     "battalion chief unit": "Battalion chief unit",
     "battalion chief vehicle": "Battalion chief unit",
     "ems chief": "EMS Chief",
