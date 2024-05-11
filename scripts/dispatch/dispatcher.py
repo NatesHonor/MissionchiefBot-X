@@ -80,7 +80,6 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
                 logging.info(f"Dispatched {dispatched_count} out of {required_count} for {vehicle_type}")
             if dispatched_count == required_count:
                 break
-
     try:
         if config.get('dispatches', 'dispatch_type') == "alliance":
             dispatch_button = WebDriverWait(driver, 10).until(
@@ -91,15 +90,17 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
         driver.execute_script("arguments[0].click();", dispatch_button)
         logging.info("Dispatched all selected vehicles.")
     except TimeoutException:
-        logging.error("Timeout exception occurred. Dispatch button not found within the expected time.")
+        logging.error("Timeout exception occurred. Dispatch button not found within the expected time. Retrying...")
+        try:
+            if config.get('dispatches', 'dispatch_type') == "alliance":
+                dispatch_button = WebDriverWait(driver, 10).until(ec.element_to_be_clickable((By.ID, 'alert_btn')))
 
-        if config.get('dispatches', 'dispatch_type') == "alliance":
-            logging.info("Alliance dispatch already pressed, using regular dispatch for vehicles...")
-            dispatch_button = WebDriverWait(driver, 10).until(ec.element_to_be_clickable((By.ID, 'alert_btn')))
+            else:
+                dispatch_button = WebDriverWait(driver, 10).until(ec.element_to_be_clickable((By.ID, 'alert_btn')))
             driver.execute_script("arguments[0].scrollIntoView();", dispatch_button)
             driver.execute_script("arguments[0].click();", dispatch_button)
-        else:
-            logging.warning("Dispatch button not pressable")
-            pass
+            logging.info("Dispatched all selected vehicles after retry.")
+        except TimeoutException:
+            logging.error("Second attempt to find dispatch button failed. Giving up.")
     except NoSuchElementException:
         logging.info(f"Could not find dispatch button for mission {mission_id}.")
