@@ -90,7 +90,7 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
         driver.execute_script("arguments[0].click();", dispatch_button)
         logging.info("Dispatched all selected vehicles.")
     except TimeoutException:
-        logging.error("Timeout exception occurred. Dispatch button not found within the expected time. Retrying...")
+        logging.error("Timeout exception occurred. Dispatch button not found within the expected time. Retrying ...")
         try:
             if config.get('dispatches', 'dispatch_type') == "alliance":
                 dispatch_button = WebDriverWait(driver, 10).until(ec.element_to_be_clickable((By.ID, 'alert_btn')))
