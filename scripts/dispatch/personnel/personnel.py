@@ -16,15 +16,16 @@ def dispatch_personnel(driver, mission_id, vehicle_pool, mission_data_file, pers
     if "personnel" in current_mission_data:
         for personnel, required_count in current_mission_data["personnel"].items():
             if personnel == "EMS Mobile Command":
-                vehicle_type_names = personnel_dispatch_mapping.get("ems mobile command")
-                required_vehicles = math.ceil(required_count / 3)
+                vehicle_type_names = personnel_dispatch_mapping.get("ems mobile command", [])
             elif personnel == "SWAT Personnel (In SWAT Vehicles)":
-                vehicle_type_names = [personnel_dispatch_mapping.get("swat personnel (in swat vehicles)")]
-                required_vehicles = math.ceil(required_count / 6)
+                vehicle_type_names = personnel_dispatch_mapping.get("swat personnel (in swat vehicles)", [])
             else:
-                vehicle_type_names = personnel_dispatch_mapping.get(personnel.lower())
-                required_vehicles = math.ceil(required_count / 6)
+                vehicle_type_names = personnel_dispatch_mapping.get(personnel.lower(), [])
+            if isinstance(vehicle_type_names, str):
+                vehicle_type_names = [vehicle_type_names]
 
+            vehicle_type_names = [name.lower() for name in vehicle_type_names]
+            required_vehicles = math.ceil(required_count / 6)
             print(vehicle_type_names)
             if not vehicle_type_names:
                 print(f"No mapping found for personnel: {personnel}")
@@ -33,13 +34,10 @@ def dispatch_personnel(driver, mission_id, vehicle_pool, mission_data_file, pers
 
             for vehicle_id in list(vehicle_pool.keys()):
                 vehicle_info = vehicle_pool[vehicle_id]
-                if vehicle_info['name'].lower() in [v.lower() for v in
-                                                    vehicle_type_names] and dispatched_count < required_vehicles:
+                if vehicle_info['name'].lower() in vehicle_type_names and dispatched_count < required_vehicles:
                     checkbox_id = f"vehicle_checkbox_{vehicle_id}"
-
                     try:
                         checkbox = WebDriverWait(driver, 1).until(ec.element_to_be_clickable((By.ID, checkbox_id)))
-
                         if not checkbox.is_selected():
                             driver.execute_script("arguments[0].scrollIntoView(true);", checkbox)
                             driver.execute_script("arguments[0].click();", checkbox)
@@ -51,5 +49,5 @@ def dispatch_personnel(driver, mission_id, vehicle_pool, mission_data_file, pers
                     except (NoSuchElementException, ElementClickInterceptedException, TimeoutException):
                         print(f"Skipping {vehicle_info['name']}:{vehicle_id}")
 
-                if dispatched_count >= required_vehicles:
-                    break
+            if dispatched_count >= required_vehicles:
+                break

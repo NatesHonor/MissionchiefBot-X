@@ -15,7 +15,8 @@ def process_mission_data(driver, mission_data):
                 and "Riot Police Extensions" not in requirement
                 and "Fire Marshal's Offices" not in requirement
                 and "Airport Extensions" not in requirement
-                and "Personnel" not in requirement):
+                and "Personnel" not in requirement
+                and "Ambulances" not in requirement):
             if requirement == "Required Personnel Available":
                 personnel_requirements = value.split('\n')
                 for personnel_requirement in personnel_requirements:
