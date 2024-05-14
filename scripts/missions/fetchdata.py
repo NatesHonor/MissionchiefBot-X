@@ -27,6 +27,8 @@ def process_mission_data(driver, mission_data):
             else:
                 vehicle = requirement.replace("Required ", "")
                 number_of_vehicles = int(''.join([char for char in value if char.isdigit()]))
+                if vehicle == "policehelicopter":
+                    vehicle = "police helicopter"
                 mission_data["vehicles"][vehicle] = number_of_vehicles
         elif requirement == "Max. Patients":
             mission_data["patients"] = int(value)

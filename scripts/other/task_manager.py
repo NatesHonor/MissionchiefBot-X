@@ -1,7 +1,7 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support import expected_conditions as ec
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
 
 def claim_tasks(driver):
@@ -9,17 +9,16 @@ def claim_tasks(driver):
 
     try:
         claim_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, "//input[@value='Claim All']"))
+            ec.element_to_be_clickable((By.XPATH, "//input[@value='Claim All']"))
         )
         claim_button.click()
         try:
             WebDriverWait(driver, 10).until(
-                EC.invisibility_of_element_located((By.XPATH, "//input[@value='Claim All']"))
+                ec.invisibility_of_element_located((By.XPATH, "//input[@value='Claim All']"))
             )
             print("Claimed all tasks")
         except NoSuchElementException:
-            print("Task claiming failed. No tasks available to claim.")
+            print("No tasks available to claim!")
 
-    except NoSuchElementException:
-        print("Task claiming failed. No 'Claim All' button found.")
-
+    except (TimeoutException, NoSuchElementException):
+        print("No tasks available to claim!")

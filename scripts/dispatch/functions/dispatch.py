@@ -1,6 +1,7 @@
 import logging
 import math
 import configparser
+import time
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -35,6 +36,20 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
     except TimeoutException:
         remove_mission(mission_id, mission_data_file)
         return
+    try:
+        load_button = WebDriverWait(driver, 10).until(
+            ec.presence_of_element_located(
+                (By.CSS_SELECTOR, '.btn.btn-xs.btn-warning.missing_vehicles_load.btn-block')))
+        logging.info("Found the load button.")
+        driver.execute_script("arguments[0].scrollIntoView();", load_button)
+        driver.execute_script("arguments[0].click();", load_button)
+        logging.info("Pressed the button to load missing vehicles.")
+        time.sleep(2)
+    except TimeoutException:
+        logging.error("Timeout exception occurred. Button not found within 10 seconds")
+    except NoSuchElementException:
+        logging.error(f"Could not find the button to load missing vehicles for mission {mission_id}.")
+    logging.info("Continuing with dispatching process.")
 
     dispatch_personnel(driver, mission_id, vehicle_pool, mission_data_file, personnel_dispatch_mapping)
     dispatch_tow_truck(crashed_cars, vehicle_dispatch_mapping, vehicle_pool, driver)
@@ -72,7 +87,7 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
         for vehicle_type in vehicle_types:
             dispatched_count = 0
             matching_vehicles = {vehicle_id: info for vehicle_id, info in vehicle_pool.copy().items() if
-                                 info['name'] == vehicle_type}
+                                 vehicle_id in vehicle_type_names}
 
             for vehicle_id, vehicle_info in matching_vehicles.items():
                 if dispatched_count < required_count:

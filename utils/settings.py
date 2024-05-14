@@ -14,6 +14,7 @@ config.read('config.ini')
 
 calendar = config.getboolean('other', 'calendar', fallback=False)
 claim_tasks_settings = config.getboolean('other', 'claim_tasks', fallback=False)
+claim_tasks_time = config.getint('other', 'claim_tasks_time', fallback=0)
 event_calendar = config.getboolean('other', 'event_calendar', fallback=False)
 handletransportrequests = config.getboolean('transport', 'should_handle_transport_requests', fallback=False)
 handletransportrequeststime = config.getint('transport', 'should_handle_transport_requests_time', fallback=0)
@@ -22,7 +23,6 @@ handletransportrequeststime = config.getint('transport', 'should_handle_transpor
 def settings():
     if handletransportrequests:
         def transport_loop():
-            time.sleep(10)
             transport_driver = login()
             while True:
                 logging.info("Transporting prisoners and patients...")
@@ -49,10 +49,9 @@ def settings():
             claimtask_driver = login()
             while True:
                 claim_tasks(claimtask_driver)
-                time1 = math.ceil(1800 / 60)
-                logging.info(f"Sleeping for {time1} minutes...")
-                time.sleep(1800)
-                time.sleep(handletransportrequeststime)
+                time1 = math.ceil(claim_tasks_time * 60)
+                logging.info(f"Sleeping for {claim_tasks_time} minutes...")
+                time.sleep(time1)
 
         transport_thread = threading.Thread(target=claimtask_loop)
         transport_thread.start()

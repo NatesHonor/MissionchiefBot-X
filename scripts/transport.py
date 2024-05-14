@@ -60,6 +60,17 @@ def transport_submit(driver):
                     button = wait.until(ec.element_to_be_clickable((By.CLASS_NAME, 'btn btn-default btn-sm')))
                     button.click()
                     logging.info(f"Detected 0 available transport locations, leaving civilian at scene...")
+
+                    # Try to leave the prisoner at the scene if leaving the patient failed
+                    try:
+                        prisoner_leave_button = WebDriverWait(driver, 1).until(
+                            ec.element_to_be_clickable((By.CSS_SELECTOR, 'a.btn.btn-xs.btn-danger')))
+                        prisoner_leave_button.click()
+                        logging.info(f"Attempted to leave prisoner at the scene for vehicle {vehicle_id}.")
+                    except (NoSuchElementException, TimeoutException) as e:
+                        logging.error(f"Exception occurred while leaving prisoner at scene {vehicle_id}: {e}")
+                        continue
+
                 except (NoSuchElementException, TimeoutException) as e:
                     logging.error(f"Exception occurred while leaving patient at scene {vehicle_id}: {e}")
                     continue
