@@ -1,6 +1,7 @@
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from scripts.missions.fetchdata import process_mission_data
+from scripts.missions.prisoner_transport import handle_prisoner_transport
 from scripts.missions.utils import handle_alerts, process_missing_personnel, process_missing_vehicles, process_alerts
 
 def gather_mission_data(driver, mission_numbers):
@@ -18,6 +19,9 @@ def gather_mission_data(driver, mission_numbers):
                 continue
             except NoSuchElementException:
                 pass
+
+            handle_prisoner_transport(driver)
+
             images = driver.find_elements(By.TAG_NAME, "img")
             for img in images:
                 if "gelb" in img.get_attribute("src"):
