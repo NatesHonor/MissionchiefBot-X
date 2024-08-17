@@ -1,10 +1,14 @@
 import logging
+import configparser
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
+config = configparser.ConfigParser()
+config.read('config.ini')
+debug = config.getboolean('client', 'debug', fallback=False)
 
 def select_vehicle(driver, vehicle_id, vehicle_type_name):
     checkbox_id = f"vehicle_checkbox_{vehicle_id}"
@@ -13,13 +17,18 @@ def select_vehicle(driver, vehicle_id, vehicle_type_name):
         if checkbox.is_displayed() and checkbox.is_enabled():
             driver.execute_script("arguments[0].scrollIntoView(true);", checkbox)
             driver.execute_script("arguments[0].click();", checkbox)
-            logging.info(f"Selected {vehicle_type_name.lower()}:{vehicle_id}")
+            if debug:
+                logging.info(f"Selected {vehicle_type_name.lower()}:{vehicle_id}")
+            else:
+                print(f"Selected {vehicle_type_name.lower()}:{vehicle_id}")
             return True
         else:
-            logging.info(f"Skipping {vehicle_type_name.lower()}:{vehicle_id} as it's not clickable.")
+            if debug:
+                logging.info(f"Skipping {vehicle_type_name.lower()}:{vehicle_id} as it's not clickable.")
             return False
     except NoSuchElementException:
-        logging.info(f"Skipping {vehicle_type_name.lower()}:{vehicle_id} as it's already dispatched.")
+        if debug:
+            logging.info(f"Skipping {vehicle_type_name.lower()}:{vehicle_id} as it's already dispatched.")
         return False
 
 
@@ -35,10 +44,14 @@ def dispatch_ems(patients, vehicle_dispatch_mapping, vehicle_pool, driver):
                     if not checkbox.is_selected():
                         driver.execute_script("arguments[0].scrollIntoView(true);", checkbox)
                         driver.execute_script("arguments[0].click();", checkbox)
-                        print(f"Selected {ems_chief_type}:{vehicle_id}")
+                        if debug:
+                            logging.info(f"Selected {ems_chief_type}:{vehicle_id}")
+                        else:
+                            print(f"Selected {ems_chief_type}:{vehicle_id}")
                         break
                 except TimeoutException:
-                    print(f"Skipping {ems_chief_type}:{vehicle_id} as it's not clickable.")
+                    if debug:
+                        logging.info(f"Skipping {ems_chief_type}:{vehicle_id} as it's not clickable.")
 
     dispatched_count = 0
     available_ambulances = {vehicle_id: info for vehicle_id, info in vehicle_pool.copy().items() if

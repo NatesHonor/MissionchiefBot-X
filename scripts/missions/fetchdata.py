@@ -1,4 +1,13 @@
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException
+
+def grab_average_credits(driver):
+    try:
+        average_credits_element = driver.find_element(By.XPATH, '//tr[td[text()="Average credits"]]/td[2]')
+        average_credits = int(average_credits_element.text.strip())
+        return average_credits
+    except NoSuchElementException:
+        return 0
 
 
 def process_mission_data(driver, mission_data):
@@ -15,14 +24,14 @@ def process_mission_data(driver, mission_data):
                 and "Riot Police Extensions" not in requirement
                 and "Fire Marshal's Offices" not in requirement
                 and "Airport Extensions" not in requirement
+                and "Foam Extensions" not in requirement
                 and "Personnel" not in requirement
                 and "Ambulances" not in requirement):
             if requirement == "Required Personnel Available":
                 personnel_requirements = value.split('\n')
                 for personnel_requirement in personnel_requirements:
                     number, personnel_type = personnel_requirement.split('x')
-                    personnel_type = personnel_type.replace(number,
-                                                            '').strip()
+                    personnel_type = personnel_type.replace(number, '').strip()
                     mission_data["personnel"][personnel_type] = int(number)
             else:
                 vehicle = requirement.replace("Required ", "")
@@ -36,4 +45,5 @@ def process_mission_data(driver, mission_data):
             mission_data["prisoners"] = int(value)
         elif requirement == "Maximum amount of crashed cars":
             mission_data["crashed_cars"] = int(value)
+        mission_data["average_credits"] = grab_average_credits(driver)
     return mission_data

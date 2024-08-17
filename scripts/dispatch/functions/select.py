@@ -1,6 +1,11 @@
 import logging
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
+import configparser
+
+config = configparser.ConfigParser()
+config.read('config.ini')
+debug = config.getboolean('client', 'debug', fallback=False)
 
 
 def select_vehicle(driver, vehicle_id, vehicle_type_name):
@@ -13,8 +18,10 @@ def select_vehicle(driver, vehicle_id, vehicle_type_name):
             logging.info(f"Selected {vehicle_type_name}:{vehicle_id}")
             return True
         else:
-            logging.info(f"Skipping {vehicle_type_name}:{vehicle_id} as it's not clickable.")
+            if debug:
+                logging.info(f"Skipping {vehicle_type_name}:{vehicle_id} as it's not clickable.")
             return False
     except NoSuchElementException:
-        logging.info(f"Skipping {vehicle_type_name}:{vehicle_id} as it's already dispatched.")
+        if debug:
+            logging.info(f"Skipping {vehicle_type_name}:{vehicle_id} as it's already dispatched.")
         return False
