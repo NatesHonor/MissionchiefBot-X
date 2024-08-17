@@ -95,7 +95,7 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
             dispatch_button = WebDriverWait(driver, 10).until(ec.element_to_be_clickable((By.ID, 'alert_btn')))
             driver.execute_script("arguments[0].scrollIntoView();", dispatch_button)
             driver.execute_script("arguments[0].click();", dispatch_button)
-            logging.info("Dispatched all selected vehicles after retry.")
+            logging.info("Dispatched all selected vehicles after retry")
         except TimeoutException:
             logging.error("Second attempt to find dispatch button failed. Giving up.")
     except NoSuchElementException:
