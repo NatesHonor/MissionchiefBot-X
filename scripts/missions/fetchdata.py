@@ -9,7 +9,6 @@ def grab_average_credits(driver):
     except NoSuchElementException:
         return 0
 
-
 def process_mission_data(driver, mission_data):
     mission_help_button = driver.find_element(By.ID, "mission_help")
     mission_help_button.click()
@@ -25,6 +24,8 @@ def process_mission_data(driver, mission_data):
                 and "Fire Marshal's Offices" not in requirement
                 and "Airport Extensions" not in requirement
                 and "Foam Extensions" not in requirement
+                and "Forestry Extensions" not in requirement
+                and "Traffic Police Extensions" not in requirement
                 and "Personnel" not in requirement
                 and "Ambulances" not in requirement):
             if requirement == "Required Personnel Available":
@@ -32,6 +33,8 @@ def process_mission_data(driver, mission_data):
                 for personnel_requirement in personnel_requirements:
                     number, personnel_type = personnel_requirement.split('x')
                     personnel_type = personnel_type.replace(number, '').strip()
+                    if personnel_type == "Technical Rescuer":
+                        pass
                     mission_data["personnel"][personnel_type] = int(number)
             else:
                 vehicle = requirement.replace("Required ", "")
@@ -40,7 +43,12 @@ def process_mission_data(driver, mission_data):
                     vehicle = "police helicopter"
                 mission_data["vehicles"][vehicle] = number_of_vehicles
         elif requirement == "Max. Patients":
-            mission_data["patients"] = int(value)
+            num_patients = int(value)
+            mission_data["vehicles"]["Ambulances"] = num_patients
+            if num_patients >= 10:
+                mission_data["vehicles"]["EMS Chief"] = 1
+            if num_patients >= 15:
+                mission_data["vehicles"]["EMS Mobile Command Unit"] = 1
         elif requirement == "Maximum Number of Prisoners":
             mission_data["prisoners"] = int(value)
         elif requirement == "Maximum amount of crashed cars":

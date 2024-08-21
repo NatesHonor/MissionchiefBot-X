@@ -3,7 +3,6 @@ import logging
 import math
 
 from scripts.dispatch.vehicles.tow_truck import dispatch_tow_truck
-from scripts.dispatch.vehicles.als_ambulance import dispatch_ems
 from scripts.dispatch.vehicles.prisoner_transport import dispatch_police_transport
 from scripts.dispatch.personnel.personnel import dispatch_personnel
 from scripts.dispatch.functions.select import select_vehicle
@@ -13,14 +12,12 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
-
 logging.basicConfig(level=logging.INFO)
 
 config = configparser.ConfigParser()
 config.read('config.ini')
 
-
-def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, patients,
+def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements,
                       vehicle_dispatch_mapping, crashed_cars, mission_data_file, prisoners, personnel_dispatch_mapping):
     mission_url = f"https://www.missionchief.com/missions/{mission_id}"
     driver.get(mission_url)
@@ -32,7 +29,6 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
     dispatch_personnel(driver, mission_id, vehicle_pool, mission_data_file, personnel_dispatch_mapping)
     dispatch_tow_truck(crashed_cars, vehicle_dispatch_mapping, vehicle_pool, driver)
     dispatch_police_transport(prisoners, vehicle_dispatch_mapping, vehicle_pool, driver)
-    dispatch_ems(patients, vehicle_dispatch_mapping, vehicle_pool, driver)
 
     for requirement, required_count in mission_requirements.items():
         requirement = requirement.lower()
@@ -40,6 +36,16 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
         processed_words = [word[:-1] if word.endswith('s') else word for word in words]
         requirement = ' '.join(processed_words)
         vehicle_type_names = None
+
+        if requirement == "ambulance" and required_count >= 7:
+            logging.info(f"Dispatching Mass Casualty Unit instead of 7 ambulances for mission {mission_id}.")
+            vehicle_type_names = vehicle_dispatch_mapping.get("mass casualty unit")
+            if vehicle_type_names:
+                if select_vehicle(driver, vehicle_type_names, "mass casualty unit"):
+                    required_count -= 7
+                    if required_count <= 0:
+                        continue
+
         if (requirement == "k-9 unit" or requirement == "k-9 unit") and required_count > 2:
             logging.info(f"Dispatching K-9 Carrier instead of K-9 Unit for mission {mission_id}.")
             vehicle_type_names = vehicle_dispatch_mapping.get("k-9 carrier")

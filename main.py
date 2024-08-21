@@ -5,7 +5,6 @@ import configparser
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
-from prettytable import PrettyTable
 from selenium.webdriver.common.by import By
 from threading import Lock
 
@@ -16,7 +15,7 @@ from functions import gather_missions, setup_driver
 from scripts.gather_missions import total_number_of_missions
 from scripts.dispatch.dispatcher import dispatch_vehicles
 from scripts.vehicle_data import gather_vehicle_data
-from utils.tables.maintables import display_final_table, display_missions_data
+from utils.tables.maintables import display_final_table, display_missions_data, display_mission_table
 from utils.version_checker import check_version
 from utils.settings import settings
 from scripts.missions.transport_needed import check_transport_needed
@@ -41,6 +40,8 @@ threads = config.getint('client', 'threads', fallback=1)
 print("Logging into threads")
 
 
+logging.info("Applying settings!")
+settings()
 def dispatch_all_missions(driver):
     vehicle_dispatch_mapping = vehicle_map
     personnel_dispatch_mapping = personnel_map
@@ -48,25 +49,10 @@ def dispatch_all_missions(driver):
     with open('data/vehicle_data.json', 'r') as vehicle_file:
         vehicle_pool = json.load(vehicle_file)
 
-    logging.info("Applying settings!")
-    settings()
+
 
     for m_number, mission_info in shared_missions_data.items():
-        title = mission_info['title']
-        average_credits = mission_info['average_credits']
-        vehicles = mission_info['vehicles']
-
-        table = PrettyTable()
-        table.title = f"Mission #{m_number}"
-        table.field_names = ["Title", "Average Credits", "Vehicles", "Patients", "Prisoners", "Crashed Cars"]
-
-        vehicle_list = "\n".join([f"{v}: {c}" for v, c in vehicles.items()])
-        patients = mission_info.get('patients', 0)
-        prisoners = mission_info.get('prisoners', 0)
-        crashed_cars = mission_info.get('crashed_cars', 0)
-        table.add_row([title, str(average_credits), vehicle_list, str(patients), str(prisoners), str(crashed_cars)])
-
-        print(table)
+        display_mission_table(shared_missions_data, m_number)
 
         missionsleep = config.getboolean('missions', 'should_wait_before_missions', fallback=False)
         missionsleeptime = config.getint('missions', 'should_wait_before_missions_time', fallback=False)
@@ -75,10 +61,9 @@ def dispatch_all_missions(driver):
         check_transport_needed(driver)
         try:
             mission_requirements = mission_info['vehicles']
-            max_patients = mission_info.get('patients', 0)
             crashed_cars = mission_info.get('crashed_cars', 0)
             prisoners = mission_info.get('prisoners', 0)
-            dispatch_vehicles(driver, m_number, vehicle_pool, mission_requirements, max_patients,
+            dispatch_vehicles(driver, m_number, vehicle_pool, mission_requirements,
                               vehicle_dispatch_mapping, crashed_cars, 'data/missions_data.json',
                               prisoners, personnel_dispatch_mapping)
 
@@ -141,6 +126,5 @@ if __name__ == "__main__":
             with open('data/missions_data.json', 'w') as missions_file:
                 json.dump(shared_missions_data, missions_file)
         display_missions_data(shared_missions_data)
-        dispatch_driver = setup_driver()
-        dispatch_all_missions(dispatch_driver)
+        dispatch_all_missions(drivers[0])
         display_final_table(shared_missions_data)

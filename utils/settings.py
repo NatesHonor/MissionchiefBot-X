@@ -6,7 +6,6 @@ import math
 
 from scripts.logon import login
 from scripts.transport import transport_submit
-from scripts.other.task_manager import claim_tasks
 import configparser
 
 config = configparser.ConfigParser()
@@ -44,14 +43,3 @@ def settings():
         driver2.quit()
         login()
 
-    if claim_tasks_settings:
-        def claimtask_loop():
-            claimtask_driver = login()
-            while True:
-                claim_tasks(claimtask_driver)
-                time1 = math.ceil(claim_tasks_time * 60)
-                logging.info(f"Sleeping for {claim_tasks_time} minutes...")
-                time.sleep(time1)
-
-        transport_thread = threading.Thread(target=claimtask_loop)
-        transport_thread.start()

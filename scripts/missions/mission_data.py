@@ -31,7 +31,7 @@ def gather_mission_data(driver, mission_numbers):
                 mission_title = driver.find_element(By.ID, "mission_general_info").get_attribute("data-mission-title")
 
                 mission_data = {"title": mission_title, "average_credits": 100, "vehicles": {}, "personnel": {},
-                                "patients": 0, "prisoners": 0, "crashed_cars": 0}
+                                "prisoners": 0, "crashed_cars": 0}
 
                 mission_data = process_missing_personnel(driver, mission_data)
                 mission_data = process_missing_vehicles(driver, mission_data)
