@@ -54,4 +54,8 @@ def process_mission_data(driver, mission_data):
         elif requirement == "Maximum amount of crashed cars":
             mission_data["crashed_cars"] = int(value)
         mission_data["average_credits"] = grab_average_credits(driver)
+    if 'prisoners' in mission_data and mission_data['prisoners'] > 0:
+        if 'police car' not in mission_data["vehicles"]:
+            mission_data["vehicles"]["police car"] = 1
+
     return mission_data

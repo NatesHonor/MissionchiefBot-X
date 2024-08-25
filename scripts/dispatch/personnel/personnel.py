@@ -5,6 +5,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, NoSuchElementException
 
+
 def dispatch_personnel(driver, mission_id, vehicle_pool, mission_data_file, personnel_dispatch_mapping):
     with open(mission_data_file, 'r') as f:
         mission_data = json.load(f)
@@ -22,12 +23,34 @@ def dispatch_personnel(driver, mission_id, vehicle_pool, mission_data_file, pers
             vehicle_type_names = [name.lower().strip() for name in vehicle_type_names]
             required_vans = 0
             required_buses = 0
+
             if personnel.lower() == "riot police officer":
-                required_vans = required_count // 12
-                required_buses = (required_count % 12) // 24
-                if required_count % 12 != 0:
-                    required_buses += 1
-                print(f"Required vans: {required_vans}, Required buses: {required_buses}")
+                if required_count <= 12:
+                    required_vans = math.ceil(required_count / 12)
+                    print(f"Dispatching {required_vans} van(s) for {required_count} riot police officers.")
+                else:
+                    required_buses = math.ceil(required_count / 24)
+                    print(f"Dispatching {required_buses} bus(es) for {required_count} riot police officers.")
+                    for vehicle_id in list(vehicle_pool.keys()):
+                        vehicle_info = vehicle_pool[vehicle_id]
+                        vehicle_name = vehicle_info['name'].lower().strip()
+                        if vehicle_name == "riot police van" and required_vans > 0:
+                            checkbox_id = f"vehicle_checkbox_{vehicle_id}"
+                            try:
+                                checkbox = WebDriverWait(driver, 1).until(
+                                    ec.element_to_be_clickable((By.ID, checkbox_id)))
+                                if not checkbox.is_selected():
+                                    driver.execute_script("arguments[0].scrollIntoView(true);", checkbox)
+                                    driver.execute_script("arguments[0].click();", checkbox)
+                                    print(f"Selected {vehicle_info['name']}:{vehicle_id}")
+                                    required_vans -= 1
+                                    del vehicle_pool[vehicle_id]
+                            except (NoSuchElementException, ElementClickInterceptedException, TimeoutException):
+                                print(f"Skipping {vehicle_info['name']}:{vehicle_id}")
+
+                    if required_vans > 0:
+                        required_buses += math.ceil(required_vans / 2)
+
             else:
                 required_vehicles = math.ceil(required_count / 6)
                 print(vehicle_type_names)

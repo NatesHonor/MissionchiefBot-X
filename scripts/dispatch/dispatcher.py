@@ -6,7 +6,8 @@ from scripts.dispatch.vehicles.tow_truck import dispatch_tow_truck
 from scripts.dispatch.vehicles.prisoner_transport import dispatch_police_transport
 from scripts.dispatch.personnel.personnel import dispatch_personnel
 from scripts.dispatch.functions.select import select_vehicle
-from scripts.dispatch.functions.check import transport_needed, prisoner_needed, wait_for_element
+from scripts.dispatch.functions.check import transport_needed, prisoner_needed, wait_for_element, \
+    click_and_wait_for_refresh
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
@@ -17,10 +18,13 @@ logging.basicConfig(level=logging.INFO)
 config = configparser.ConfigParser()
 config.read('config.ini')
 
+
+
 def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements,
                       vehicle_dispatch_mapping, crashed_cars, mission_data_file, prisoners, personnel_dispatch_mapping):
     mission_url = f"https://www.missionchief.com/missions/{mission_id}"
     driver.get(mission_url)
+    click_and_wait_for_refresh(driver, '.btn.btn-xs.btn-warning.missing_vehicles_load.btn-block')
 
     transport_needed(driver, mission_id)
     prisoner_needed(driver, mission_id)
@@ -86,23 +90,24 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements,
                 logging.info(f"Dispatched {dispatched_count} out of {required_count} for {vehicle_type}")
             if dispatched_count == required_count:
                 break
+
     try:
         if config.get('dispatches', 'dispatch_type') == "alliance":
-            dispatch_button = WebDriverWait(driver, 10).until(
+            dispatch_button = WebDriverWait(driver, 3).until(
                 ec.element_to_be_clickable((By.CSS_SELECTOR, '.btn.btn-success.alert_next_alliance')))
         else:
-            dispatch_button = WebDriverWait(driver, 10).until(ec.element_to_be_clickable((By.ID, 'alert_btn')))
+            dispatch_button = WebDriverWait(driver, 3).until(ec.element_to_be_clickable((By.ID, 'alert_btn')))
         driver.execute_script("arguments[0].scrollIntoView();", dispatch_button)
         driver.execute_script("arguments[0].click();", dispatch_button)
-        logging.info("Dispatched all selected vehicles.")
+        logging.info("Dispatching all selected vehicles.")
     except TimeoutException:
-        logging.error("Timeout exception occurred. Dispatch button not found within the expected time. Retrying ...")
+        logging.error("Dispatch failed on first attempt. Retrying...  (Attempt 1/2)")
         try:
-            dispatch_button = WebDriverWait(driver, 10).until(ec.element_to_be_clickable((By.ID, 'alert_btn')))
+            dispatch_button = WebDriverWait(driver, 3).until(ec.element_to_be_clickable((By.ID, 'alert_btn')))
             driver.execute_script("arguments[0].scrollIntoView();", dispatch_button)
             driver.execute_script("arguments[0].click();", dispatch_button)
-            logging.info("Dispatched all selected vehicles after retry")
+            logging.info("Dispatched all selected vehicles. (Attempt 2/2)")
         except TimeoutException:
-            logging.error("Second attempt to find dispatch button failed. Giving up.")
-    except NoSuchElementException:
-        logging.info(f"Could not find dispatch button for mission {mission_id}.")
+            logging.error("Dispatching failed, giving up...")
+    except NoSuchElementException as e:
+        logging.info(f"Could not find dispatch button for mission {mission_id} due to it not being found. {e}")

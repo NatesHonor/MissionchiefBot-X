@@ -19,6 +19,7 @@ from utils.tables.maintables import display_final_table, display_missions_data, 
 from utils.version_checker import check_version
 from utils.settings import settings
 from scripts.missions.transport_needed import check_transport_needed
+from utils.website import navigate_to_url
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -33,15 +34,14 @@ logger = logging.getLogger(__name__)
 
 check_version()
 config = configparser.ConfigParser()
-
 config.read('config.ini')
 
 threads = config.getint('client', 'threads', fallback=1)
 print("Logging into threads")
 
-
 logging.info("Applying settings!")
 settings()
+
 def dispatch_all_missions(driver):
     vehicle_dispatch_mapping = vehicle_map
     personnel_dispatch_mapping = personnel_map
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         with ThreadPoolExecutor(max_workers=threads) as executor:
             driver_vehicle_urls = [[] for _ in range(threads)]
             first_driver = drivers[0]
-            first_driver.get('https://missionchief.com/leitstellenansicht')
+            navigate_to_url(first_driver, 'https://missionchief.com/leitstellenansicht')
             time.sleep(10)
             vehicle_urls = [link.get_attribute('href')
                             for link in first_driver.find_elements(By.CSS_SELECTOR,

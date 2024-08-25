@@ -9,7 +9,6 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
 from scripts.dispatch.vehicles.tow_truck import dispatch_tow_truck
-from scripts.dispatch.vehicles.als_ambulance import dispatch_ems
 from scripts.dispatch.vehicles.prisoner_transport import dispatch_police_transport
 from scripts.dispatch.personnel.personnel import dispatch_personnel
 from scripts.dispatch.functions.select import select_vehicle
@@ -18,7 +17,7 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 
 
-def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, patients,
+def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements,
                       vehicle_dispatch_mapping, crashed_cars, mission_data_file, prisoners, personnel_dispatch_mapping):
     mission_url = f"https://www.missionchief.com/missions/{mission_id}"
     driver.get(mission_url)
@@ -54,7 +53,6 @@ def dispatch_vehicles(driver, mission_id, vehicle_pool, mission_requirements, pa
     dispatch_personnel(driver, mission_id, vehicle_pool, mission_data_file, personnel_dispatch_mapping)
     dispatch_tow_truck(crashed_cars, vehicle_dispatch_mapping, vehicle_pool, driver)
     dispatch_police_transport(prisoners, vehicle_dispatch_mapping, vehicle_pool, driver)
-    dispatch_ems(patients, vehicle_dispatch_mapping, vehicle_pool, driver)
 
     for requirement, required_count in mission_requirements.items():
         vehicle_type_names = None
