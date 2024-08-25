@@ -1,12 +1,10 @@
-# 🚀 Updates (v1.1.4) - ACCELERATION & BUG FIXES
+# 🚀 Updates (v1.1.5) - BUG FIX & GENERAL UPDATE
 
 ## 🎉 New Features:
-- **Threading** to simplify functions
-- Added **more vehicle support**
-- Updated **ambulance dispatching**
-- Enhanced **personnel mapping and dispatching**
-- Added support for **riot units**
-- Added **Log File**
+- **Updated Vehicle Support**
+- **Fixed Transportation Errors**
+- **Added better mission data handling**
+- **Updated Riot Personnel Logic**
 
 ## 🐞 Bug Fixes:
 - Patients and prisoners not being transported
