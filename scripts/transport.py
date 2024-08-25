@@ -1,8 +1,8 @@
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException, ElementNotInteractableException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
-import random
+
 import time
 import logging
 import configparser
@@ -15,19 +15,38 @@ config.read('config.ini')
 def handle_transport_buttons(driver, vehicle_id):
     try:
         transport_buttons = WebDriverWait(driver, 15).until(
-            ec.presence_of_all_elements_located((By.XPATH, "//a[starts-with(@id, 'btn_approach_')]"))
+            ec.presence_of_all_elements_located((By.XPATH, "//a[contains(@class, 'btn btn-success')]"))
         )
         if transport_buttons:
-            random.choice(transport_buttons).click()
-            logging.info(f"{vehicle_id}: Transport button clicked.")
+            clicked = False
+            for button in transport_buttons:
+                try:
+                    button.click()
+                    logging.info(f"{vehicle_id}: Transport button clicked.")
+                    clicked = True
+                    break
+                except ElementNotInteractableException:
+                    continue
+            if not clicked:
+                logging.info(f"{vehicle_id}: No transport buttons were clickable.")
+                release_prisoners(driver, vehicle_id)
         else:
             logging.info(f"{vehicle_id}: No transport buttons found.")
+            release_prisoners(driver, vehicle_id)
     except (NoSuchElementException, TimeoutException) as e:
         logging.error(f"{vehicle_id}: Error finding transport buttons: {e}")
+        release_prisoners(driver, vehicle_id)
+
+def release_prisoners(driver, vehicle_id):
+    try:
+        release_button = driver.find_element(By.XPATH, "//a[contains(@class, 'btn btn-xs btn-danger') and contains(@href, 'entlassen')]")
+        release_button.click()
+        logging.info(f"{vehicle_id}: No transport buttons available. Released prisoners.")
+    except NoSuchElementException:
+        logging.error(f"{vehicle_id}: No release button found.")
 
 def transport_submit(driver):
     if config.getboolean('transport', 'prisoner_van_handling'):
-        # Assuming `van_requests` handles some specific logic for prisoner vans
         from config.prisonervan import van_requests
         van_requests(driver)
 
