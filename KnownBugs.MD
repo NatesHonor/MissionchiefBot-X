@@ -1,5 +1,5 @@
 # 🐛 Known Bugs
 
-- Bot not leaving patients/criminals at scene when needed
+- Bot not selecting vehicles
 
 ## We appreciate your patience as we work to resolve these issues. Your feedback helps us improve! 🙌
