@@ -21,6 +21,7 @@ from utils.settings import settings
 from scripts.missions.transport_needed import check_transport_needed
 from utils.website import navigate_to_url
 
+
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',

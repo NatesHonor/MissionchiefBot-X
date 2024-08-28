@@ -1,5 +1,4 @@
 import logging
-from time import sleep
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -14,15 +13,13 @@ def wait_for_element(driver, selector, timeout=10):
         return False
     return True
 
-def click_and_wait_for_refresh(driver, button_selector, refresh_wait_time=5):
+def click_and_wait_for_refresh(driver, button_selector):
     try:
         load_button = WebDriverWait(driver, 3).until(
             ec.element_to_be_clickable((By.CSS_SELECTOR, button_selector))
         )
         driver.execute_script("arguments[0].click();", load_button)
         logging.info("Clicked 'Load missing' button. Waiting for page refresh...")
-        sleep(refresh_wait_time)
-        wait_for_element(driver, 'all')
     except TimeoutException:
         logging.error("Timeout while waiting for 'Load missing' button.")
     except NoSuchElementException:

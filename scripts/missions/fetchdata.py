@@ -1,19 +1,31 @@
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as ec
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
 
 def grab_average_credits(driver):
     try:
-        average_credits_element = driver.find_element(By.XPATH, '//tr[td[text()="Average credits"]]/td[2]')
+        logging.info("Attempting to find 'Average credits' element.")
+        average_credits_element = WebDriverWait(driver, 10).until(
+            ec.visibility_of_element_located((By.XPATH,
+                                              '//table[@class="table table-striped"]//td[normalize-space(text())="Average credits"]/following-sibling::td'))
+        )
         average_credits = int(average_credits_element.text.strip())
+        logging.info(f"Found 'Average credits': {average_credits}")
         return average_credits
-    except NoSuchElementException:
+    except (NoSuchElementException, TimeoutException) as e:
         return 0
+
 
 def process_mission_data(driver, mission_data):
     mission_help_button = driver.find_element(By.ID, "mission_help")
     mission_help_button.click()
     table_rows = driver.find_elements(By.XPATH, '//table[@class="table table-striped"]/tbody/tr')
-
+    mission_data["average_credits"] = grab_average_credits(driver)
     for row in table_rows:
         columns = row.find_elements(By.TAG_NAME, 'td')
         requirement = columns[0].text.strip()
@@ -53,9 +65,4 @@ def process_mission_data(driver, mission_data):
             mission_data["prisoners"] = int(value)
         elif requirement == "Maximum amount of crashed cars":
             mission_data["crashed_cars"] = int(value)
-        mission_data["average_credits"] = grab_average_credits(driver)
-    if 'prisoners' in mission_data and mission_data['prisoners'] > 0:
-        if 'police car' not in mission_data["vehicles"]:
-            mission_data["vehicles"]["police car"] = 1
-
     return mission_data
