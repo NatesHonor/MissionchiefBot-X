@@ -23,7 +23,7 @@ def click_and_wait_for_refresh(driver, button_selector):
     except TimeoutException:
         logging.error("Timeout while waiting for 'Load missing' button.")
     except NoSuchElementException:
-        logging.info("No 'Load missing' button found. Continuing without clicking.")
+        pass
 
 
 def transport_needed(driver, mission_id):
