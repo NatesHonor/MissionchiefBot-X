@@ -7,6 +7,8 @@ import time
 import logging
 import configparser
 
+from scripts.dispatch.functions.check import wait_for_element
+
 logging.basicConfig(level=logging.INFO)
 
 config = configparser.ConfigParser()
@@ -49,7 +51,7 @@ def transport_submit(driver):
     if config.getboolean('transport', 'prisoner_van_handling'):
         from config.prisonervan import van_requests
         van_requests(driver)
-
+    wait_for_element(driver, 'all')
     try:
         driver.get("https://www.missionchief.com")
         logging.info("Navigating to Missionchief")
