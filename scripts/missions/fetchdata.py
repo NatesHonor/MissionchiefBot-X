@@ -3,23 +3,20 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 import logging
+import math
 
 logging.basicConfig(level=logging.INFO)
 
-
 def grab_average_credits(driver):
     try:
-        logging.info("Attempting to find 'Average credits' element.")
-        average_credits_element = WebDriverWait(driver, 10).until(
+        average_credits_element = WebDriverWait(driver, 3).until(
             ec.visibility_of_element_located((By.XPATH,
                                               '//table[@class="table table-striped"]//td[normalize-space(text())="Average credits"]/following-sibling::td'))
         )
         average_credits = int(average_credits_element.text.strip())
-        logging.info(f"Found 'Average credits': {average_credits}")
         return average_credits
-    except (NoSuchElementException, TimeoutException) as e:
+    except (NoSuchElementException, TimeoutException):
         return 0
-
 
 def process_mission_data(driver, mission_data):
     mission_help_button = driver.find_element(By.ID, "mission_help")
@@ -30,8 +27,11 @@ def process_mission_data(driver, mission_data):
         columns = row.find_elements(By.TAG_NAME, 'td')
         requirement = columns[0].text.strip()
         value = columns[1].text.strip()
-
-        if ("Required" in requirement and "Station" not in requirement
+        if "Foam required" in requirement:
+            foam_amount = int(value)
+            number_of_vehicles = math.ceil(foam_amount / 2500)
+            mission_data["vehicles"]["Foam Tender"] = number_of_vehicles
+        elif ("Required" in requirement and "Station" not in requirement
                 and "Riot Police Extensions" not in requirement
                 and "Fire Marshal's Offices" not in requirement
                 and "Airport Extensions" not in requirement
