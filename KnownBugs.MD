@@ -1,7 +1,6 @@
 # 🐛 Known Bugs
 
 - Missions Not being grabbed occasionally
-- Credits not being grabbed occasionally
 - No water support
 - Foam support only support tenders and not trailers
 
