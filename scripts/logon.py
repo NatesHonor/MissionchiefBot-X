@@ -2,6 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 import configparser
+import time
 
 def login():
     config = configparser.ConfigParser()
@@ -32,5 +33,6 @@ def login():
 
     sign_in_button = driver.find_element(By.NAME, "commit")
     sign_in_button.click()
-
+    time.sleep(5)
+    print("Sleeping for 5s to ensure each driver logs in.")
     return driver
