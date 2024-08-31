@@ -1,13 +1,16 @@
-# 🚀 Updates (v1.1.5) - BUG FIX & GENERAL UPDATE
+# 🔧 Update (v1.1.6) - BUG FIX & GENERAL UPDATE
 
 ## 🎉 New Features:
-- **Updated Vehicle Support**
-- **Fixed Transportation Errors**
-- **Added better mission data handling**
-- **Updated Riot Personnel Logic**
+- **If no transport vehicle is on scene prisoner is released**
+- **Updated mappings**
+- **Simplified and enhanced transportation logic**
+- **Added foam liquid support**
 
 ## 🐞 Bug Fixes:
-- Patients and prisoners not being transported
+- Fixed Transportation Errors AGAIN
+- Fixed credits not being grabbed properly
+- Fixed missions not being grabbed properly
+
 
 ---
 
