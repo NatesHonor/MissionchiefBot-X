@@ -11,7 +11,6 @@ def dispatch_personnel(driver, mission_id, vehicle_pool, mission_data_file, pers
         mission_data = json.load(f)
 
     current_mission_data = mission_data.get(str(mission_id), {})
-    print(current_mission_data)
 
     if "personnel" in current_mission_data:
         for personnel, required_count in current_mission_data["personnel"].items():
