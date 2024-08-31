@@ -54,14 +54,10 @@ def click_non_danger_buttons_under_prisoner_element(driver, mission_id):
     try:
         prisoner_element = driver.find_element(By.CLASS_NAME, 'vehicle_prisoner_select')
         prisoner_buttons = prisoner_element.find_elements(By.TAG_NAME, 'a')
-
-        # Flag to indicate if other buttons are found
         other_buttons_found = False
-
         for button in prisoner_buttons:
             try:
                 button_class = button.get_attribute('class')
-                # Check if the button is not the "Release Prisoners" button and not a danger button
                 if 'btn-danger' not in button_class and "btn-default" not in button_class:
                     other_buttons_found = True
                     driver.execute_script("arguments[0].scrollIntoView(true);", button)
@@ -72,10 +68,20 @@ def click_non_danger_buttons_under_prisoner_element(driver, mission_id):
                 logging.info(f"Finished transports on mission {mission_id}.")
                 pass
         if not other_buttons_found:
+            try:
+                release_prisoners_button = driver.find_element(By.CSS_SELECTOR, 'a.btn.btn-xs.btn-danger')
+                driver.execute_script("arguments[0].scrollIntoView(true);", release_prisoners_button)
+                release_prisoners_button.click()
+                logging.info("Clicked the 'Release Prisoners' button.")
+            except NoSuchElementException:
+                logging.error("Release Prisoners button not found.")
+    except NoSuchElementException:
+        logging.info("Prisoner element not found on the page.")
+        try:
             release_prisoners_button = driver.find_element(By.CSS_SELECTOR, 'a.btn.btn-xs.btn-danger')
             driver.execute_script("arguments[0].scrollIntoView(true);", release_prisoners_button)
             release_prisoners_button.click()
             logging.info("Clicked the 'Release Prisoners' button.")
-    except NoSuchElementException:
-        logging.info("Prisoner element not found on the page.")
+        except NoSuchElementException:
+            logging.error("Prisoner release button not found")
         pass
