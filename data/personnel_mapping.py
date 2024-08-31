@@ -4,5 +4,6 @@ personnel_map = {
     "riot police van": "Riot Police Van",
     "traffic control": ["police traffic blocker unit", "fire traffic blocker unit"],
     "ems mobile command": "EMS Mobile Command Unit",
+    "em mobile command": "EMS Mobile Command Unit",
     "usar": "Fire Traffic Blocker",
 }
