@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from selenium.webdriver.common.by import By
 from threading import Lock
+from multiprocessing import Value
 
 from data.vehicle_mapping import vehicle_map
 from data.personnel_mapping import personnel_map
@@ -24,7 +25,7 @@ from utils.website import navigate_to_url
 
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format='%(asctime)s - %(name=s - %(levelname=s - %(message=s',
     handlers=[
         logging.FileHandler("app.log"),
         logging.StreamHandler()
@@ -49,8 +50,6 @@ def dispatch_all_missions(driver):
 
     with open('data/vehicle_data.json', 'r') as vehicle_file:
         vehicle_pool = json.load(vehicle_file)
-
-
 
     for m_number, mission_info in shared_missions_data.items():
         display_mission_table(shared_missions_data, m_number)
@@ -78,6 +77,7 @@ if __name__ == "__main__":
     shared_vehicle_data = {}
     shared_missions_data = {}
     shared_lock = Lock()
+    total_vehicles_fetched = Value('i', 0)
 
     drivers = [setup_driver() for _ in range(threads)]
 
@@ -93,7 +93,10 @@ if __name__ == "__main__":
             for i, vehicle_url in enumerate(vehicle_urls):
                 driver_vehicle_urls[i % threads].append(vehicle_url)
 
-            futures = [executor.submit(gather_vehicle_data, driver, urls, thread_id, shared_vehicle_data, shared_lock)
+            total_vehicles = len(vehicle_urls)
+            print(f"All threads: Total vehicles found {total_vehicles}")
+
+            futures = [executor.submit(gather_vehicle_data, driver, urls, thread_id, shared_vehicle_data, shared_lock, total_vehicles_fetched, total_vehicles)
                        for thread_id, (driver, urls) in enumerate(zip(drivers, driver_vehicle_urls))]
 
             for future in futures:
