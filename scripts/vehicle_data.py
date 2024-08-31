@@ -6,16 +6,17 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import NoSuchElementException
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
+from multiprocessing import Value
 
-def gather_vehicle_data(driver, urls, thread_id, shared_vehicle_data, shared_lock):
+def gather_vehicle_data(driver, urls, thread_id, shared_vehicle_data, shared_lock, total_vehicles_fetched, total_vehicles):
     print(f"Thread {thread_id}: Gathering vehicle data...")
     vehicle_data = {}
 
-    total_vehicles = len(urls)
-    print(f"Thread {thread_id}: Found {total_vehicles} vehicles!")
-
     for current_vehicle_number, vehicle_url in enumerate(urls, start=1):
-        print(f"Thread {thread_id}: Gathering data from vehicle {current_vehicle_number}/{total_vehicles} {vehicle_url}")
+        with shared_lock:
+            total_vehicles_fetched.value += 1
+            current_total = total_vehicles_fetched.value
+        print(f"Thread {thread_id}: Gathering data from vehicle {current_total}/{total_vehicles} {vehicle_url}")
         driver.get(vehicle_url)
 
         WebDriverWait(driver, 10).until(ec.presence_of_element_located((By.TAG_NAME, 'body')))
@@ -43,6 +44,7 @@ def main():
 
     shared_vehicle_data = {}
     shared_lock = Lock()
+    total_vehicles_fetched = Value('i', 0)  # Use a multiprocessing.Value to allow modification within threads
     threads = 4  # Number of threads to use
 
     drivers = [login() for _ in range(threads)]
@@ -58,7 +60,11 @@ def main():
         for i, vehicle_url in enumerate(vehicle_urls):
             driver_vehicle_urls[i % threads].append(vehicle_url)
 
-        futures = [executor.submit(gather_vehicle_data, driver, urls, thread_id, shared_vehicle_data, shared_lock)
+        # Print the total number of vehicles found
+        total_vehicles = len(vehicle_urls)
+        print(f"All threads: Total vehicles found {total_vehicles}")
+
+        futures = [executor.submit(gather_vehicle_data, driver, urls, thread_id, shared_vehicle_data, shared_lock, total_vehicles_fetched, total_vehicles)
                    for thread_id, (driver, urls) in enumerate(zip(drivers, driver_vehicle_urls))]
 
         for future in futures:
