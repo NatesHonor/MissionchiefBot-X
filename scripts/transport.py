@@ -1,5 +1,5 @@
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException, TimeoutException, ElementNotInteractableException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException, ElementNotInteractableException, StaleElementReferenceException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 
@@ -35,7 +35,7 @@ def handle_transport_buttons(driver, vehicle_id):
         else:
             logging.info(f"{vehicle_id}: No transport buttons found.")
             release_prisoners(driver, vehicle_id)
-    except (NoSuchElementException, TimeoutException) as e:
+    except (NoSuchElementException, TimeoutException, StaleElementReferenceException) as e:
         logging.error(f"{vehicle_id}: Error finding transport buttons: {e}")
         release_prisoners(driver, vehicle_id)
 
