@@ -1,7 +1,6 @@
 # 🐛 Known Bugs
 
-- No water support
-- Foam support only support tenders and not trailers
+- Sometimes need to restart the bot in order for it to handle transport requests.
 
 
 ## We appreciate your patience as we work to resolve these issues. Your feedback helps us improve! 🙌
