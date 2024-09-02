@@ -13,7 +13,8 @@ def grab_average_credits(driver):
             ec.visibility_of_element_located((By.XPATH,
                                               '//table[@class="table table-striped"]//td[normalize-space(text())="Average credits"]/following-sibling::td'))
         )
-        average_credits = int(average_credits_element.text.strip())
+        average_credits_text = average_credits_element.text.strip()
+        average_credits = int(''.join(filter(str.isdigit, average_credits_text)))
         return average_credits
     except (NoSuchElementException, TimeoutException):
         return 0
