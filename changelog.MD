@@ -1,15 +1,14 @@
-# 🔧 Update (v1.1.6) - BUG FIX & GENERAL UPDATE
+# 🆕 Update (v1.1.7) - MINOR BUG FIX & GENERAL UPDATE
 
 ## 🎉 New Features:
-- **Updated releasing logic**
-- **Updated mappings**
-- **Simplified and enhanced transportation logic**
-- **Added foam liquid support**
+- **Added x2 Credit Support**
+- **Enhanced skipping and selection logic**
+- **Updated dispatching logic**
 
 ## 🐞 Bug Fixes:
-- Fixed Transportation Errors AGAIN
-- Fixed credits not being grabbed properly
-- Fixed missions not being grabbed properly
+- Added StaleElement Error Support
+- Bug crashing on x2 credits event
+- Mission dispatches significantly reduced
 
 
 ---
