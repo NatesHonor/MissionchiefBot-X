@@ -3,10 +3,6 @@ This is a MissionChief bot that automates the process of logging into your accou
 
 # CURRENTLY ONLY WORKS ON NA
 
-## 🕒 Timing
-1. Runs every 30 seconds
-2. Transports Prisoners and Patients before and after each loop
-
 ## 🚨 Dispatching
 1. Dispatch vehicles to missions
 2. Dispatch certain vehicles based off of personnel
@@ -66,7 +62,7 @@ Replace your_username and your_password with your actual MissionChief credential
 [Click HERE](KnownBugs.MD)
 
 ## 🆘 Need Support?
-Visit this link [HERE](https://linktr.ee/honorablenate) link and join my discord for any questions or support!
+Visit this link [HERE](https://links.natemarcellus.com) link and join my discord for any questions or support!
 
 ## ⚠️ Disclaimer
 Please note that using automation tools to interact with websites may violate the terms of service of MissionChief. Make sure to use this bot responsibly and in compliance with the website’s policies.
