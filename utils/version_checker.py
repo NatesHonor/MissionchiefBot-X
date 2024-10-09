@@ -39,5 +39,3 @@ def check_version():
 
     elif beta == 'True':
         cprint(figlet_format(f'This is a beta version!', font='5lineoblique'), 'red', 'on_red', attrs=['bold'])
-
-check_version()
