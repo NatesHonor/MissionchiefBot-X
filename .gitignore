@@ -8,3 +8,4 @@ output.log
 ./output.log
 ./build
 ./dist
+application.py
