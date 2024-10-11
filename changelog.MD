@@ -1,15 +1,24 @@
-# 🆕 Update (v1.1.7) - MINOR BUG FIX & GENERAL UPDATE
+# 🆕 Update (v2.0) - FUNCTIONALITY UPDATE
 
 ## 🎉 New Features:
-- **Added x2 Credit Support**
-- **Enhanced skipping and selection logic**
-- **Updated dispatching logic**
 
-## 🐞 Bug Fixes:
-- Added StaleElement Error Support
-- Bug crashing on x2 credits event
-- Mission dispatches significantly reduced
+### 🔧 Bot:
+- **Improved performance and reliability:**
+  - Fixed issues with alliance mission gathering.
+  - Fixed issues with credit gathering.
 
+### 🚀 Launcher:
+- **Enhanced functionality:**
+  - Added logging capabilities for better tracking.
+  - Implemented seamless configuration editing for easier updates.
+  - Added virtual environment (venv) creation tool for dependency management.
+  - Introduced a user-friendly start/stop tool for managing the bot and Chromium windows.
+  - Integrated a requirements installer to streamline setup.
+
+---
+
+### 🐞 Bug Fixes:
+- Resolved the issue with accurately grabbing mission numbers for alliance missions.
 
 ---
 
