@@ -26,26 +26,10 @@ Before running the bot, make sure you have the following installed:
 `Python 3.x`
 
 ## 🛠️ Installation
-1. Clone this repository or download the code.
-2. Install the required Python dependencies by running pip install -r requirements.txt in the project directory.
-3. Update the config.ini
-4. Enjoy!
+1. Visit the downloaod page on my site [HERE](https://files.natemarcellus.com/download/MissionchiefBot).
+2. Run the MissionchiefBot Application.
+3. Enjoy!
 
-
-## ⚙️ Configuration
-#### Modify the config.ini file in the project directory and fill in the following:
-
-```ini
-[credentials]
-username = your_username
-password = your_password
-
-[client]
-server = us
-headless = true
-```
-
-Replace your_username and your_password with your actual MissionChief credentials.
 
 ## 🚀 Usage
 1. Open a terminal or command prompt and navigate to the project directory.
@@ -62,7 +46,7 @@ Replace your_username and your_password with your actual MissionChief credential
 [Click HERE](KnownBugs.MD)
 
 ## 🆘 Need Support?
-Visit this link [HERE](https://links.natemarcellus.com) link and join my discord for any questions or support!
+Visit this link [HERE](https://links.natemarcellus.com)  and join my discord for any questions or support!
 
 ## ⚠️ Disclaimer
 Please note that using automation tools to interact with websites may violate the terms of service of MissionChief. Make sure to use this bot responsibly and in compliance with the website’s policies.
