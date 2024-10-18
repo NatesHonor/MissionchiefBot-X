@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "C:\Users\natha\PycharmProjects\MissionchiefBot\application.py", line 280, in <module>
+  File "C:\Users\natha\PycharmProjects\MissionchiefBot\application.py", line 276, in main
+KeyboardInterrupt
