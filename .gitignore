@@ -6,6 +6,7 @@ data/vehicle_data.json
 ./data/vehicle_data.json
 output.log
 ./output.log
-./build
+/build
 ./dist
 application.py
+
