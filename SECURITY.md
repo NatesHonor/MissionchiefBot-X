@@ -9,4 +9,4 @@
 
 ## Reporting a Vulnerability
 
-To report a vulnerability please create a Github issue or a ticket [here](https://support.natemarcellus.com)
+To report a vulnerability please create a GitHub issue or a ticket [here](https://support.natemarcellus.com)
