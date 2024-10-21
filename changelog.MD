@@ -1,4 +1,4 @@
-# 🆕 Update (v2.0) - FUNCTIONALITY UPDATE
+# 🆕 Update (v2.0.1) - BUG And Feature Update
 
 ## 🎉 New Features:
 
@@ -6,19 +6,21 @@
 - **Improved performance and reliability:**
   - Fixed issues with alliance mission gathering.
   - Fixed issues with credit gathering.
+  - Bot skips missions in the new mission_ignore_list.json
+  - Fixed issue with bot only using 1 thread.
 
 ### 🚀 Launcher:
 - **Enhanced functionality:**
-  - Added logging capabilities for better tracking.
-  - Implemented seamless configuration editing for easier updates.
-  - Added virtual environment (venv) creation tool for dependency management.
-  - Introduced a user-friendly start/stop tool for managing the bot and Chromium windows.
-  - Integrated a requirements installer to streamline setup.
+  - Fixed issue with the output console missing characters.
+  - Fixed issue with launcher being unmovable.
+  - Fixed issue with application not logging properly.
+  - Simplified code to make the application smaller.
+  - Added new auto-scroll toggle button.
 
 ---
 
 ### 🐞 Bug Fixes:
-- Resolved the issue with accurately grabbing mission numbers for alliance missions.
+- included above
 
 ---
 
