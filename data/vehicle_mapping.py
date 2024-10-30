@@ -70,4 +70,8 @@ vehicle_map = {
     "warden' truck": "Warden's Truck",
     "water tanker": "Water Tanker",
     "wrecker": ["Wrecker", "Police Wrecker", "Fire Wrecker"],
+    "patrol boat": ["Patrol Boat"],
+    "light boat": ["Light Boat Trailer"],
+    "large fire boat": ["Large Fireboat"],
+        "large rescue boat": ["Large Rescue Boat"],
 }
