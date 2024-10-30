@@ -1,5 +1,6 @@
 import json
 import time
+import configparser
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
@@ -42,10 +43,13 @@ def gather_vehicle_data(driver, urls, thread_id, shared_vehicle_data, shared_loc
 def main():
     from scripts.logon import login
 
+    config = configparser.ConfigParser()
+    config.read('../config.ini')
+    threads = int(config.get('client', 'thread_count'))
+
     shared_vehicle_data = {}
     shared_lock = Lock()
-    total_vehicles_fetched = Value('i', 0)  # Use a multiprocessing.Value to allow modification within threads
-    threads = 4  # Number of threads to use
+    total_vehicles_fetched = Value('i', 0)
 
     drivers = [login() for _ in range(threads)]
 
@@ -57,10 +61,6 @@ def main():
         vehicle_urls = [link.get_attribute('href')
                         for link in first_driver.find_elements(By.CSS_SELECTOR,
                                                                'a.lightbox-open.list-group-item[href*="/vehicles/"]')]
-        for i, vehicle_url in enumerate(vehicle_urls):
-            driver_vehicle_urls[i % threads].append(vehicle_url)
-
-        # Print the total number of vehicles found
         total_vehicles = len(vehicle_urls)
         print(f"All threads: Total vehicles found {total_vehicles}")
 
