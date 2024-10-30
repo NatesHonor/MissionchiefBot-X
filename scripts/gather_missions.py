@@ -32,8 +32,10 @@ def load_ignored_missions():
 
 def total_number_of_missions(driver):
     driver.get("https://www.missionchief.com/")
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, 'missions')))
-
+    try:
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, 'missions')))
+    except Exception as e:
+        print("Error finding missions id")
     try:
         mission_list = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, 'mission_list')))
     except Exception as e:
