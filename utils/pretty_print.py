@@ -6,3 +6,6 @@ def display_message(message):
 
 def display_error(message):
     print(f"\033[91m{message}\033[0m")
+
+def display_info(message):
+    print(f"{message}")
