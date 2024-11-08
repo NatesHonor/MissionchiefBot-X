@@ -13,12 +13,7 @@ def get_password():
     return config.get('credentials', 'password')
 
 def get_headless():
-    if config.getboolean('browser_settings', 'headless'):
-        return True
-    else:
-        return False
-
-
+    return config.getboolean('browser_settings', 'headless')
 
 def get_threads():
     return config.getint('browser_settings', 'threads')
