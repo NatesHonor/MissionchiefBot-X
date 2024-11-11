@@ -23,5 +23,5 @@ async def login_single(username, password, headless, thread_id, delay, playwrigh
     except Exception as e:
         display_error(f"Thread {thread_id} encountered an error: {e}")
         if browser:
-            await browser.close()  # Close only if there's an error
+            await browser.close()
         return "Failure", f"Thread {thread_id} failed due to an unexpected error: {e}", None
