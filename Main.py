@@ -1,9 +1,13 @@
 import asyncio
 import os
+import json
 from playwright.async_api import async_playwright
 from setup.login import login_single
 from data.config_settings import get_username, get_password, get_threads, get_headless
+from utils.mission_data import check_and_grab_missions
 from utils.pretty_print import display_info, display_error
+from utils.vehicle_data import gather_vehicle_data
+
 
 async def login():
     username = get_username()
@@ -24,31 +28,23 @@ async def login():
             else:
                 display_error(result[1])
 
-    if not successful_logins:
-        display_error("Login failed. No threads were successfully logged in.")
-        exit(1)
+        if not successful_logins:
+            display_error("Login failed. No threads were successfully logged in.")
+            exit(1)
 
-    display_info(f"All drivers logged in successfully. Threads: {', '.join(map(str, successful_logins))}")
+        display_info(f"All drivers logged in successfully. Threads: {', '.join(map(str, successful_logins))}")
 
-    await check_vehicle_data(browsers)
+        if os.path.exists("data/vehicle_data.json"):
+            await check_and_grab_missions(browsers, threads)
+        else:
+            await gather_vehicle_data(browsers, threads)
 
-    for browser in browsers:
-        await browser.close()
+        for browser in browsers:
+            display_info(f"Closing browser for thread: {successful_logins[browsers.index(browser)]}")
+            await browser.close()
 
     return successful_logins, browsers
 
-async def check_vehicle_data(browsers):
-    if not os.path.exists("data/vehicle_data.json"):
-        display_info("vehicle_data.json does not exist. Navigating to Leitstellenansicht.")
-        first_browser = browsers[0]
-        try:
-            page = await first_browser.new_page()
-            await page.goto("https://www.missionchief.com/leitstellenansicht")
-            await page.wait_for_load_state("networkidle")
-            display_info("Successfully navigated to Leitstellenansicht.")
-        except Exception as e:
-            display_error(f"Error navigating to Leitstellenansicht: {e}")
-            await first_browser.close()
 
 if __name__ == "__main__":
     asyncio.run(login())
