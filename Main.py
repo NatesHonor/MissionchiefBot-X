@@ -4,6 +4,7 @@ import json
 from playwright.async_api import async_playwright
 from setup.login import login_single
 from data.config_settings import get_username, get_password, get_threads, get_headless
+from utils.dispatcher import navigate_and_dispatch
 from utils.mission_data import check_and_grab_missions
 from utils.pretty_print import display_info, display_error
 from utils.vehicle_data import gather_vehicle_data
@@ -38,6 +39,8 @@ async def login():
             await check_and_grab_missions(browsers, threads)
         else:
             await gather_vehicle_data(browsers, threads)
+
+        await navigate_and_dispatch(browsers)
 
         for browser in browsers:
             display_info(f"Closing browser for thread: {successful_logins[browsers.index(browser)]}")
