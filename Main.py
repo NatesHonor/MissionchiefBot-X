@@ -1,6 +1,6 @@
 import asyncio
 import os
-import json
+
 from playwright.async_api import async_playwright
 from setup.login import login_single
 from data.config_settings import get_username, get_password, get_threads, get_headless
