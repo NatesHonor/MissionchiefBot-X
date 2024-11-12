@@ -1,6 +1,9 @@
 import json
+import time
 
 from utils.pretty_print import display_info, display_error
+from utils.vehicle_options import get_vehicle_options
+
 
 async def navigate_and_dispatch(browsers):
     with open('data/mission_data.json', 'r') as file:
@@ -37,15 +40,27 @@ async def navigate_and_dispatch(browsers):
                 if vehicle_checkbox:
                     await page.evaluate('(checkbox) => checkbox.scrollIntoView()', vehicle_checkbox)
                     await vehicle_checkbox.click()
-                    display_info(f"Selected vehicle with ID {vehicle_id} for mission {mission_id}")
+                    display_info(f"Selected Vehicle {vehicle_name}({vehicle_id})")
+        dispatch_button = await page.query_selector('#alert_btn')
+        if dispatch_button:
+            await dispatch_button.click()
+            display_info(f"Dispatched units for mission {mission_id}")
+        else:
+            display_error("Dispatch button not found for mission {mission_id}")
+
 
 async def find_vehicle_ids(vehicle_name, vehicle_count):
     with open('data/vehicle_data.json', 'r') as file:
         vehicle_data = json.load(file)
-
     vehicle_ids = []
-    for vehicle in vehicle_data:
-        if vehicle['name'] == vehicle_name and vehicle_count > 0:
-            vehicle_ids.append(vehicle['id'])
-            vehicle_count -= 1
+    if vehicle_name in vehicle_data:
+        vehicle_ids.extend(vehicle_data[vehicle_name])
+    alternatives = get_vehicle_options(vehicle_name)
+    if alternatives:
+        display_info(f"Gathering alternative types for '{vehicle_name}': {', '.join(alternatives)}")
+        for alt_name in alternatives:
+            if alt_name in vehicle_data:
+                vehicle_ids.extend(vehicle_data[alt_name])
+    if not vehicle_ids:
+        display_error(f"No vehicles found for '{vehicle_name}' or its alternatives.")
     return vehicle_ids
