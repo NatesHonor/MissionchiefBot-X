@@ -5,6 +5,7 @@ def get_vehicle_options(vehicle_type):
         "battalion chief vehicle": ["Battalion chief unit"],
         "mobile air unit": ["Mobile air"],
         "mobile air vehicle": ["Mobile air"],
+        "heavy rescue vehicle": ["Heavy rescue vehicle", "Rescue Engine"],
         "hazmat vehicle": ["HazMat"],
         "mobile command vehicle": ["MCV"],
         "fire investigation unit": ["Fire Investigator Unit"],
