@@ -4,11 +4,12 @@ def get_vehicle_options(vehicle_type):
         "platform truck": ["Platform truck", "Quint"],
         "battalion chief vehicle": ["Battalion chief unit"],
         "mobile air unit": ["Mobile air"],
+        "mobile air vehicle": ["Mobile air"],
         "hazmat vehicle": ["HazMat"],
         "mobile command vehicle": ["MCV"],
         "fire investigation unit": ["Fire Investigator Unit"],
         "ambulance": ["ALS Ambulance", "BLS Ambulance"],
-        "policecar": ["Patrol car", "K9 Unit", "SWAT vehicle"],
+        "police car": ["Patrol car"],
     }
     vehicle_type = vehicle_type.lower()
     return vehicle_options_map.get(vehicle_type, [])
