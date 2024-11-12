@@ -15,7 +15,12 @@ async def navigate_and_dispatch(browsers):
         mission_name = data.get("mission_name", "Unknown Mission")
         display_info(f"Dispatching units for {mission_name}")
         await page.goto(f"https://www.missionchief.com/missions/{mission_id}")
-        await page.wait_for_selector('#missionH1', timeout=5000)
+        try:
+            await page.wait_for_selector('#missionH1', timeout=5000)
+        except TimeoutError:
+            display_error(f"Mission {mission_id} didn't load in time. Possible slow network? Skipping mission...")
+            continue
+
         load_missing_button = await page.query_selector('a.missing_vehicles_load.btn-warning')
         if load_missing_button:
             await load_missing_button.click()
