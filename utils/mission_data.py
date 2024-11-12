@@ -1,11 +1,14 @@
 import asyncio
 import json
+import os
 
 from utils.pretty_print import display_info, display_error
 
 async def check_and_grab_missions(browsers, num_threads):
     first_browser = browsers[0]
     try:
+        if os.path.exists('data/mission_data.json'):
+            os.remove('data/mission_data.json')
         page = first_browser.contexts[0].pages[0]
         await page.goto("https://www.missionchief.com")
         await page.wait_for_selector('.mission_panel_red')
@@ -67,11 +70,9 @@ async def gather_mission_info(mission_ids, browser, thread_id):
 
             max_patients_element = await page.query_selector('td:has-text("Max. Patients") + td')
             max_patients = int((await max_patients_element.inner_text()).strip()) if max_patients_element else 0
-
-            if patients == 0 and max_patients != 0:
-                await dispatch_patients(page, max_patients)
-
             vehicles = await gather_vehicle_requirements(page)
+            if max_patients > 0:
+                vehicles.append({"name": "Ambulance", "count": max_patients})
 
             mission_data[mission_id] = {
                 "mission_name": mission_name,
@@ -103,9 +104,3 @@ async def gather_vehicle_requirements(page):
 
     return vehicle_requirements
 
-async def dispatch_patients(page, max_patients):
-    try:
-        for _ in range(max_patients):
-            await page.click('#dispatch')
-    except Exception as e:
-        display_error(f"Error dispatching patients: {e}")
