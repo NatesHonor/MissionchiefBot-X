@@ -76,7 +76,7 @@ async def gather_mission_info(mission_ids, browser, thread_id):
             if max_patients >= 10:
                 vehicles.append({"name": "EMS Chief", "count": 1})
             if max_patients >= 20:
-                vehicles.append({"name": "EMS Mobile Command", "count": 1})
+                vehicles.append({"name": "EMS Mobile Command Unit", "count": 1})
             mission_data[mission_id] = {
                 "mission_name": mission_name,
                 "credits": credits_value,
