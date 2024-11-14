@@ -11,6 +11,8 @@ def get_vehicle_options(vehicle_type):
         "fire investigation unit": ["Fire Investigator Unit"],
         "ambulance": ["ALS Ambulance", "BLS Ambulance"],
         "police car": ["Patrol car"],
+        "police supervisors / sheriff": ["Police Supervisor / Sheriff Unit"],
+        "fbi investigation wagon": ["FBI Investigation Wagon"],
     }
     vehicle_type = vehicle_type.lower()
     return vehicle_options_map.get(vehicle_type, [])
