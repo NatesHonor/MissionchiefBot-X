@@ -1,5 +1,4 @@
 import json
-
 from utils.pretty_print import display_info, display_error
 from utils.vehicle_options import get_vehicle_options
 
@@ -12,7 +11,9 @@ async def navigate_and_dispatch(browsers):
 
     for mission_id, data in mission_data.items():
         mission_name = data.get("mission_name", "Unknown Mission")
-        display_info(f"Dispatching units for {mission_name}")
+        crashed_cars = data.get("crashed_cars", 0)
+        display_info(f"Dispatching units for {mission_name} (Crashed Cars: {crashed_cars})")
+
         await page.goto(f"https://www.missionchief.com/missions/{mission_id}")
         try:
             await page.wait_for_selector('#missionH1', timeout=5000)
@@ -30,6 +31,7 @@ async def navigate_and_dispatch(browsers):
         for requirement in vehicle_requirements:
             vehicle_name = requirement["name"]
             vehicle_count = requirement["count"]
+
             if "SWAT Personnel" in vehicle_name:
                 armoured_vehicles_needed = vehicle_count // 6
                 armoured_vehicle_ids = await find_vehicle_ids("SWAT Armoured Vehicle")
@@ -72,6 +74,56 @@ async def navigate_and_dispatch(browsers):
                         await vehicle_checkbox.click()
                         display_info(f"Selected Vehicle {vehicle_name}({vehicle_id})")
                         selected_count += 1
+        if crashed_cars > 1:
+            flatbed_carriers_needed = crashed_cars - 2
+            flatbed_carriers_ids = await find_vehicle_ids("Flatbed Carrier")
+            selected_count = 0
+            for vehicle_id in flatbed_carriers_ids:
+                if selected_count >= flatbed_carriers_needed:
+                    break
+                vehicle_checkbox = await page.query_selector(f'input.vehicle_checkbox[value="{vehicle_id}"]')
+                if vehicle_checkbox:
+                    await page.evaluate('(checkbox) => checkbox.scrollIntoView()', vehicle_checkbox)
+                    await vehicle_checkbox.click()
+                    display_info(f"Selected Flatbed Carrier({vehicle_id})")
+                    selected_count += 1
+            if selected_count < flatbed_carriers_needed:
+                wrecker_types = ["Wrecker", "Police Wrecker", "Fire Wrecker"]
+                for wrecker_type in wrecker_types:
+                    wrecker_ids = await find_vehicle_ids(wrecker_type)
+                    selected_count = 0
+                    for vehicle_id in wrecker_ids:
+                        if selected_count >= flatbed_carriers_needed:
+                            break
+                        vehicle_checkbox = await page.query_selector(f'input.vehicle_checkbox[value="{vehicle_id}"]')
+                        if vehicle_checkbox:
+                            await page.evaluate('(checkbox) => checkbox.scrollIntoView()', vehicle_checkbox)
+                            await vehicle_checkbox.click()
+                            display_info(f"Selected {wrecker_type}({vehicle_id})")
+                            selected_count += 1
+
+        elif crashed_cars == 1:
+            wrecker_types = ["Wrecker", "Police Wrecker", "Fire Wrecker"]
+            selected_count = 0
+            for wrecker_type in wrecker_types:
+                wrecker_ids = await find_vehicle_ids(wrecker_type)
+                for vehicle_id in wrecker_ids:
+                    if selected_count >= 1:
+                        break
+                    vehicle_checkbox = await page.query_selector(f'input.vehicle_checkbox[value="{vehicle_id}"]')
+                    if vehicle_checkbox:
+                        await page.evaluate('(checkbox) => checkbox.scrollIntoView()', vehicle_checkbox)
+                        await vehicle_checkbox.click()
+                        display_info(f"Selected {wrecker_type}({vehicle_id})")
+                        selected_count += 1
+            if selected_count == 0:
+                flatbed_carriers_ids = await find_vehicle_ids("Flatbed Carrier")
+                if flatbed_carriers_ids:
+                    vehicle_checkbox = await page.query_selector(f'input.vehicle_checkbox[value="{flatbed_carriers_ids[0]}"]')
+                    if vehicle_checkbox:
+                        await page.evaluate('(checkbox) => checkbox.scrollIntoView()', vehicle_checkbox)
+                        await vehicle_checkbox.click()
+                        display_info(f"Selected Flatbed Carrier({flatbed_carriers_ids[0]})")
 
         dispatch_button = await page.query_selector('#alert_btn')
         if dispatch_button:
