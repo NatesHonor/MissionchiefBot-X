@@ -67,6 +67,9 @@ async def gather_mission_info(mission_ids, browser, thread_id):
             credits_value = int((await credits_element.inner_text()).split()[0]) if credits_element else 0
             max_patients_element = await page.query_selector('td:has-text("Max. Patients") + td')
             max_patients = int((await max_patients_element.inner_text()).strip()) if max_patients_element else 0
+            crashed_cars_element = await page.query_selector('td:has-text("Maximum amount of crashed cars") + td')
+            max_crashed_cars = int((await crashed_cars_element.inner_text()).strip()) if crashed_cars_element else 0
+
             vehicles = await gather_vehicle_requirements(page)
             if max_patients > 0:
                 vehicles.append({"name": "Ambulance", "count": max_patients})
@@ -78,11 +81,13 @@ async def gather_mission_info(mission_ids, browser, thread_id):
                 "mission_name": mission_name,
                 "credits": credits_value,
                 "vehicles": vehicles,
-                "patients": patients
-                }
+                "patients": patients,
+                "crashed_cars": max_crashed_cars
+            }
         except Exception as e:
             display_error(f"Error processing mission ID {mission_id}: {e}")
     return mission_data
+
 
 async def gather_vehicle_requirements(page):
     vehicle_requirements = []
@@ -104,16 +109,3 @@ async def gather_vehicle_requirements(page):
     return vehicle_requirements
 
 
-def parse_missing_vehicles(missing_vehicles_text):
-    missing_vehicles = []
-    vehicle_parts = missing_vehicles_text.replace('<b>Missing Vehicles:</b>', '').split(',')
-
-    for part in vehicle_parts:
-        try:
-            count, vehicle_name = part.strip().split(' ', 1)
-            count = int(count)
-            vehicle_name = vehicle_name.strip().lower()
-            missing_vehicles.append({"name": vehicle_name, "count": count})
-        except ValueError:
-            continue
-    return missing_vehicles
