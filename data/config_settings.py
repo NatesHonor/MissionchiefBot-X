@@ -16,4 +16,4 @@ def get_headless():
     return config.getboolean('browser_settings', 'headless')
 
 def get_threads():
-    return config.getint('browser_settings', 'threads')
+    return config.getint('browser_settings', 'browsers')
