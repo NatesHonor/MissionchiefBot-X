@@ -26,3 +26,6 @@ def get_threads():
 
 def get_mission_delay():
     return config.getint('delays', 'missions')
+
+def get_transport_delay():
+    return config.getint('delays', 'transport')
