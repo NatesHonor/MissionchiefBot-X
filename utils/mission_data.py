@@ -11,23 +11,20 @@ async def check_and_grab_missions(browsers, num_threads):
             os.remove('data/mission_data.json')
         page = first_browser.contexts[0].pages[0]
         await page.goto("https://www.missionchief.com")
-        await page.wait_for_selector('.mission_panel_red')
-
         mission_panels = await page.query_selector_all('.mission_panel_red')
+        if not mission_panels:
+            display_info("No missions found, skipping this function.")
+            return
         mission_ids = [await panel.get_attribute('id') for panel in mission_panels]
         mission_ids = [mission_id.split('_')[-1] for mission_id in mission_ids]
-
         display_info(f"Found {len(mission_ids)} mission IDs.")
-
         mission_data = await split_mission_ids_among_threads(mission_ids, browsers, num_threads)
-
         with open('data/mission_data.json', 'w') as outfile:
             json.dump(mission_data, outfile, indent=4)
-
-        display_info(f"Mission data collection complete. Stored mission data in mission_data.json.")
-
+        display_info("Mission data collection complete. Stored mission data in mission_data.json.")
     except Exception as e:
         display_error(f"Error gathering mission data: {e}")
+
 
 async def split_mission_ids_among_threads(mission_ids, browsers, num_threads):
     mission_data = {}
@@ -100,10 +97,11 @@ async def gather_vehicle_requirements(page):
         for row in vehicle_rows:
             name_element = await row.query_selector('td:first-child')
             count_element = await row.query_selector('td:nth-child(2)')
-
             if name_element and count_element:
                 vehicle_name = (await name_element.text_content()).replace("Required", "").strip().rstrip("s")
                 vehicle_count = int((await count_element.text_content()).strip())
+                if "Probability" in vehicle_name:
+                    continue
                 vehicle_requirements.append({"name": vehicle_name, "count": vehicle_count})
 
     return vehicle_requirements
