@@ -14,6 +14,8 @@ def get_vehicle_options(vehicle_type):
         "police supervisors / sheriff": ["Police Supervisor / Sheriff Unit"],
         "police helicopter": ["Police helicopter"],
         "fbi investigation wagon": ["FBI Investigation Wagon"],
+        "riot police unit": ["Riot Police Van", "Riot Police Bus"],
+        "warden truck": ["arden's Truck"],
         "police cars or swat suv": ["Patrol car", "SWAT SUV"]
     }
     vehicle_type = vehicle_type.lower()
