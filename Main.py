@@ -2,7 +2,8 @@ import asyncio
 import os
 from playwright.async_api import async_playwright
 from setup.login import login_single
-from data.config_settings import get_username, get_password, get_threads, get_headless
+from data.config_settings import get_username, get_password, get_threads, get_headless, get_mission_delay, \
+    get_transport_delay
 from utils.dispatcher import navigate_and_dispatch
 from utils.mission_data import check_and_grab_missions
 from utils.pretty_print import display_info, display_error
@@ -17,7 +18,7 @@ async def transport_logic(browser):
             display_info("Handling transport requests.")
             await handle_transport_requests(browser)
             display_info("Waiting for 3 minutes before the next transport.")
-            await asyncio.sleep(180)
+            await asyncio.sleep(get_transport_delay())
         except Exception as e:
             display_error(f"Error in transport logic: {e}")
 
@@ -36,7 +37,7 @@ async def mission_logic(browsers_for_missions):
             display_info("Navigating and dispatching missions.")
             await navigate_and_dispatch(browsers_for_missions)
             display_info("Waiting for 10 seconds before checking missions again.")
-            await asyncio.sleep(10)
+            await asyncio.sleep(get_mission_delay())
         except Exception as e:
             display_error(f"Error in mission logic: {e}")
 
