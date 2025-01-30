@@ -42,7 +42,7 @@ async def navigate_and_dispatch(browsers):
                     vehicle_checkbox = await page.query_selector(f'input.vehicle_checkbox[value="{vehicle_id}"]')
                     if vehicle_checkbox:
                         await page.evaluate('(checkbox) => checkbox.scrollIntoView()', vehicle_checkbox)
-                        await vehicle_checkbox.click()
+                        await page.evaluate('(checkbox) => { checkbox.click(); checkbox.dispatchEvent(new Event("change", { bubbles: true })); }', vehicle_checkbox)
                         display_info(f"Selected SWAT Armored Vehicle({vehicle_id})")
                         selected_count += 1
 
@@ -54,7 +54,7 @@ async def navigate_and_dispatch(browsers):
                         vehicle_checkbox = await page.query_selector(f'input.vehicle_checkbox[value="{vehicle_id}"]')
                         if vehicle_checkbox:
                             await page.evaluate('(checkbox) => checkbox.scrollIntoView()', vehicle_checkbox)
-                            await vehicle_checkbox.click()
+                            await page.evaluate('(checkbox) => { checkbox.click(); checkbox.dispatchEvent(new Event("change", { bubbles: true })); }', vehicle_checkbox)
                             display_info(f"Selected SWAT SUV({vehicle_id})")
                             selected_count += 1
 
@@ -71,9 +71,10 @@ async def navigate_and_dispatch(browsers):
                     vehicle_checkbox = await page.query_selector(f'input.vehicle_checkbox[value="{vehicle_id}"]')
                     if vehicle_checkbox:
                         await page.evaluate('(checkbox) => checkbox.scrollIntoView()', vehicle_checkbox)
-                        await vehicle_checkbox.click()
+                        await page.evaluate('(checkbox) => { checkbox.click(); checkbox.dispatchEvent(new Event("change", { bubbles: true })); }', vehicle_checkbox)
                         display_info(f"Selected Vehicle {vehicle_name}({vehicle_id})")
                         selected_count += 1
+
         if crashed_cars > 1:
             flatbed_carriers_needed = crashed_cars - 2
             flatbed_carriers_ids = await find_vehicle_ids("Flatbed Carrier")
@@ -84,7 +85,7 @@ async def navigate_and_dispatch(browsers):
                 vehicle_checkbox = await page.query_selector(f'input.vehicle_checkbox[value="{vehicle_id}"]')
                 if vehicle_checkbox:
                     await page.evaluate('(checkbox) => checkbox.scrollIntoView()', vehicle_checkbox)
-                    await vehicle_checkbox.click()
+                    await page.evaluate('(checkbox) => { checkbox.click(); checkbox.dispatchEvent(new Event("change", { bubbles: true })); }', vehicle_checkbox)
                     display_info(f"Selected Flatbed Carrier({vehicle_id})")
                     selected_count += 1
             if selected_count < flatbed_carriers_needed:
@@ -98,7 +99,7 @@ async def navigate_and_dispatch(browsers):
                         vehicle_checkbox = await page.query_selector(f'input.vehicle_checkbox[value="{vehicle_id}"]')
                         if vehicle_checkbox:
                             await page.evaluate('(checkbox) => checkbox.scrollIntoView()', vehicle_checkbox)
-                            await vehicle_checkbox.click()
+                            await page.evaluate('(checkbox) => { checkbox.click(); checkbox.dispatchEvent(new Event("change", { bubbles: true })); }', vehicle_checkbox)
                             display_info(f"Selected {wrecker_type}({vehicle_id})")
                             selected_count += 1
 
@@ -113,7 +114,7 @@ async def navigate_and_dispatch(browsers):
                     vehicle_checkbox = await page.query_selector(f'input.vehicle_checkbox[value="{vehicle_id}"]')
                     if vehicle_checkbox:
                         await page.evaluate('(checkbox) => checkbox.scrollIntoView()', vehicle_checkbox)
-                        await vehicle_checkbox.click()
+                        await page.evaluate('(checkbox) => { checkbox.click(); checkbox.dispatchEvent(new Event("change", { bubbles: true })); }', vehicle_checkbox)
                         display_info(f"Selected {wrecker_type}({vehicle_id})")
                         selected_count += 1
             if selected_count == 0:
@@ -122,7 +123,7 @@ async def navigate_and_dispatch(browsers):
                     vehicle_checkbox = await page.query_selector(f'input.vehicle_checkbox[value="{flatbed_carriers_ids[0]}"]')
                     if vehicle_checkbox:
                         await page.evaluate('(checkbox) => checkbox.scrollIntoView()', vehicle_checkbox)
-                        await vehicle_checkbox.click()
+                        await page.evaluate('(checkbox) => { checkbox.click(); checkbox.dispatchEvent(new Event("change", { bubbles: true })); }', vehicle_checkbox)
                         display_info(f"Selected Flatbed Carrier({flatbed_carriers_ids[0]})")
 
         dispatch_button = await page.query_selector('#alert_btn')
