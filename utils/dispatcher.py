@@ -12,7 +12,8 @@ async def navigate_and_dispatch(browsers):
     for mission_id, data in mission_data.items():
         mission_name = data.get("mission_name", "Unknown Mission")
         crashed_cars = data.get("crashed_cars", 0)
-        display_info(f"Dispatching units for {mission_name} (Crashed Cars: {crashed_cars})")
+        patients = data.get("patients", 0)
+        display_info(f"Dispatching units for {mission_name} (Crashed Cars: {crashed_cars}) (Patients: {patients})")
 
         await page.goto(f"https://www.missionchief.com/missions/{mission_id}")
         try:
