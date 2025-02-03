@@ -52,45 +52,53 @@ async def gather_mission_info(mission_ids, browser, thread_id):
 
             mission_name_element = await page.query_selector('#missionH1')
             if mission_name_element:
-                mission_name = (await mission_name_element.inner_text())
+                mission_name = (await mission_name_element.inner_text()).strip()
             else:
                 display_error(f"Mission ID {mission_id}: Mission name element not found.")
                 continue
 
-
             await page.click('#mission_help')
             await page.wait_for_selector('#iframe-inside-container', timeout=5000)
 
-
             vehicles = await gather_vehicle_requirements(page)
-            patient_elements = await page.query_selector_all('.mission_patient')
-            patients = len(patient_elements)
+
             credits_element = await page.query_selector('td:has-text("Average credits") + td')
             credits_value = int((await credits_element.inner_text()).split()[0]) if credits_element else 0
-            max_patients_element = await page.query_selector('td:has-text("Maximum Number of Prisoners") + td')
-            max_patients = int((await max_patients_element.inner_text()).strip()) if max_patients_element else 0
-            crashed_cars_element = await page.query_selector('td:has-text("Maximum amount of crashed cars") + td')
 
-            if crashed_cars_element:
-                max_crashed_cars = int((await crashed_cars_element.inner_text()).strip())
-            else:
-                max_crashed_cars = 0
-            if max_patients > 0:
-                vehicles.append({"name": "Ambulance", "count": max_patients})
-            if max_patients >= 10:
+            patients_element = await page.query_selector('td:has-text("Max. Patients") + td')
+            patients = int((await patients_element.inner_text()).strip()) if patients_element else 0
+
+            crashed_cars_element = await page.query_selector('td:has-text("Maximum amount of cars to tow") + td')
+            crashed_cars = int((await crashed_cars_element.inner_text()).strip()) if crashed_cars_element else 0
+
+            required_personnel = []
+            personnel_elements = await page.query_selector_all('td:has-text("Required Personnel Available") + td div')
+            for element in personnel_elements:
+                text = (await element.inner_text()).strip()
+                if 'x' in text:
+                    count, name = text.split('x', 1)
+                    required_personnel.append({"name": name.strip(), "count": int(count.strip())})
+
+            if patients > 0:
+                vehicles.append({"name": "Ambulance", "count": patients})
+            if patients >= 10:
                 vehicles.append({"name": "EMS Chief", "count": 1})
-            if max_patients >= 20:
+            if patients >= 20:
                 vehicles.append({"name": "EMS Mobile Command Unit", "count": 1})
+
             mission_data[mission_id] = {
                 "mission_name": mission_name,
                 "credits": credits_value,
                 "vehicles": vehicles,
                 "patients": patients,
-                "crashed_cars": max_crashed_cars
+                "crashed_cars": crashed_cars,
+                "required_personnel": required_personnel
             }
         except Exception as e:
             display_error(f"Error processing mission ID {mission_id}: {e}")
+
     return mission_data
+
 
 
 def remove_plural_suffix(vehicle_name):
