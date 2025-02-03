@@ -64,7 +64,7 @@ async def gather_mission_info(mission_ids, browser, thread_id):
 
             credits_element = await page.query_selector('td:has-text("Average credits") + td')
             credits_value = int((await credits_element.inner_text()).split()[0]) if credits_element else 0
-d
+
             patients_element = await page.query_selector('td:has-text("Max. Patients") + td')
             patients = int((await patients_element.inner_text()).strip()) if patients_element else 0
 
