@@ -20,6 +20,7 @@ def get_vehicle_options(vehicle_type):
         "police helicopter": ["Police helicopter"],
         "fbi investigation wagon": ["FBI Investigation Wagon"],
         "fbi bomb technician vehicle": ["FBI Bomb Technician Vehicle"],
+        "fbi drones or fbi investigation wagon": ["FBI Investigation Wagon", "FBI Surveillance Drone"],
         "riot police unit": ["Riot Police Van", "Riot Police Bus"],
         "warden truck": ["Warden's Truck"],
         "police cars or swat suv": ["Patrol car", "SWAT SUV"],
