@@ -6,6 +6,10 @@ def get_personnel_options(personnel_type):
             "Police Traffic Blocker Unit": 6,
             "Police Traffic Control Unit": 4,
         },
+        "prisoners": {
+            "Police Prisoner Van": 5,
+            "Patrol Car": 1,
+        },
         "sample": {
             "sample1": 1
         },
