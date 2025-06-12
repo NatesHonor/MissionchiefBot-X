@@ -1,4 +1,6 @@
 import json
+
+from utils.personnel_options import get_personnel_options
 from utils.pretty_print import display_info, display_error
 from utils.vehicle_options import get_vehicle_options
 
@@ -76,6 +78,26 @@ async def navigate_and_dispatch(browsers):
                         display_info(f"Selected Vehicle {vehicle_name}({vehicle_id})")
                         selected_count += 1
 
+        personnel_requirements = data.get("required_personnel", [])
+        for personnel in personnel_requirements:
+            personnel_name = personnel["name"].lower()
+            personnel_count = personnel["count"]
+            personnel_vehicles_map = get_personnel_options(personnel_name)
+            selected_count = 0
+            for vehicle_type, max_count_per_vehicle in personnel_vehicles_map.items():
+                vehicle_ids = await find_vehicle_ids(vehicle_type)
+                for vehicle_id in vehicle_ids:
+                    if selected_count >= personnel_count:
+                        break
+                    vehicle_checkbox = await page.query_selector(f'input.vehicle_checkbox[value="{vehicle_id}"]')
+                    if vehicle_checkbox:
+                        await page.evaluate('(checkbox) => checkbox.scrollIntoView()', vehicle_checkbox)
+                        await page.evaluate('(checkbox) => { checkbox.click(); checkbox.dispatchEvent(new Event("change", { bubbles: true })); }', vehicle_checkbox)
+                        display_info(f"Selected {vehicle_type}({vehicle_id}) for {personnel_name}")
+                        selected_count += max_count_per_vehicle
+                if selected_count >= personnel_count:
+                    break
+
         if crashed_cars > 1:
             flatbed_carriers_needed = crashed_cars - 2
             flatbed_carriers_ids = await find_vehicle_ids("Flatbed Carrier")
@@ -93,7 +115,6 @@ async def navigate_and_dispatch(browsers):
                 wrecker_types = ["Wrecker", "Police Wrecker", "Fire Wrecker"]
                 for wrecker_type in wrecker_types:
                     wrecker_ids = await find_vehicle_ids(wrecker_type)
-                    selected_count = 0
                     for vehicle_id in wrecker_ids:
                         if selected_count >= flatbed_carriers_needed:
                             break
