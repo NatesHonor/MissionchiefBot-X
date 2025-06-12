@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import re
 
 from utils.pretty_print import display_info, display_error
 
@@ -45,6 +46,8 @@ async def gather_mission_info(mission_ids, browser, thread_id):
     page = browser.contexts[0].pages[0]
 
     for index, mission_id in enumerate(mission_ids):
+        skip_this_mission = False
+
         try:
             display_info(f"Thread {thread_id}: Grabbing missions {index+1}/{len(mission_ids)}")
             await page.goto(f"https://www.missionchief.com/missions/{mission_id}")
@@ -56,7 +59,76 @@ async def gather_mission_info(mission_ids, browser, thread_id):
             else:
                 display_error(f"Mission ID {mission_id}: Mission name element not found.")
                 continue
+            try:
+                vehicles = []
+                crashed_cars = 0
+                alerts = await page.query_selector_all('div.alert.alert-danger')
+                for alert in alerts:
+                    text = (await alert.inner_text()).strip().lower()
+                    if "missing vehicles:" in text:
+                        text = text.replace('\xa0', ' ').replace('missing vehicles:', '').strip()
+                        vehicle_entries = text.split(',')
+                        for entry in vehicle_entries:
+                            match = re.search(r'(\d+)\s+(.+)', entry.strip())
+                            if match:
+                                count = int(match.group(1))
+                                name = match.group(2).strip().lower()
 
+                                if name.endswith('s'):
+                                    name = name[:-1]
+                                    if name == "car to tow":
+                                        crashed_cars = count
+                                    else:
+                                        vehicles.append({"name": name, "count": count})
+
+                        mission_data[mission_id] = {
+                            "mission_name": f"Missing Vehicles Mission {mission_id}",
+                            "credits": 0,
+                            "vehicles": vehicles,
+                            "patients": 0,
+                            "crashed_cars": crashed_cars,
+                            "required_personnel": []
+                        }
+                        display_info(f"Thread {thread_id}: Mission {mission_id} has missing vehicles.")
+                        skip_this_mission = True
+                        break
+            except Exception as e:
+                display_error(f"Thread {thread_id}: Error parsing missing vehicles: {e}")
+            try:
+                if not skip_this_mission:
+                    alerts = await page.query_selector_all('div.alert.alert-danger')
+                    for alert in alerts:
+                        text = (await alert.inner_text()).strip().lower()
+                        if "prisoners must be transported" in text or "transport is needed!" in text:
+                            display_info(f"Thread {thread_id}: Prisoner transport required for mission {mission_id}")
+                            transport_successful = await handle_prisoner_transport(page)
+
+                            if not transport_successful:
+                                prisoner_h4 = await page.query_selector('#h2_prisoners')
+                                prisoner_count = 0
+                                if prisoner_h4:
+                                    prisoner_text = (await prisoner_h4.inner_text()).strip()
+                                    match = re.search(r'(\d+)', prisoner_text)
+                                    if match:
+                                        prisoner_count = int(match.group(1))
+                                mission_data[mission_id] = {
+                                    "mission_name": f"Prisoner Transport Mission {mission_id}",
+                                    "credits": 0,
+                                    "vehicles": [],
+                                    "patients": 0,
+                                    "crashed_cars": 0,
+                                    "required_personnel": [
+                                        {"name": "Prisoners", "count": prisoner_count}
+                                    ]
+                                }
+                                display_info(f"Thread {thread_id}: Skipping mission {mission_id} due to no transport vehicles.")
+                                skip_this_mission = True
+                            break
+            except Exception as e:
+                display_error(f"Thread {thread_id}: Error handling prisoner transport check: {e}")
+
+            if skip_this_mission:
+                continue
             await page.click('#mission_help')
             await page.wait_for_selector('#iframe-inside-container', timeout=5000)
 
@@ -80,11 +152,11 @@ async def gather_mission_info(mission_ids, browser, thread_id):
                     required_personnel.append({"name": name.strip(), "count": int(count.strip())})
 
             if patients > 0:
-                vehicles.append({"name": "Ambulance", "count": patients})
+                vehicles.append({"name": "ambulance", "count": patients})
             if patients >= 10:
-                vehicles.append({"name": "EMS Chief", "count": 1})
+                vehicles.append({"name": "ems chief", "count": 1})
             if patients >= 20:
-                vehicles.append({"name": "EMS Mobile Command Unit", "count": 1})
+                vehicles.append({"name": "ems mobile command unit", "count": 1})
 
             mission_data[mission_id] = {
                 "mission_name": mission_name,
@@ -100,11 +172,7 @@ async def gather_mission_info(mission_ids, browser, thread_id):
     return mission_data
 
 
-
 def remove_plural_suffix(vehicle_name):
-    """
-    Remove the plural suffix "s" from the last word if present.
-    """
     vehicle_name_parts = vehicle_name.split()
     if vehicle_name_parts[-1].endswith('s'):
         vehicle_name_parts[-1] = vehicle_name_parts[-1][:-1]
@@ -124,10 +192,49 @@ async def gather_vehicle_requirements(page):
             count_element = await row.query_selector('td:nth-child(2)')
             if name_element and count_element:
                 vehicle_name = (await name_element.text_content()).replace("Required", "").strip()
-                vehicle_name = remove_plural_suffix(vehicle_name)  # Remove plural suffix if necessary
+                vehicle_name = remove_plural_suffix(vehicle_name)
                 vehicle_count = int((await count_element.text_content()).strip())
                 if "Probability" in vehicle_name:
                     continue
                 vehicle_requirements.append({"name": vehicle_name, "count": vehicle_count})
 
     return vehicle_requirements
+
+async def handle_prisoner_transport(page):
+    try:
+        while True:
+            prison_select_divs = await page.query_selector_all('div.prison-select')
+            sorted_prison_buttons = []
+            for div in prison_select_divs:
+                green_buttons = await div.query_selector_all('a.btn-success')
+                for btn in green_buttons:
+                    distance = await extract_distance(btn)
+                    sorted_prison_buttons.append((distance, btn, 'green'))
+                yellow_buttons = await div.query_selector_all('a.btn-warning')
+                for btn in yellow_buttons:
+                    distance = await extract_distance(btn)
+                    sorted_prison_buttons.append((distance, btn, 'yellow'))
+            if sorted_prison_buttons:
+                sorted_prison_buttons.sort(key=lambda x: x[0])
+                _, closest_button, btn_type = sorted_prison_buttons[0]
+                prison_name = await closest_button.inner_text()
+                display_info(f"Clicking {btn_type} transport button for {prison_name}")
+                await closest_button.click()
+                await page.wait_for_load_state('networkidle')
+                continue
+            return False
+    except Exception as e:
+        display_error(f"Error in prisoner transport handler: {e}")
+        return False
+
+
+
+async def extract_distance(button):
+    try:
+        text = await button.inner_text()
+        match = re.search(r'Distance: ([\d.]+) km', text)
+        if match:
+            return float(match.group(1))
+    except:
+        pass
+    return float('inf')
