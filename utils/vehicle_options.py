@@ -6,7 +6,7 @@ def get_vehicle_options(vehicle_type):
         "firetrucks or playform truck": ["Type 1 fire engine", "Type 2 fire engine","Platform truck", "Quint"],
         "firetrucks, heavy rescue vehicles or platform truck": ["Type 1 fire engine", "Type 2 fire engine", "Platform truck", "Quint", "Heavy rescue vehicle", "Rescue Engine"],
         "platform truck": ["Platform truck", "Quint"],
-        "Flood Equipment": ["Flood Equipment Trailer"],
+        "flood equipment": ["Flood Equipment Trailer"],
         "battalion chief vehicle": ["Battalion chief unit"],
         "mobile air": ["Mobile air"],
         "mobile air unit": ["Mobile air"],
