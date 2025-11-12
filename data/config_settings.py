@@ -29,3 +29,8 @@ def get_mission_delay():
 
 def get_transport_delay():
     return config.getint('delays', 'transport')
+
+# Grabbing Mission Settings (for my reference)
+
+def get_dispatch_type():
+    return config.get('missions', 'dispatch')
