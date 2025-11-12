@@ -1,5 +1,7 @@
+import asyncio
 import json
 
+from data.config_settings import get_dispatch_type
 from utils.personnel_options import get_personnel_options
 from utils.pretty_print import display_info, display_error
 from utils.vehicle_options import get_vehicle_options
@@ -16,13 +18,23 @@ async def navigate_and_dispatch(browsers):
         crashed_cars = data.get("crashed_cars", 0)
         patients = data.get("patients", 0)
         display_info(f"Dispatching units for {mission_name} (Crashed Cars: {crashed_cars}) (Patients: {patients})")
-
-        await page.goto(f"https://www.missionchief.com/missions/{mission_id}")
-        try:
-            await page.wait_for_selector('#missionH1', timeout=5000)
-        except TimeoutError:
-            display_error(f"Mission {mission_id} didn't load in time. Possible slow network? Skipping mission...")
-            continue
+        for attempt in range(2):
+            try:
+                url = f"https://www.missionchief.com/missions/{mission_id}"
+                display_info(f"Navigating to mission page: {url} (Attempt {attempt + 1})")
+                await page.goto(url, wait_until="domcontentloaded", timeout=10000)
+                await page.wait_for_selector('#missionH1', timeout=5000)
+                display_info(f"Successfully loaded mission {mission_name} ({mission_id})")
+                break
+            except TimeoutError:
+                display_error(f"[Timeout] Mission {mission_name} ({mission_id}) didn't load in time. Attempt {attempt + 1}/2")
+                if attempt == 1:
+                    display_error(f"❌ Skipping mission {mission_id} due to repeated loading issues.")
+                    continue
+                await asyncio.sleep(2)
+            except Exception as e:
+                display_error(f"Unexpected error while loading mission {mission_id}: {str(e)}")
+                continue
 
         load_missing_button = await page.query_selector('a.missing_vehicles_load.btn-warning')
         if load_missing_button:
@@ -148,7 +160,16 @@ async def navigate_and_dispatch(browsers):
                         await page.evaluate('(checkbox) => { checkbox.click(); checkbox.dispatchEvent(new Event("change", { bubbles: true })); }', vehicle_checkbox)
                         display_info(f"Selected Flatbed Carrier({flatbed_carriers_ids[0]})")
 
-        dispatch_button = await page.query_selector('#alert_btn')
+        dispatch_type = get_dispatch_type() or "default"
+
+        if dispatch_type.lower() == "alliance":
+            dispatch_button = await page.query_selector('a[class*="alert_next_alliance"]')
+            if not dispatch_button:
+                display_info(f"Alliance dispatch button not found, falling back to default dispatch.")
+                dispatch_button = await page.query_selector('#alert_btn')
+        else:
+            dispatch_button = await page.query_selector('#alert_btn')
+
         if dispatch_button:
             await dispatch_button.click()
             display_info(f"Dispatched units for mission {mission_id}")
