@@ -1,240 +1,120 @@
-import asyncio
-import json
-import os
-import re
-
+import asyncio, json, os, re
 from utils.pretty_print import display_info, display_error
 
+with open('data/requirement_mapping.json') as f:
+    REQUIREMENT_MAP = json.load(f)
+
 async def check_and_grab_missions(browsers, num_threads):
-    first_browser = browsers[0]
     try:
         if os.path.exists('data/mission_data.json'):
             os.remove('data/mission_data.json')
-        page = first_browser.contexts[0].pages[0]
+        page = browsers[0].contexts[0].pages[0]
         await page.goto("https://www.missionchief.com")
-        mission_panels = await page.query_selector_all('.mission_panel_red')
-        if not mission_panels:
-            display_info("No missions found, skipping this function.")
-            return
-        mission_ids = [await panel.get_attribute('id') for panel in mission_panels]
-        mission_ids = [mission_id.split('_')[-1] for mission_id in mission_ids]
-        display_info(f"Found {len(mission_ids)} mission IDs.")
-        mission_data = await split_mission_ids_among_threads(mission_ids, browsers, num_threads)
-        with open('data/mission_data.json', 'w') as outfile:
-            json.dump(mission_data, outfile, indent=4)
+        panels = await page.query_selector_all('.mission_panel_red')
+        if not panels:
+            return display_info("No missions found, skipping this function.")
+        ids = [(await p.get_attribute('id')).split('_')[-1] for p in panels]
+        display_info(f"Found {len(ids)} mission IDs.")
+        data = await split_mission_ids_among_threads(ids, browsers, num_threads)
+        with open('data/mission_data.json','w') as f:
+            json.dump(data, f, indent=4)
         display_info("Mission data collection complete. Stored mission data in mission_data.json.")
     except Exception as e:
         display_error(f"Error gathering mission data: {e}")
 
-
-async def split_mission_ids_among_threads(mission_ids, browsers, num_threads):
-    mission_data = {}
-    thread_mission_ids = [mission_ids[i::num_threads] for i in range(num_threads)]
-
-    tasks = [gather_mission_info(thread_mission_ids[i], browsers[i], i+1) for i in range(num_threads)]
+async def split_mission_ids_among_threads(ids, browsers, n):
+    tasks = [gather_mission_info(ids[i::n], browsers[i], i+1) for i in range(n)]
     results = await asyncio.gather(*tasks)
+    return {k:v for r in results for k,v in r.items()}
 
-    for result in results:
-        for mission_id, data in result.items():
-            if mission_id not in mission_data:
-                mission_data[mission_id] = data
-    return mission_data
+async def get_val(page, sel, split_first=False):
+    el = await page.query_selector(sel)
+    if not el: return 0
+    text = (await el.inner_text()).strip()
+    return int(text.split()[0]) if split_first else int(text)
 
-
-async def gather_mission_info(mission_ids, browser, thread_id):
-    mission_data = {}
-    page = browser.contexts[0].pages[0]
-
-    for index, mission_id in enumerate(mission_ids):
-        skip_this_mission = False
-
+async def gather_mission_info(ids, browser, tid):
+    data, page = {}, browser.contexts[0].pages[0]
+    for i, mid in enumerate(ids):
         try:
-            display_info(f"Thread {thread_id}: Grabbing missions {index+1}/{len(mission_ids)}")
-            await page.goto(f"https://www.missionchief.com/missions/{mission_id}")
+            display_info(f"Thread {tid}: Grabbing missions {i+1}/{len(ids)}")
+            await page.goto(f"https://www.missionchief.com/missions/{mid}")
             await page.wait_for_selector('#missionH1', timeout=5000)
-
-            mission_name_element = await page.query_selector('#missionH1')
-            if mission_name_element:
-                mission_name = (await mission_name_element.inner_text()).strip()
-            else:
-                display_error(f"Mission ID {mission_id}: Mission name element not found.")
+            name_el = await page.query_selector('#missionH1')
+            if not name_el: continue
+            name = (await name_el.inner_text()).strip()
+            miss = await page.query_selector('div.alert-missing-vehicles div[data-requirement-type="vehicles"]')
+            if miss:
+                parsed, crashed = [], 0
+                for entry in (await miss.inner_text()).replace('\xa0',' ').split(','):
+                    m = re.search(r'(\d+)\s+(.+)', entry.strip())
+                    if m:
+                        c,n = int(m.group(1)), normalize_name(m.group(2))
+                        if "tow" in n: crashed = c
+                        else: parsed.append({"name":n,"count":c})
+                data[mid] = {"mission_name":name,"credits":0,"vehicles":parsed,"personnel":[],"liquid":[],"patients":0,"crashed_cars":crashed}
+                display_info(f"Thread {tid}: Mission {mid} has missing vehicles.")
                 continue
-            try:
-                vehicles = []
-                crashed_cars = 0
-                alerts = await page.query_selector_all('div.alert.alert-danger')
-                for alert in alerts:
-                    text = (await alert.inner_text()).strip().lower()
-                    if "missing vehicles:" in text:
-                        text = text.replace('\xa0', ' ').replace('missing vehicles:', '').strip()
-                        vehicle_entries = text.split(',')
-                        for entry in vehicle_entries:
-                            match = re.search(r'(\d+)\s+(.+)', entry.strip())
-                            if match:
-                                count = int(match.group(1))
-                                name = match.group(2).strip().lower()
-
-                                if name.endswith('s'):
-                                    name = name[:-1]
-                                    if name == "car to tow":
-                                        crashed_cars = count
-                                    else:
-                                        vehicles.append({"name": name, "count": count})
-
-                        mission_data[mission_id] = {
-                            "mission_name": f"Missing Vehicles Mission {mission_id}",
-                            "credits": 0,
-                            "vehicles": vehicles,
-                            "patients": 0,
-                            "crashed_cars": crashed_cars,
-                            "required_personnel": []
-                        }
-                        display_info(f"Thread {thread_id}: Mission {mission_id} has missing vehicles.")
-                        skip_this_mission = True
-                        break
-            except Exception as e:
-                display_error(f"Thread {thread_id}: Error parsing missing vehicles: {e}")
-            try:
-                if not skip_this_mission:
-                    alerts = await page.query_selector_all('div.alert.alert-danger')
-                    for alert in alerts:
-                        text = (await alert.inner_text()).strip().lower()
-                        if "prisoners must be transported" in text or "transport is needed!" in text:
-                            display_info(f"Thread {thread_id}: Prisoner transport required for mission {mission_id}")
-                            transport_successful = await handle_prisoner_transport(page)
-
-                            if not transport_successful:
-                                prisoner_h4 = await page.query_selector('#h2_prisoners')
-                                prisoner_count = 0
-                                if prisoner_h4:
-                                    prisoner_text = (await prisoner_h4.inner_text()).strip()
-                                    match = re.search(r'(\d+)', prisoner_text)
-                                    if match:
-                                        prisoner_count = int(match.group(1))
-                                mission_data[mission_id] = {
-                                    "mission_name": f"Prisoner Transport Mission {mission_id}",
-                                    "credits": 0,
-                                    "vehicles": [],
-                                    "patients": 0,
-                                    "crashed_cars": 0,
-                                    "required_personnel": [
-                                        {"name": "Prisoners", "count": prisoner_count}
-                                    ]
-                                }
-                                display_info(f"Thread {thread_id}: Skipping mission {mission_id} due to no transport vehicles.")
-                                skip_this_mission = True
-                            break
-            except Exception as e:
-                display_error(f"Thread {thread_id}: Error handling prisoner transport check: {e}")
-
-            if skip_this_mission:
-                continue
+            for alert in await page.query_selector_all('div.alert.alert-danger'):
+                txt = (await alert.inner_text()).lower()
+                if "prisoners must be transported" in txt or "transport is needed!" in txt:
+                    if not await handle_prisoner_transport(page):
+                        h4 = await page.query_selector('#h2_prisoners')
+                        cnt = int(re.search(r'(\d+)', await h4.inner_text()).group(1)) if h4 else 0
+                        data[mid] = {"mission_name":f"Prisoner Transport Mission {mid}","credits":0,"vehicles":[],"personnel":[{"name":"Prisoners","count":cnt}],"liquid":[],"patients":0,"crashed_cars":0}
+                        continue
             await page.click('#mission_help')
             await page.wait_for_selector('#iframe-inside-container', timeout=5000)
-
-            vehicles = await gather_vehicle_requirements(page)
-
-            credits_element = await page.query_selector('td:has-text("Average credits") + td')
-            credits_value = int((await credits_element.inner_text()).split()[0]) if credits_element else 0
-
-            patients_element = await page.query_selector('td:has-text("Max. Patients") + td')
-            patients = int((await patients_element.inner_text()).strip()) if patients_element else 0
-
-            crashed_cars_element = await page.query_selector('td:has-text("Maximum amount of cars to tow") + td')
-            crashed_cars = int((await crashed_cars_element.inner_text()).strip()) if crashed_cars_element else 0
-
-            required_personnel = []
-            personnel_elements = await page.query_selector_all('td:has-text("Required Personnel Available") + td div')
-            for element in personnel_elements:
-                text = (await element.inner_text()).strip()
-                if 'x' in text:
-                    count, name = text.split('x', 1)
-                    required_personnel.append({"name": name.strip(), "count": int(count.strip())})
-
-            if patients > 0:
-                vehicles.append({"name": "ambulance", "count": patients})
-            if patients >= 10:
-                vehicles.append({"name": "ems chief", "count": 1})
-            if patients >= 20:
-                vehicles.append({"name": "ems mobile command unit", "count": 1})
-
-            mission_data[mission_id] = {
-                "mission_name": mission_name,
-                "credits": credits_value,
-                "vehicles": vehicles,
-                "patients": patients,
-                "crashed_cars": crashed_cars,
-                "required_personnel": required_personnel
-            }
+            requirements = await gather_requirements(page)
+            credits = await get_val(page,'td:has-text("Average credits") + td',split_first=True)
+            patients = await get_val(page,'td:has-text("Max. Patients") + td')
+            crashed = await get_val(page,'td:has-text("Maximum amount of cars to tow") + td')
+            if patients: requirements["vehicles"].append({"name":"ambulance","count":patients})
+            if patients>=10: requirements["vehicles"].append({"name":"ems chief","count":1})
+            if patients>=20: requirements["vehicles"].append({"name":"ems mobile command unit","count":1})
+            data[mid] = {"mission_name":name,"credits":credits,"vehicles":requirements["vehicles"],"personnel":requirements["personnel"],"liquid":requirements["liquid"],"patients":patients,"crashed_cars":crashed}
         except Exception as e:
-            display_error(f"Error processing mission ID {mission_id}: {e}")
+            display_error(f"Error processing mission ID {mid}: {e}")
+    return data
 
-    return mission_data
+def normalize_name(raw: str) -> str:
+    name = raw.lower().replace("required","").replace("vehicles","").replace("vehicle","").strip()
+    return remove_plural_suffix(name)
 
+def remove_plural_suffix(n):
+    parts = n.split()
+    last = parts[-1]
+    if last.endswith("s") and len(last)>3:
+        parts[-1] = last[:-1]
+    return " ".join(parts)
 
-def remove_plural_suffix(vehicle_name):
-    vehicle_name_parts = vehicle_name.split()
-    if vehicle_name_parts[-1].endswith('s'):
-        vehicle_name_parts[-1] = vehicle_name_parts[-1][:-1]
-    return ' '.join(vehicle_name_parts)
-
-
-async def gather_vehicle_requirements(page):
-    vehicle_requirements = []
-    requirement_table = await page.query_selector(
-        'div.col-md-4 > table:has(th:has-text("Vehicle and Personnel Requirements"))')
-
-    if requirement_table:
-        vehicle_rows = await requirement_table.query_selector_all('tr:has(td:has-text("Required"))')
-
-        for row in vehicle_rows:
-            name_element = await row.query_selector('td:first-child')
-            count_element = await row.query_selector('td:nth-child(2)')
-            if name_element and count_element:
-                vehicle_name = (await name_element.text_content()).replace("Required", "").strip()
-                vehicle_name = remove_plural_suffix(vehicle_name)
-                vehicle_count = int((await count_element.text_content()).strip())
-                if "Probability" in vehicle_name:
-                    continue
-                vehicle_requirements.append({"name": vehicle_name, "count": vehicle_count})
-
-    return vehicle_requirements
+async def gather_requirements(page):
+    reqs = {"vehicles": [], "personnel": [], "liquid": []}
+    table = await page.query_selector('div.col-md-4 > table:has(th:has-text("Vehicle and Personnel Requirements"))')
+    if table:
+        for row in await table.query_selector_all('tr:has(td:has-text("Required"))'):
+            n_el,c_el = await row.query_selector('td:first-child'), await row.query_selector('td:nth-child(2)')
+            if n_el and c_el:
+                raw = await n_el.text_content()
+                name = normalize_name(raw)
+                if "probability" in name: continue
+                count = int((await c_el.text_content()).strip())
+                category = REQUIREMENT_MAP.get(name, "vehicles")
+                reqs[category].append({"name":name,"count":count})
+    return reqs
 
 async def handle_prisoner_transport(page):
     try:
         while True:
-            prison_select_divs = await page.query_selector_all('div.prison-select')
-            sorted_prison_buttons = []
-            for div in prison_select_divs:
-                green_buttons = await div.query_selector_all('a.btn-success')
-                for btn in green_buttons:
-                    distance = await extract_distance(btn)
-                    sorted_prison_buttons.append((distance, btn, 'green'))
-                yellow_buttons = await div.query_selector_all('a.btn-warning')
-                for btn in yellow_buttons:
-                    distance = await extract_distance(btn)
-                    sorted_prison_buttons.append((distance, btn, 'yellow'))
-            if sorted_prison_buttons:
-                sorted_prison_buttons.sort(key=lambda x: x[0])
-                _, closest_button, btn_type = sorted_prison_buttons[0]
-                prison_name = await closest_button.inner_text()
-                display_info(f"Clicking {btn_type} transport button for {prison_name}")
-                await closest_button.click()
+            buttons = [(await extract_distance(btn),btn) for div in await page.query_selector_all('div.prison-select') for btn in (await div.query_selector_all('a.btn-success'))+(await div.query_selector_all('a.btn-warning'))]
+            if buttons:
+                await sorted(buttons,key=lambda x:x[0])[0][1].click()
                 await page.wait_for_load_state('networkidle')
                 continue
             return False
-    except Exception as e:
-        display_error(f"Error in prisoner transport handler: {e}")
-        return False
+    except: return False
 
-
-
-async def extract_distance(button):
+async def extract_distance(btn):
     try:
-        text = await button.inner_text()
-        match = re.search(r'Distance: ([\d.]+) km', text)
-        if match:
-            return float(match.group(1))
-    except:
-        pass
-    return float('inf')
+        return float(re.search(r'Distance: ([\d.]+) km', await btn.inner_text()).group(1))
+    except: return float('inf')
