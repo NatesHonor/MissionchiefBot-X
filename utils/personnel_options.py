@@ -6,6 +6,10 @@ def get_personnel_options(personnel_type):
             "Police Traffic Blocker Unit": 6,
             "Police Traffic Control Unit": 4,
         },
+        "swat personnel": {
+            "SWAT Armoured Vehicle": 6,
+            "SWAT SUV": 4,
+        },
         "riot police officer": {
             "Riot Police Bus": 24,
             "Riot Police Van": 12,
