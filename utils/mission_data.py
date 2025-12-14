@@ -29,9 +29,13 @@ async def split_mission_ids_among_threads(ids, browsers, n):
 
 async def get_val(page, sel, split_first=False):
     el = await page.query_selector(sel)
-    if not el: return 0
-    text = (await el.inner_text()).strip()
-    return int(text.split()[0]) if split_first else int(text)
+    if not el:
+        return 0
+    text = (await el.inner_text()).strip().lower()
+    try:
+        return int(text.split()[0]) if split_first else int(text)
+    except:
+        return 0
 
 async def gather_mission_info(ids, browser, tid):
     data, page = {}, browser.contexts[0].pages[0]
@@ -41,19 +45,40 @@ async def gather_mission_info(ids, browser, tid):
             await page.goto(f"https://www.missionchief.com/missions/{mid}")
             await page.wait_for_selector('#missionH1', timeout=5000)
             name_el = await page.query_selector('#missionH1')
-            if not name_el: continue
+            if not name_el:
+                continue
             name = (await name_el.inner_text()).strip()
-            miss = await page.query_selector('div.alert-missing-vehicles div[data-requirement-type="vehicles"]')
-            if miss:
-                parsed, crashed = [], 0
-                for entry in (await miss.inner_text()).replace('\xa0',' ').split(','):
+            vehicles_missing = []
+            personnel_missing = []
+            crashed = 0
+            miss_v = await page.query_selector('div.alert-missing-vehicles div[data-requirement-type="vehicles"]')
+            if miss_v:
+                for entry in (await miss_v.inner_text()).replace('\xa0',' ').split(','):
                     m = re.search(r'(\d+)\s+(.+)', entry.strip())
                     if m:
                         c,n = int(m.group(1)), normalize_name(m.group(2))
-                        if "tow" in n: crashed = c
-                        else: parsed.append({"name":n,"count":c})
-                data[mid] = {"mission_name":name,"credits":0,"vehicles":parsed,"personnel":[],"liquid":[],"patients":0,"crashed_cars":crashed}
-                display_info(f"Thread {tid}: Mission {mid} has missing vehicles.")
+                        if "tow" in n:
+                            crashed = c
+                        else:
+                            vehicles_missing.append({"name":n,"count":c})
+            miss_p = await page.query_selector('div.alert-missing-vehicles div[data-requirement-type="personnel"]')
+            if miss_p:
+                for entry in (await miss_p.inner_text()).replace('\xa0',' ').split(','):
+                    m = re.search(r'(\d+)\s+(.+)', entry.strip())
+                    if m:
+                        c,n = int(m.group(1)), normalize_name(m.group(2))
+                        personnel_missing.append({"name":n,"count":c})
+            if vehicles_missing or personnel_missing:
+                data[mid] = {
+                    "mission_name":name,
+                    "credits":0,
+                    "vehicles":vehicles_missing,
+                    "personnel":personnel_missing,
+                    "liquid":[],
+                    "patients":0,
+                    "crashed_cars":crashed
+                }
+                display_info(f"Thread {tid}: Mission {mid} has missing requirements.")
                 continue
             for alert in await page.query_selector_all('div.alert.alert-danger'):
                 txt = (await alert.inner_text()).lower()
@@ -61,7 +86,15 @@ async def gather_mission_info(ids, browser, tid):
                     if not await handle_prisoner_transport(page):
                         h4 = await page.query_selector('#h2_prisoners')
                         cnt = int(re.search(r'(\d+)', await h4.inner_text()).group(1)) if h4 else 0
-                        data[mid] = {"mission_name":f"Prisoner Transport Mission {mid}","credits":0,"vehicles":[],"personnel":[{"name":"Prisoners","count":cnt}],"liquid":[],"patients":0,"crashed_cars":0}
+                        data[mid] = {
+                            "mission_name":f"Prisoner Transport Mission {mid}",
+                            "credits":0,
+                            "vehicles":[],
+                            "personnel":[{"name":"prisoners","count":cnt}],
+                            "liquid":[],
+                            "patients":0,
+                            "crashed_cars":0
+                        }
                         continue
             await page.click('#mission_help')
             await page.wait_for_selector('#iframe-inside-container', timeout=5000)
@@ -69,10 +102,21 @@ async def gather_mission_info(ids, browser, tid):
             credits = await get_val(page,'td:has-text("Average credits") + td',split_first=True)
             patients = await get_val(page,'td:has-text("Max. Patients") + td')
             crashed = await get_val(page,'td:has-text("Maximum amount of cars to tow") + td')
-            if patients: requirements["vehicles"].append({"name":"ambulance","count":patients})
-            if patients>=10: requirements["vehicles"].append({"name":"ems chief","count":1})
-            if patients>=20: requirements["vehicles"].append({"name":"ems mobile command unit","count":1})
-            data[mid] = {"mission_name":name,"credits":credits,"vehicles":requirements["vehicles"],"personnel":requirements["personnel"],"liquid":requirements["liquid"],"patients":patients,"crashed_cars":crashed}
+            if isinstance(patients,int) and patients:
+                requirements["vehicles"].append({"name":"ambulance","count":patients})
+                if patients>=10:
+                    requirements["vehicles"].append({"name":"ems chief","count":1})
+                if patients>=20:
+                    requirements["vehicles"].append({"name":"ems mobile command unit","count":1})
+            data[mid] = {
+                "mission_name":name,
+                "credits":credits,
+                "vehicles":requirements["vehicles"],
+                "personnel":requirements["personnel"],
+                "liquid":requirements["liquid"],
+                "patients":patients,
+                "crashed_cars":crashed
+            }
         except Exception as e:
             display_error(f"Error processing mission ID {mid}: {e}")
     return data
@@ -97,10 +141,16 @@ async def gather_requirements(page):
             if n_el and c_el:
                 raw = await n_el.text_content()
                 name = normalize_name(raw)
-                if "probability" in name: continue
-                count = int((await c_el.text_content()).strip())
+                if "probability" in name:
+                    continue
+                count_text = (await c_el.text_content()).strip().lower()
+                try:
+                    count = int(count_text)
+                except:
+                    count = count_text
                 category = REQUIREMENT_MAP.get(name, "vehicles")
-                reqs[category].append({"name":name,"count":count})
+                if category != "pass":
+                    reqs[category].append({"name":name,"count":count})
     return reqs
 
 async def handle_prisoner_transport(page):
@@ -112,9 +162,11 @@ async def handle_prisoner_transport(page):
                 await page.wait_for_load_state('networkidle')
                 continue
             return False
-    except: return False
+    except:
+        return False
 
 async def extract_distance(btn):
     try:
         return float(re.search(r'Distance: ([\d.]+) km', await btn.inner_text()).group(1))
-    except: return float('inf')
+    except:
+        return float('inf')
