@@ -2,25 +2,30 @@ import asyncio, json
 from utils.pretty_print import display_info, display_error, display_warning
 from utils.vehicle_options import get_vehicle_options
 from .utils import format_distance, normalize_key
+from data.cache import get_vehicle_data
 
-async def get_vehicle_distance(page, vehicle_id):
-    el = await page.query_selector(f'#vehicle_sort_{vehicle_id}')
-    if not el:
-        return float('inf')
-    val = await el.get_attribute('sortvalue')
-    try:
-        val = int(val)
-        if val < 0 or val > 86400 * 365:
-            return float('inf')
-        return val
-    except:
-        return float('inf')
 
-async def click_vehicle(page, cb, vehicle_id, label):
+async def get_all_vehicle_distances(page, ids):
+    script = """
+    (ids) => {
+        const result = {};
+        for (const id of ids) {
+            const el = document.querySelector(`#vehicle_sort_${id}`);
+            if (el) {
+                const val = el.getAttribute('sortvalue');
+                result[id] = val ? parseInt(val) : Infinity;
+            } else {
+                result[id] = Infinity;
+            }
+        }
+        return result;
+    }
+    """
+    return await page.evaluate(script, ids)
+
+async def click_vehicle(page, cb, vehicle_id, label, dist):
     if await cb.is_checked():
-        display_warning(f"Skipped {label}({vehicle_id}) already selected")
         return False
-    dist = await get_vehicle_distance(page, vehicle_id)
     await page.evaluate(
         '(c) => { c.click(); c.dispatchEvent(new Event("change", { bubbles: true })); }',
         cb
@@ -31,32 +36,37 @@ async def click_vehicle(page, cb, vehicle_id, label):
 async def select_vehicles(page, ids, needed, label):
     checkboxes = await page.query_selector_all("input.vehicle_checkbox")
     checkbox_map = {await cb.get_attribute("value"): cb for cb in checkboxes}
-    tasks = [get_vehicle_distance(page, vid) for vid in ids if vid in checkbox_map]
-    distances = await asyncio.gather(*tasks)
-    vehicles = list(zip([vid for vid in ids if vid in checkbox_map], distances))
+    valid_ids = [vid for vid in ids if vid in checkbox_map]
+    if not valid_ids:
+        return 0
+    distance_map = await get_all_vehicle_distances(page, valid_ids)
+    vehicles = [(vid, distance_map.get(vid, float('inf'))) for vid in valid_ids]
     vehicles.sort(key=lambda x: x[1])
+
     count = 0
-    for vid, _ in vehicles:
+    for vid, dist in vehicles:
         if count >= needed:
             break
         cb = checkbox_map[vid]
-        if await click_vehicle(page, cb, vid, label):
+        if await click_vehicle(page, cb, vid, label, dist):
             count += 1
     return count
 
-async def find_vehicle_ids(name):
-    with open('data/vehicle_data.json') as f:
-        vehicle_data = json.load(f)
+
+async def find_vehicle_ids(name: str):
+    VEHICLE_DATA = get_vehicle_data()
     norm = normalize_key(name)
     ids = []
-    for k, v in vehicle_data.items():
+    for k, v in VEHICLE_DATA.items():
         if normalize_key(k) == norm:
             ids.extend(v)
     for alt in get_vehicle_options(name):
         n = normalize_key(alt)
-        for k, v in vehicle_data.items():
+        for k, v in VEHICLE_DATA.items():
             if normalize_key(k) == n:
                 ids.extend(v)
+    ids = list(dict.fromkeys(ids))
     if not ids:
         display_error(f"No vehicles found for '{name}'")
     return ids
+
