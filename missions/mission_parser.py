@@ -22,12 +22,10 @@ def resolve_vehicle_name(name: str) -> str:
     return n
 
 def resolve_vehicle_entry(raw_name: str, count: int):
-    if " or " in raw_name.lower():
-        opts = [resolve_vehicle_name(normalize_name(x.strip())) for x in raw_name.split(" or ")]
-        return {"options": opts, "count": count}
-    else:
-        canonical = resolve_vehicle_name(normalize_name(raw_name))
-        return {"options": [canonical], "count": count}
+    normalized = raw_name.lower().replace(",", " or ")
+    parts = [p.strip() for p in normalized.split(" or ") if p.strip()]
+    opts = [resolve_vehicle_name(normalize_name(p)) for p in parts]
+    return {"options": opts, "count": count}
 
 async def gather_mission_info(ids, context, tid):
     data = {}
@@ -43,7 +41,7 @@ async def gather_mission_info(ids, context, tid):
             if not name_el:
                 continue
             name = (await name_el.inner_text()).strip()
-            crashed = 0
+
             prisoner_handled = False
             for alert in await page.query_selector_all("div.alert.alert-danger"):
                 txt = (await alert.inner_text()).lower()
