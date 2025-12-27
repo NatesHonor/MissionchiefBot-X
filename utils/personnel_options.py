@@ -6,6 +6,9 @@ def get_personnel_options(personnel_type):
             "Police Traffic Blocker Unit": 6,
             "Police Traffic Control Unit": 4,
         },
+        "hazmat": {
+            "HazMat": 6
+        },
         "swat personnel": {
             "SWAT Armoured Vehicle": 6,
             "SWAT SUV": 4,
