@@ -6,7 +6,7 @@
   "heavy rescue vehicles": ["Heavy rescue"],
   "hazmat vehicles": ["HazMat"],
   "mobile command vehicles": ["mobile command"],
-  "fire investigation units": ["Fire Investigator Unit"],
+  "Fire Investigator Unit": ["fire investigation unit"],
   "arffs": ["Small ARFF Crash Tender", "Medium ARFF Crash Tender", "Large ARFF Crash Tender"],
   "wildland fire engine": ["Type 3 engine", "Type 4 engine", "Type 5 engine", "Type 6 engine", "Type 7 engine"],
   "wildland fire vehicle": ["Type 3 engine", "Type 4 engine", "Type 5 engine", "Type 6 engine", "Type 7 engine"],
