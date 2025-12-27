@@ -2,7 +2,7 @@ def get_vehicle_options(vehicle_type):
     vehicle_options_map = {
         "arffs or firetrucks": ["Type 1 fire engine", "Type 2 fire engine", "Small ARFF Crash Tender", "Medium ARFF Crash Tender", "Large ARFF Crash Tender"],
         "firetrucks": ["Type 1 fire engine", "Type 2 fire engine", "Type 3 fire engine"],
-        "firetrucks or platform trucks": ["Type 1 fire engine", "Type 2 fire engine", "Platform truck", "Quint"],
+        "firetruck": ["Type 1 fire engine", "Type 2 fire engine", "Platform truck", "Quint"],
         "firetrucks, heavy rescue vehicles, or platform trucks,": ["Type 1 fire engine", "Type 2 fire engine", "Platform truck", "Quint", "Heavy rescue vehicle", "Rescue Engine"],
         "platform truck": ["Platform truck", "Quint"],
         "flood equipment": ["Flood Equipment Trailer"],

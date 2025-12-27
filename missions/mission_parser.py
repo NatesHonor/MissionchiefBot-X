@@ -22,7 +22,7 @@ def resolve_vehicle_name(name: str) -> str:
     return n
 
 def resolve_vehicle_entry(raw_name: str, count: int):
-    normalized = raw_name.lower().replace(",", " or ")
+    normalized = raw_name.lower().replace(",", " or ").replace("/", " or ")
     parts = [p.strip() for p in normalized.split(" or ") if p.strip()]
     opts = [resolve_vehicle_name(normalize_name(p)) for p in parts]
     return {"options": opts, "count": count}
@@ -42,44 +42,71 @@ async def gather_mission_info(ids, context, tid):
                 continue
             name = (await name_el.inner_text()).strip()
 
-            prisoner_handled = False
-            for alert in await page.query_selector_all("div.alert.alert-danger"):
-                txt = (await alert.inner_text()).lower()
-                if "prisoners must be transported" in txt or "transport is needed!" in txt:
-                    if not await handle_prisoner_transport(page):
-                        h4 = await page.query_selector("#h2_prisoners")
-                        cnt = int(re.search(r"(\d+)", await h4.inner_text()).group(1)) if h4 else 0
-                        dispatched = await page.query_selector_all("#mission_vehicle_at_mission tbody tr")
-                        covered = 0
-                        for row in dispatched:
-                            caption_el = await row.query_selector("small.vehicle_caption")
-                            if caption_el:
-                                caption = (await caption_el.inner_text()).lower()
-                                if "patrol car" in caption:
-                                    covered += 1
-                                elif "supervisor" in caption or "sheriff" in caption:
-                                    covered += 1
-                        remaining = max(0, cnt - covered)
-                        vehicles_needed = []
-                        if remaining > 0:
-                            if remaining < 4:
-                                vehicles_needed.append({"name": "police car", "count": remaining})
-                            else:
-                                vans = (remaining + 3) // 4
-                                vehicles_needed.append({"name": "prisoner transport van", "count": vans})
-                        data[mid] = {
-                            "mission_name": f"Prisoner Transport Mission {mid}",
-                            "credits": 0,
-                            "vehicles": vehicles_needed,
-                            "personnel": [{"name": "prisoners", "count": cnt}],
-                            "liquid": [],
-                            "patients": 0,
-                            "crashed_cars": 0,
-                        }
-                        prisoner_handled = True
-                        continue
-            if prisoner_handled:
+            requirements_handled = False
+
+            missing_alerts = await page.query_selector_all("div.alert-missing-vehicles div[data-requirement-type='personnel']")
+            if missing_alerts:
+                personnel_reqs = []
+                for alert in missing_alerts:
+                    text = (await alert.inner_text()).strip()
+                    m = re.match(r".*?(\d+)\s+(.+)", text)
+                    if m:
+                        count = int(m.group(1))
+                        role = normalize_name(m.group(2))
+                        personnel_reqs.append({"name": role, "count": count})
+                data[mid] = {
+                    "mission_name": name,
+                    "credits": 0,
+                    "vehicles": [],
+                    "personnel": personnel_reqs,
+                    "liquid": [],
+                    "patients": 0,
+                    "crashed_cars": 0,
+                }
+                requirements_handled = True
+
+            if not requirements_handled:
+                for alert in await page.query_selector_all("div.alert.alert-danger"):
+                    txt = (await alert.inner_text()).lower()
+                    if "prisoners must be transported" in txt or "transport is needed!" in txt:
+                        if not await handle_prisoner_transport(page):
+                            result = await page.evaluate("""() => {
+                                const h4 = document.querySelector("#h2_prisoners");
+                                let prisoners = 0;
+                                if (h4) {
+                                    const m = h4.textContent.match(/(\\d+)/);
+                                    if (m) prisoners = parseInt(m[1]);
+                                }
+                                const rows = document.querySelectorAll("#mission_vehicle_at_mission tbody tr small.vehicle_caption");
+                                const captions = Array.from(rows).map(el => el.textContent.toLowerCase());
+                                return { prisoners, captions };
+                            }""")
+                            cnt = result["prisoners"]
+                            captions = result["captions"]
+                            covered = sum(1 for c in captions if "patrol car" in c or "supervisor" in c or "sheriff" in c)
+                            remaining = max(0, cnt - covered)
+                            vehicles_needed = []
+                            if remaining > 0:
+                                if remaining < 4:
+                                    vehicles_needed.append({"options": ["police car"], "count": remaining})
+                                else:
+                                    vans = (remaining + 3) // 4
+                                    vehicles_needed.append({"options": ["prisoner transport van"], "count": vans})
+                            data[mid] = {
+                                "mission_name": f"Prisoner Transport Mission {mid}",
+                                "credits": 0,
+                                "vehicles": vehicles_needed,
+                                "personnel": [],
+                                "liquid": [],
+                                "patients": 0,
+                                "crashed_cars": 0,
+                            }
+                            requirements_handled = True
+                            break
+
+            if requirements_handled:
                 continue
+
             await page.click("#mission_help")
             await page.wait_for_selector("#iframe-inside-container", timeout=5000)
             requirements = await gather_requirements(page)
