@@ -22,7 +22,7 @@ def resolve_vehicle_name(name: str) -> str:
     return n
 
 def resolve_vehicle_entry(raw_name: str, count: int):
-    normalized = raw_name.lower().replace(",", " or ").replace("/", " or ")
+    normalized = raw_name.lower().replace(",", " or ")
     parts = [p.strip() for p in normalized.split(" or ") if p.strip()]
     opts = [resolve_vehicle_name(normalize_name(p)) for p in parts]
     return {"options": opts, "count": count}

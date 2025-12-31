@@ -24,8 +24,8 @@ def get_vehicle_options(vehicle_type):
         "patrol car": ["Patrol car"],
         "riot police unit": ["Riot Police Van", "Riot Police Bus"],
         "police cars or swat suv": ["Patrol car", "SWAT SUV"],
+        "sheriff": ["Police Supervisor / Sheriff Unit"],
         "police supervisor / sheriff": ["Police Supervisor / Sheriff Unit"],
-        "police supervisors / sheriff": ["Police Supervisor / Sheriff Unit"],
         "police helicopter": ["Police helicopter"],
         "policehelicopter": ["Police helicopter"],
 
