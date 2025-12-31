@@ -69,5 +69,5 @@ def get_dynamic_delay_transport_enabled():
 def get_mission_delay():
     return config.getint('delays', 'missions')
 
-def get_transport_delay():
-    return config.getint('delays', 'transport')
+def get_other_delay():
+    return config.getint('delays', 'other')
