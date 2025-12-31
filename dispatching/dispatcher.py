@@ -19,7 +19,7 @@ async def read_water_status(page):
     selected = int(m.group(1).replace(",", "")) if m else 0
     return selected, need
 
-async def handle_water_requirement(page, missing):
+async def handle_water_requirement(page, missing, mission_id):
     selected, need = await read_water_status(page)
     if need <= 0 or selected >= need:
         return
@@ -31,12 +31,12 @@ async def handle_water_requirement(page, missing):
             break
         progressed = False
         if tanker_ids:
-            used = await select_vehicles(page, tanker_ids, 1, "water tanker")
+            used = await select_vehicles(page, tanker_ids, 1, "water tanker", mission_id)
             if used > 0:
                 progressed = True
                 continue
         if firetruck_ids and not progressed:
-            used = await select_vehicles(page, firetruck_ids, 1, "firetruck")
+            used = await select_vehicles(page, firetruck_ids, 1, "firetruck", mission_id)
             if used > 0:
                 progressed = True
                 continue
@@ -46,7 +46,6 @@ async def handle_water_requirement(page, missing):
     if selected < need and not get_dispatch_incomplete():
         missing.append(("Water", need - selected))
 
-
 async def navigate_and_dispatch(contexts):
     with open('data/mission_data.json') as f:
         missions = list(json.load(f).items())
@@ -54,16 +53,19 @@ async def navigate_and_dispatch(contexts):
     if not pages:
         return
     chunk_size = math.ceil(len(missions) / len(pages))
-    async def process_chunk(page, chunk):
-        for mission_id, data in chunk:
+
+    async def process_chunk(page, chunk, thread_id):
+        prefix = f"[Mission Thread {thread_id}]"
+
+        async def process_mission(mission_id, data):
             if not await load_mission_page(page, mission_id, data.get("mission_name", "Unknown")):
-                continue
+                return
             btn = await page.query_selector('a.missing_vehicles_load.btn-warning')
             if btn:
                 await btn.click()
                 await page.wait_for_load_state('networkidle')
             missing = []
-            await handle_personnel(page, data, missing)
+            await handle_personnel(page, data, missing, mission_id)
             for req in data.get("vehicles", []):
                 needed = req.get("count", 0)
                 if needed <= 0:
@@ -92,24 +94,28 @@ async def navigate_and_dispatch(contexts):
                     remaining = max(0, crashed - covered)
                 if remaining > 0 and not get_dispatch_incomplete():
                     missing.append(("Tow Vehicles", remaining))
-            await handle_water_requirement(page, missing)
+            await handle_water_requirement(page, missing, mission_id)
             if missing and not get_dispatch_incomplete():
                 display_error(
-                    f"❌ Mission {mission_id} missing requirements: "
+                    f"{prefix} ❌ Mission {mission_id} missing requirements: "
                     + ", ".join([f"{m[0]}({m[1]})" for m in missing])
                 )
-                continue
+                return
             d = get_dispatch_type() or "default"
             selector = 'a[class*="alert_next_alliance"]' if d.lower() == "alliance" else '#alert_btn'
             btn = await page.query_selector(selector) or await page.query_selector('#alert_btn')
             if btn:
                 await btn.click()
-                display_info(f"Dispatched mission {mission_id}")
+                display_info(f"{prefix} Dispatched mission {mission_id}")
             else:
-                display_error(f"Dispatch button missing for {mission_id}")
+                display_error(f"{prefix} Dispatch button missing for {mission_id}")
+
+        tasks = [process_mission(mission_id, data) for mission_id, data in chunk]
+        await asyncio.gather(*tasks)
+
     tasks = []
     for i, page in enumerate(pages):
         chunk = missions[i*chunk_size:(i+1)*chunk_size]
         if chunk:
-            tasks.append(process_chunk(page, chunk))
+            tasks.append(process_chunk(page, chunk, i+1))
     await asyncio.gather(*tasks)

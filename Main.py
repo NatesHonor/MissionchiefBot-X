@@ -1,6 +1,7 @@
 import asyncio
 import os
 from playwright.async_api import async_playwright
+from utils.tasks import grab_tasks
 from setup.login_manager import BrowserPool, login_single
 from data.config_settings import (
     get_username,
@@ -8,7 +9,7 @@ from data.config_settings import (
     get_threads,
     get_headless,
     get_mission_delay,
-    get_transport_delay,
+    get_other_delay,
     get_concurrent_missions,
     get_dispatch_type
 )
@@ -18,12 +19,13 @@ from utils.pretty_print import display_info, display_error
 from utils.transport import handle_transport_requests
 from utils.vehicle_data import gather_vehicle_data
 
-async def transport_logic(context):
+async def other_logic(context):
     display_info("Starting transportation logic.")
     while True:
         try:
             await handle_transport_requests(context)
-            await asyncio.sleep(get_transport_delay())
+            await grab_tasks(context)
+            await asyncio.sleep(get_other_delay())
         except Exception as e:
             display_error(f"Error in transport logic: {e}")
 
@@ -88,7 +90,7 @@ async def main():
         display_info(f"Dispatch type: {dispatch_type}.")
         display_info(f"Concurrent missions are currently {'enabled' if concurrent else 'disabled'}.")
 
-        transport_context = contexts[0]
+        other_context = contexts[0]
         grabbing_contexts = contexts[1:]
         if concurrent:
             mission_contexts = grabbing_contexts
@@ -96,9 +98,9 @@ async def main():
             mission_contexts = grabbing_contexts[:1]
 
         mission_task = asyncio.create_task(mission_logic(grabbing_contexts, mission_contexts))
-        transport_task = asyncio.create_task(transport_logic(transport_context))
+        other_task = asyncio.create_task(other_logic(other_context))
 
-        await asyncio.gather(mission_task, transport_task)
+        await asyncio.gather(mission_task, other_task)
 
         for ctx in contexts:
             await ctx.close()
