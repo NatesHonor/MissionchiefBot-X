@@ -4,6 +4,17 @@ async def handle_transport_requests(context):
     page = context.pages[0]
     await page.goto("https://www.missionchief.com")
     await page.wait_for_load_state("networkidle")
+    prisoner_alerts = await page.query_selector_all("div.alert.alert-danger")
+    prisoner_missions = set()
+    for alert in prisoner_alerts:
+        txt = (await alert.inner_text()).strip().lower()
+        if "prisoners must be transported" in txt:
+            mission_id = await alert.get_attribute("id")
+            if mission_id and mission_id.startswith("mission_missing_"):
+                mission_id = mission_id.replace("mission_missing_", "")
+                prisoner_missions.add(mission_id)
+    if prisoner_missions:
+        display_info(f"Prisoner transport missions: {', '.join(prisoner_missions)}")
 
     transport_requests = await page.query_selector_all("ul#radio_messages_important li")
     display_info(f"Found {len(transport_requests)} transport requests")
@@ -32,15 +43,12 @@ async def handle_transport_requests(context):
                     name_el = await hospital.query_selector("td:first-child")
                     dist_el = await hospital.query_selector("td:nth-child(2)")
                     btn = await hospital.query_selector("a.btn.btn-success")
-
                     if not (name_el and dist_el and btn):
                         continue
-
                     try:
                         distance = float((await dist_el.inner_text()).split()[0])
                     except:
                         continue
-
                     if distance < smallest_distance:
                         smallest_distance = distance
                         chosen = (btn, await name_el.inner_text(), distance)
@@ -66,7 +74,6 @@ async def handle_transport_requests(context):
                         distance = float(text.split("Distance:")[1].split()[0])
                     except:
                         continue
-
                     if distance < smallest_distance:
                         smallest_distance = distance
                         chosen = (btn, text.strip(), distance)
