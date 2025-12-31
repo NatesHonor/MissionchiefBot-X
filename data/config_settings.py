@@ -53,6 +53,9 @@ def get_concurrent_missions():
 def get_auto_training():
     return config.getboolean('other', 'auto_training')
 
+def get_auto_tasks():
+    return config.getboolean('other', 'auto_tasks')
+
 
 # -----------------------------
 # Delays & Dynamic Settings

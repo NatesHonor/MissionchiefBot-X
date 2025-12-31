@@ -16,8 +16,7 @@
   "ems mobile command units": ["EMS Mobile Command Unit"],
 
   "k-9 unit": ["K-9 Unit"],
-  "police car": ["Patrol car"],
-  "patrol car": ["Patrol car"],
+  "patrol car": ["Police car"],
   "riot police unit": ["Riot Police Van", "Riot Police Bus"],
   "Warden's Truck": ["warden truck"],
   "sheriff": ["police supervisors / sheriff"],
@@ -29,7 +28,7 @@
   "fbi investigation wagon": ["FBI Investigation Wagon"],
   "fbi unit": ["FBI Unit"],
   "FBI Bomb Technician Vehicle": ["fbi bomb technician"],
-  "fbi drones or fbi investigation wagon": ["FBI Investigation Wagon", "FBI Surveillance Drone"],
+  "FBI Surveillance Drone": ["FBI Drone"],
 
 
   "SWAT Armoured Vehicle": ["SWAT SUV", "SWAT Armoured Vehicle", "swat armoured"],

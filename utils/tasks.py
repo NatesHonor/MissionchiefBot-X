@@ -63,10 +63,10 @@ async def grab_tasks(context):
 
         display_info(f"Saved {len(tasks)} unique tasks to {TASKS_FILE}")
 
-        claim_all_btn = await page.query_selector("form[action='/tasks/claim_all_rewards'] input[type='submit']")
-        if claim_all_btn:
-            display_info("Claim All button found, clicking...")
-            await claim_all_btn.click()
+        claim_all_form = await page.query_selector("form[action='/tasks/claim_all_rewards']")
+        if claim_all_form:
+            display_info("Claim All form found, submitting...")
+            await claim_all_form.evaluate("(form) => form.submit()")
             await page.wait_for_load_state("networkidle")
 
         await page.goto("https://www.missionchief.com")
