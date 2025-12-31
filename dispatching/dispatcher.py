@@ -2,6 +2,8 @@ import asyncio
 import json
 import math
 import re
+
+from data.cache import free_up_vehicles
 from data.config_settings import get_dispatch_type, get_dispatch_incomplete
 from utils.pretty_print import display_info, display_error
 from .vehicles import find_vehicle_ids, select_vehicles
@@ -93,6 +95,7 @@ async def navigate_and_dispatch(contexts):
                 missing.append(("Tow Vehicles", remaining))
         await handle_water_requirement(page, missing, mission_id)
         if missing and not get_dispatch_incomplete():
+            free_up_vehicles(mission_id)
             display_error(
                 f"{prefix} ❌ Mission {mission_id} missing requirements: "
                 + ", ".join([f"{m[0]}({m[1]})" for m in missing])

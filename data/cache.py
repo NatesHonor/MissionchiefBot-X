@@ -1,4 +1,5 @@
 import json, os
+from utils.pretty_print import display_info, display_error
 
 _vehicle_file = os.path.join(os.path.dirname(__file__), "vehicle_data.json")
 VEHICLE_DATA = None
@@ -25,6 +26,7 @@ def is_vehicle_locked(vehicle_id):
 def free_up_vehicles(mission_id):
     global _LOCKED_VEHICLES
     _LOCKED_VEHICLES = {vid: mid for vid, mid in _LOCKED_VEHICLES.items() if mid != mission_id}
+    display_info(f"Freed up vehicles for {mission_id}")
 
 def get_locked_vehicles(mission_id=None):
     if mission_id is None:
