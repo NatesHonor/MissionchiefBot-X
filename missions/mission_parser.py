@@ -6,6 +6,13 @@ from .helpers import get_val, normalize_name
 from .requirements import gather_requirements
 from .prisoners import handle_prisoner_transport
 
+_LOCKED_VEHICLES = {}
+
+def free_up_vehicles(mission_id):
+    global _LOCKED_VEHICLES
+    _LOCKED_VEHICLES = {vid: mid for vid, mid in _LOCKED_VEHICLES.items() if mid != mission_id}
+    display_info(f"Freeing up mission: {mission_id}")
+
 def load_vehicle_aliases():
     parent_dir = os.path.dirname(os.path.dirname(__file__))
     alias_file = os.path.join(parent_dir, "data", "vehicle_aliases.json")
@@ -29,6 +36,19 @@ def resolve_vehicle_entry(raw_name: str, count: int):
 
 async def gather_mission_info(ids, context, tid):
     data = {}
+    old_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "cache", "mission_data.json")
+    old_ids = set()
+    if os.path.exists(old_file):
+        try:
+            with open(old_file, "r", encoding="utf-8") as f:
+                old_data = json.load(f)
+                old_ids = set(old_data.keys())
+        except:
+            old_ids = set()
+    new_ids = set(ids)
+    removed_ids = old_ids - new_ids
+    for rid in removed_ids:
+        free_up_vehicles(rid)
     if not context.pages:
         await context.new_page()
     page = context.pages[0]
@@ -41,9 +61,7 @@ async def gather_mission_info(ids, context, tid):
             if not name_el:
                 continue
             name = (await name_el.inner_text()).strip()
-
             requirements_handled = False
-
             missing_alerts = await page.query_selector_all("div.alert-missing-vehicles div[data-requirement-type='personnel']")
             if missing_alerts:
                 personnel_reqs = []
@@ -64,7 +82,6 @@ async def gather_mission_info(ids, context, tid):
                     "crashed_cars": 0,
                 }
                 requirements_handled = True
-
             if not requirements_handled:
                 for alert in await page.query_selector_all("div.alert.alert-danger"):
                     txt = (await alert.inner_text()).lower()
@@ -103,10 +120,8 @@ async def gather_mission_info(ids, context, tid):
                             }
                             requirements_handled = True
                             break
-
             if requirements_handled:
                 continue
-
             await page.click("#mission_help")
             await page.wait_for_selector("#iframe-inside-container", timeout=5000)
             requirements = await gather_requirements(page)

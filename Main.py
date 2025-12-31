@@ -1,6 +1,8 @@
 import asyncio
 import os
 from playwright.async_api import async_playwright
+
+from missions.buildings import gather_building_data
 from utils.tasks import grab_tasks
 from setup.login_manager import BrowserPool, login_single
 from data.config_settings import (
@@ -11,6 +13,7 @@ from data.config_settings import (
     get_mission_delay,
     get_other_delay,
     get_concurrent_missions,
+    get_auto_tasks,
     get_dispatch_type
 )
 from dispatching import navigate_and_dispatch
@@ -24,24 +27,28 @@ async def other_logic(context):
     while True:
         try:
             await handle_transport_requests(context)
-            await grab_tasks(context)
+            if get_auto_tasks():
+                await grab_tasks(context)
             await asyncio.sleep(get_other_delay())
         except Exception as e:
             display_error(f"Error in transport logic: {e}")
+
 
 async def mission_logic(grabbing_contexts, dispatch_contexts):
     display_info("Starting mission logic.")
     while True:
         try:
-            if os.path.exists("data/vehicle_data.json"):
-                await check_and_grab_missions(grabbing_contexts, len(grabbing_contexts))
-            else:
+            if not os.path.exists("data/vehicle_data.json"):
                 await gather_vehicle_data(grabbing_contexts, len(grabbing_contexts))
-                await check_and_grab_missions(grabbing_contexts, len(grabbing_contexts))
+            if not os.path.exists("data/building_data.json"):
+                await gather_building_data(grabbing_contexts, len(grabbing_contexts))
+
+            await check_and_grab_missions(grabbing_contexts, len(grabbing_contexts))
             await navigate_and_dispatch(dispatch_contexts)
             await asyncio.sleep(get_mission_delay())
         except Exception as e:
             display_error(f"Error in mission logic: {e}")
+
 
 async def main():
     username = get_username()
