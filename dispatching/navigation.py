@@ -7,10 +7,12 @@ async def load_mission_page(page, mission_id, name):
         try:
             display_info(f"Navigating: {url} (Attempt {attempt+1})")
             await page.goto(url, wait_until="domcontentloaded", timeout=10000)
-            await page.wait_for_selector('#missionH1', timeout=5000)
+            await page.wait_for_selector('#missionH1', timeout=10000)
+            await page.wait_for_selector('#alert_btn', timeout=10000)
             display_info(f"Loaded mission {name} ({mission_id})")
             return True
-        except:
+        except Exception as e:
+            display_error(f"Load attempt {attempt+1} failed for mission {mission_id}: {e}")
             if attempt == 1:
                 display_error(f"❌ Failed loading mission {mission_id}, skipping.")
                 return False
