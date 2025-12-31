@@ -8,14 +8,15 @@ from data.config_settings import (
     get_threads,
     get_headless,
     get_mission_delay,
-    get_transport_delay
+    get_transport_delay,
+    get_concurrent_missions,
+    get_dispatch_type
 )
 from dispatching import navigate_and_dispatch
 from missions import check_and_grab_missions
 from utils.pretty_print import display_info, display_error
 from utils.transport import handle_transport_requests
 from utils.vehicle_data import gather_vehicle_data
-
 
 async def transport_logic(context):
     display_info("Starting transportation logic.")
@@ -26,22 +27,19 @@ async def transport_logic(context):
         except Exception as e:
             display_error(f"Error in transport logic: {e}")
 
-
-async def mission_logic(contexts):
+async def mission_logic(grabbing_contexts, dispatch_contexts):
     display_info("Starting mission logic.")
     while True:
         try:
             if os.path.exists("data/vehicle_data.json"):
-                await check_and_grab_missions(contexts, len(contexts))
+                await check_and_grab_missions(grabbing_contexts, len(grabbing_contexts))
             else:
-                await gather_vehicle_data(contexts, len(contexts))
-                await check_and_grab_missions(contexts, len(contexts))
-
-            await navigate_and_dispatch(contexts)
+                await gather_vehicle_data(grabbing_contexts, len(grabbing_contexts))
+                await check_and_grab_missions(grabbing_contexts, len(grabbing_contexts))
+            await navigate_and_dispatch(dispatch_contexts)
             await asyncio.sleep(get_mission_delay())
         except Exception as e:
             display_error(f"Error in mission logic: {e}")
-
 
 async def main():
     username = get_username()
@@ -82,10 +80,22 @@ async def main():
             await browser_pool.close_all()
             return
 
-        transport_context = contexts[0]
-        mission_contexts = contexts[1:]
+        concurrent = get_concurrent_missions()
+        dispatch_type = get_dispatch_type()
+        display_info("Pooled settings:")
+        display_info(f"Headless browsers: {'enabled' if headless else 'disabled'}.")
+        display_info(f"Thread Count: {threads}")
+        display_info(f"Dispatch type: {dispatch_type}.")
+        display_info(f"Concurrent missions are currently {'enabled' if concurrent else 'disabled'}.")
 
-        mission_task = asyncio.create_task(mission_logic(mission_contexts))
+        transport_context = contexts[0]
+        grabbing_contexts = contexts[1:]
+        if concurrent:
+            mission_contexts = grabbing_contexts
+        else:
+            mission_contexts = grabbing_contexts[:1]
+
+        mission_task = asyncio.create_task(mission_logic(grabbing_contexts, mission_contexts))
         transport_task = asyncio.create_task(transport_logic(transport_context))
 
         await asyncio.gather(mission_task, transport_task)
@@ -94,7 +104,6 @@ async def main():
             await ctx.close()
 
         await browser_pool.close_all()
-
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -44,6 +44,8 @@ def get_dispatch_incomplete():
 def get_dynamic_missions():
     return config.getboolean('missions', 'dynamic_missions')
 
+def get_concurrent_missions():
+    return config.getboolean('missions', 'dispatch_concurrent_missions')
 
 # -----------------------------
 # Other Settings

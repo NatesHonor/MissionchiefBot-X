@@ -1,4 +1,6 @@
+import asyncio
 import json
+import math
 import re
 from data.config_settings import get_dispatch_type, get_dispatch_incomplete
 from utils.pretty_print import display_info, display_error
@@ -44,61 +46,70 @@ async def handle_water_requirement(page, missing):
     if selected < need and not get_dispatch_incomplete():
         missing.append(("Water", need - selected))
 
+
 async def navigate_and_dispatch(contexts):
     with open('data/mission_data.json') as f:
-        missions = json.load(f)
-    if not contexts or not contexts[0].pages:
+        missions = list(json.load(f).items())
+    pages = [ctx.pages[0] for ctx in contexts if ctx.pages]
+    if not pages:
         return
-    page = contexts[0].pages[0]
-    for mission_id, data in missions.items():
-        if not await load_mission_page(page, mission_id, data.get("mission_name", "Unknown")):
-            continue
-        btn = await page.query_selector('a.missing_vehicles_load.btn-warning')
-        if btn:
-            await btn.click()
-            await page.wait_for_load_state('networkidle')
-        missing = []
-        await handle_personnel(page, data, missing)
-        for req in data.get("vehicles", []):
-            needed = req.get("count", 0)
-            if needed <= 0:
+    chunk_size = math.ceil(len(missions) / len(pages))
+    async def process_chunk(page, chunk):
+        for mission_id, data in chunk:
+            if not await load_mission_page(page, mission_id, data.get("mission_name", "Unknown")):
                 continue
-            used_total = 0
-            for opt in req.get("options", []):
-                if used_total >= needed:
-                    break
-                ids = await find_vehicle_ids(opt)
-                used = await select_vehicles(page, ids, needed - used_total, opt)
-                used_total += used
-            if used_total < needed and not get_dispatch_incomplete():
-                missing.append(("/".join(req.get("options", [])), needed - used_total))
-        crashed = data.get("crashed_cars", 0)
-        if crashed > 0:
-            flatbeds = await find_vehicle_ids("Flatbed Carrier")
-            used_flatbed = await select_vehicles(page, flatbeds, crashed, "Flatbed Carrier")
-            covered = 2 * used_flatbed
-            remaining = max(0, crashed - covered)
-            if remaining > 0:
-                wreckers = []
-                for w in ["Wrecker", "Police Wrecker", "Fire Wrecker"]:
-                    wreckers.extend(await find_vehicle_ids(w))
-                used = await select_vehicles(page, wreckers, remaining, "Wrecker Police Wrecker Fire Wrecker")
-                covered += used
+            btn = await page.query_selector('a.missing_vehicles_load.btn-warning')
+            if btn:
+                await btn.click()
+                await page.wait_for_load_state('networkidle')
+            missing = []
+            await handle_personnel(page, data, missing)
+            for req in data.get("vehicles", []):
+                needed = req.get("count", 0)
+                if needed <= 0:
+                    continue
+                used_total = 0
+                for opt in req.get("options", []):
+                    if used_total >= needed:
+                        break
+                    ids = await find_vehicle_ids(opt)
+                    used = await select_vehicles(page, ids, needed - used_total, opt, mission_id)
+                    used_total += used
+                if used_total < needed and not get_dispatch_incomplete():
+                    missing.append(("/".join(req.get("options", [])), needed - used_total))
+            crashed = data.get("crashed_cars", 0)
+            if crashed > 0:
+                flatbeds = await find_vehicle_ids("Flatbed Carrier")
+                used_flatbed = await select_vehicles(page, flatbeds, crashed, "Flatbed Carrier", mission_id)
+                covered = 2 * used_flatbed
                 remaining = max(0, crashed - covered)
-            if remaining > 0 and not get_dispatch_incomplete():
-                missing.append(("Tow Vehicles", remaining))
-        await handle_water_requirement(page, missing)
-        if missing and not get_dispatch_incomplete():
-            display_error(
-                f"❌ Mission {mission_id} missing requirements: "
-                + ", ".join([f"{m[0]}({m[1]})" for m in missing])
-            )
-            continue
-        d = get_dispatch_type() or "default"
-        selector = 'a[class*="alert_next_alliance"]' if d.lower() == "alliance" else '#alert_btn'
-        btn = await page.query_selector(selector) or await page.query_selector('#alert_btn')
-        if btn:
-            await btn.click()
-            display_info(f"Dispatched mission {mission_id}")
-        else:
-            display_error(f"Dispatch button missing for {mission_id}")
+                if remaining > 0:
+                    wreckers = []
+                    for w in ["Wrecker", "Police Wrecker", "Fire Wrecker"]:
+                        wreckers.extend(await find_vehicle_ids(w))
+                    used = await select_vehicles(page, wreckers, remaining, "Wrecker Police Wrecker Fire Wrecker", mission_id)
+                    covered += used
+                    remaining = max(0, crashed - covered)
+                if remaining > 0 and not get_dispatch_incomplete():
+                    missing.append(("Tow Vehicles", remaining))
+            await handle_water_requirement(page, missing)
+            if missing and not get_dispatch_incomplete():
+                display_error(
+                    f"❌ Mission {mission_id} missing requirements: "
+                    + ", ".join([f"{m[0]}({m[1]})" for m in missing])
+                )
+                continue
+            d = get_dispatch_type() or "default"
+            selector = 'a[class*="alert_next_alliance"]' if d.lower() == "alliance" else '#alert_btn'
+            btn = await page.query_selector(selector) or await page.query_selector('#alert_btn')
+            if btn:
+                await btn.click()
+                display_info(f"Dispatched mission {mission_id}")
+            else:
+                display_error(f"Dispatch button missing for {mission_id}")
+    tasks = []
+    for i, page in enumerate(pages):
+        chunk = missions[i*chunk_size:(i+1)*chunk_size]
+        if chunk:
+            tasks.append(process_chunk(page, chunk))
+    await asyncio.gather(*tasks)
