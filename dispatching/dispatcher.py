@@ -57,7 +57,7 @@ async def navigate_and_dispatch(contexts, url):
     chunk_size = math.ceil(len(missions) / len(pages))
 
     async def process_mission(page, mission_id, data, prefix):
-        if not await load_mission_page(page, mission_id, data.get("mission_name", "Unknown")):
+        if not await load_mission_page(page, mission_id, data.get("mission_name", "Unknown"), url):
             return
         btn = await page.query_selector('a.missing_vehicles_load.btn-warning')
         if btn:
