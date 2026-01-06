@@ -56,6 +56,9 @@ def get_auto_training():
 def get_auto_tasks():
     return config.getboolean('other', 'auto_tasks')
 
+def get_region():
+    return config.get('bot', 'region')
+
 
 # -----------------------------
 # Delays & Dynamic Settings
