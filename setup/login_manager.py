@@ -34,7 +34,8 @@ async def login_single(
         password,
         thread_id,
         delay,
-        browser_pool
+        browser_pool,
+        url
 ):
     if delay:
         await asyncio.sleep(delay)
@@ -50,7 +51,7 @@ async def login_single(
             page = await context.new_page()
 
             await page.goto(
-                "https://www.missionchief.com/users/sign_in",
+                url + "users/sign_in",
                 wait_until="domcontentloaded"
             )
 
@@ -72,7 +73,7 @@ async def login_single(
                 await browser_pool.release(browser)
                 return "Failure", "Invalid credentials", None
 
-            if "missionchief.com" not in page.url:
+            if url not in page.url:
                 raise RuntimeError(f"Unexpected domain after login: {page.url}")
 
             display_info(f"Thread {thread_id}: Login successful")

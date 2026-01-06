@@ -6,12 +6,12 @@ from deep_translator import GoogleTranslator
 
 BUILDING_FILE = os.path.join("data", "building_data.json")
 
-async def gather_building_data_single(context, thread_id):
+async def gather_building_data_single(context, thread_id, url):
     try:
         display_info(f"[Building Thread {thread_id}] Starting building data grab")
         page = context.pages[0]
-        display_info(f"[Building Thread {thread_id}] Navigating to missionchief.com")
-        await page.goto("https://www.missionchief.com/")
+        display_info(f"[Building Thread {thread_id}] Navigating to {url}")
+        await page.goto(url)
         await page.wait_for_load_state("networkidle")
         display_info(f"[Building Thread {thread_id}] Page loaded")
 
@@ -63,9 +63,9 @@ async def gather_building_data_single(context, thread_id):
         display_error(f"[Building Thread {thread_id}] Error gathering building data: {e}")
         return {}
 
-async def gather_building_data(contexts, thread_count):
+async def gather_building_data(contexts, thread_count, url):
     display_info(f"[Building] Starting gather across {thread_count} threads")
-    tasks = [gather_building_data_single(ctx, i+1) for i, ctx in enumerate(contexts[:thread_count])]
+    tasks = [gather_building_data_single(ctx, i+1, url) for i, ctx in enumerate(contexts[:thread_count])]
     results = await asyncio.gather(*tasks)
     display_info(f"[Building] Gather complete, merging results")
 
@@ -82,10 +82,10 @@ async def gather_building_data(contexts, thread_count):
 
     display_info(f"[Building] Saved building data to {BUILDING_FILE} with {len(merged)} categories total")
 
-async def ensure_building_data(contexts, thread_count):
+async def ensure_building_data(contexts, thread_count, url):
     display_info("[Building] Ensuring building data file exists")
     if not os.path.exists(BUILDING_FILE):
         display_info("[Building] File missing, gathering data now")
-        await gather_building_data(contexts, thread_count)
+        await gather_building_data(contexts, thread_count, url)
     else:
         display_info("[Building] File already exists, skipping gather")

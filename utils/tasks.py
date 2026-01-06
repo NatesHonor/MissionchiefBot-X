@@ -8,10 +8,10 @@ TASKS_FILE = "data/tasks.json"
 def clean_text(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
-async def grab_tasks(context):
+async def grab_tasks(context, url):
     try:
         page = context.pages[0]
-        await page.goto("https://www.missionchief.com/tasks/index")
+        await page.goto(url + f"/tasks/index")
         await page.wait_for_load_state("networkidle")
 
         panels = await page.query_selector_all("div.task_panel")
@@ -69,7 +69,7 @@ async def grab_tasks(context):
             await claim_all_form.evaluate("(form) => form.submit()")
             await page.wait_for_load_state("networkidle")
 
-        await page.goto("https://www.missionchief.com")
+        await page.goto(url)
         await page.wait_for_load_state("networkidle")
 
     except Exception as e:
