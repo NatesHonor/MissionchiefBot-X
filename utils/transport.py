@@ -1,8 +1,8 @@
 from utils.pretty_print import display_info, display_error
 
-async def handle_transport_requests(context):
+async def handle_transport_requests(context, url):
     page = context.pages[0]
-    await page.goto("https://www.missionchief.com")
+    await page.goto(url)
     await page.wait_for_load_state("networkidle")
     prisoner_alerts = await page.query_selector_all("div.alert.alert-danger")
     prisoner_missions = set()
@@ -25,7 +25,7 @@ async def handle_transport_requests(context):
         if img:
             vehicle_id = await img.get_attribute("vehicle_id")
             if vehicle_id:
-                vehicle_urls.append(f"https://www.missionchief.com/vehicles/{vehicle_id}")
+                vehicle_urls.append(url + f"/vehicles/{vehicle_id}")
 
     for vehicle_url in vehicle_urls:
         try:
