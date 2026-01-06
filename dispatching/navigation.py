@@ -1,12 +1,12 @@
 import asyncio
 from utils.pretty_print import display_info, display_error
 
-async def load_mission_page(page, mission_id, name):
-    url = f"https://www.missionchief.com/missions/{mission_id}"
+async def load_mission_page(page, mission_id, name, url):
+    murl = url + "missions/{mission_id}"
     for attempt in range(2):
         try:
-            display_info(f"Navigating: {url} (Attempt {attempt+1})")
-            await page.goto(url, wait_until="domcontentloaded", timeout=10000)
+            display_info(f"Navigating: {murl} (Attempt {attempt+1})")
+            await page.goto(murl, wait_until="domcontentloaded", timeout=10000)
             await page.wait_for_selector('#missionH1', timeout=10000)
             await page.wait_for_selector('#alert_btn', timeout=10000)
             display_info(f"Loaded mission {name} ({mission_id})")

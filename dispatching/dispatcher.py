@@ -48,7 +48,7 @@ async def handle_water_requirement(page, missing, mission_id):
     if selected < need and not get_dispatch_incomplete():
         missing.append(("Water", need - selected))
 
-async def navigate_and_dispatch(contexts):
+async def navigate_and_dispatch(contexts, url):
     with open('data/mission_data.json') as f:
         missions = list(json.load(f).items())
     pages = [ctx.pages[0] for ctx in contexts if ctx.pages]

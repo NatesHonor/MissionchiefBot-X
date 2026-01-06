@@ -2,6 +2,7 @@ import asyncio
 import os
 from playwright.async_api import async_playwright
 
+from data.region_tracker import get_url, setup_region
 from missions.buildings import gather_building_data
 from utils.tasks import grab_tasks
 from setup.login_manager import BrowserPool, login_single
@@ -22,40 +23,42 @@ from utils.pretty_print import display_info, display_error
 from utils.transport import handle_transport_requests
 from utils.vehicle_data import gather_vehicle_data
 
-async def other_logic(context):
+async def other_logic(context, url):
     display_info("Starting transportation logic.")
     while True:
         try:
-            await handle_transport_requests(context)
+            await handle_transport_requests(context, url)
             if get_auto_tasks():
-                await grab_tasks(context)
+                await grab_tasks(context, url)
             await asyncio.sleep(get_other_delay())
         except Exception as e:
             display_error(f"Error in transport logic: {e}")
 
 
-async def mission_logic(grabbing_contexts, dispatch_contexts):
+async def mission_logic(grabbing_contexts, dispatch_contexts, url):
     display_info("Starting mission logic.")
     while True:
         try:
             if not os.path.exists("data/vehicle_data.json"):
-                await gather_vehicle_data(grabbing_contexts, len(grabbing_contexts))
+                await gather_vehicle_data(grabbing_contexts, len(grabbing_contexts), url)
             if not os.path.exists("data/building_data.json"):
-                await gather_building_data(grabbing_contexts, len(grabbing_contexts))
+                await gather_building_data(grabbing_contexts, len(grabbing_contexts), url)
 
-            await check_and_grab_missions(grabbing_contexts, len(grabbing_contexts))
-            await navigate_and_dispatch(dispatch_contexts)
+            await check_and_grab_missions(grabbing_contexts, len(grabbing_contexts), url)
+            await navigate_and_dispatch(dispatch_contexts, url)
             await asyncio.sleep(get_mission_delay())
         except Exception as e:
             display_error(f"Error in mission logic: {e}")
 
 
 async def main():
+    setup_region()
+
     username = get_username()
     password = get_password()
     threads = get_threads()
     headless = get_headless()
-
+    url = get_url()
     async with async_playwright() as p:
         browser_pool = BrowserPool(
             playwright=p,
@@ -70,7 +73,8 @@ async def main():
                 password=password,
                 thread_id=i + 1,
                 delay=i * 1.5,
-                browser_pool=browser_pool
+                browser_pool=browser_pool,
+                url=url
             )
             for i in range(threads)
         ]
@@ -104,8 +108,8 @@ async def main():
         else:
             mission_contexts = grabbing_contexts[:1]
 
-        mission_task = asyncio.create_task(mission_logic(grabbing_contexts, mission_contexts))
-        other_task = asyncio.create_task(other_logic(other_context))
+        mission_task = asyncio.create_task(mission_logic(grabbing_contexts, mission_contexts, url))
+        other_task = asyncio.create_task(other_logic(other_context, url))
 
         await asyncio.gather(mission_task, other_task)
 

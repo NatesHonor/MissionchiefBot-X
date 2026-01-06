@@ -1,12 +1,12 @@
 import asyncio
 from .mission_parser import gather_mission_info
 
-async def split_mission_ids_among_threads(ids, contexts, n):
+async def split_mission_ids_among_threads(ids, contexts, n, url):
     for ctx in contexts:
         if not ctx.pages:
             await ctx.new_page()
     tasks = [
-        gather_mission_info(ids[i::n], contexts[i], i + 1)
+        gather_mission_info(ids[i::n], contexts[i], i + 1, url)
         for i in range(min(n, len(contexts)))
     ]
     results = await asyncio.gather(*tasks)

@@ -34,7 +34,7 @@ def resolve_vehicle_entry(raw_name: str, count: int):
     opts = [resolve_vehicle_name(normalize_name(p)) for p in parts]
     return {"options": opts, "count": count}
 
-async def gather_mission_info(ids, context, tid):
+async def gather_mission_info(ids, context, tid, url):
     data = {}
     old_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "cache", "mission_data.json")
     old_ids = set()
@@ -55,7 +55,7 @@ async def gather_mission_info(ids, context, tid):
     for i, mid in enumerate(ids):
         try:
             display_info(f"Thread {tid}: Grabbing missions {i+1}/{len(ids)}")
-            await page.goto(f"https://www.missionchief.com/missions/{mid}")
+            await page.goto(url + f"missions/{mid}")
             await page.wait_for_selector("#missionH1", timeout=5000)
             name_el = await page.query_selector("#missionH1")
             if not name_el:
