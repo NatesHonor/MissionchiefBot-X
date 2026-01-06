@@ -2,7 +2,7 @@ import asyncio
 from utils.pretty_print import display_info, display_error
 
 async def load_mission_page(page, mission_id, name, url):
-    murl = url + "missions/{mission_id}"
+    murl = url + f"missions/{mission_id}"
     for attempt in range(2):
         try:
             display_info(f"Navigating: {murl} (Attempt {attempt+1})")
