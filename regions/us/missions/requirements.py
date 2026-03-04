@@ -1,10 +1,17 @@
-import json, re
+import json
+import re
+from pathlib import Path
+from config.config_settings import get_region
 from .helpers import normalize_name
 
-with open("data/requirement_mapping.json") as f:
+BASE_DIR = Path(__file__).resolve().parents[3]
+REGION = get_region().lower()
+DATA_DIR = BASE_DIR / "regions" / REGION / "data"
+
+with open(DATA_DIR / "requirement_mapping.json") as f:
     REQUIREMENT_MAP = json.load(f)
 
-with open("data/personnel_aliases.json") as f:
+with open(DATA_DIR / "personnel_aliases.json") as f:
     PERSONNEL_ALIASES = json.load(f)
 
 def resolve_personnel(name: str) -> str:
@@ -53,6 +60,7 @@ async def gather_requirements(page):
                             c, n = int(m.group(1)), normalize_name(m.group(2))
                             canonical = resolve_personnel(n)
                             reqs["personnel"].append({"name": canonical, "count": c})
+
     for p in reqs["personnel"]:
         if p["name"].lower() == "swat personnel":
             div = p["count"] // 6
@@ -60,6 +68,9 @@ async def gather_requirements(page):
                 for v in reqs["vehicles"]:
                     if "swat armoured vehicle" in v["name"].lower():
                         v["count"] = max(0, v["count"] - div)
-                reqs["vehicles"] = [v for v in reqs["vehicles"] if not (v["name"].lower().startswith("swat armoured vehicle") and v["count"] == 0)]
+                reqs["vehicles"] = [
+                    v for v in reqs["vehicles"]
+                    if not (v["name"].lower().startswith("swat armoured vehicle") and v["count"] == 0)
+                ]
 
     return reqs

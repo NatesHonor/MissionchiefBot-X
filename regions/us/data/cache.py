@@ -1,5 +1,5 @@
 import json, os
-from utils.pretty_print import display_info, display_error
+from utils.pretty_print import display_info
 
 _vehicle_file = os.path.join(os.path.dirname(__file__), "vehicle_data.json")
 VEHICLE_DATA = None

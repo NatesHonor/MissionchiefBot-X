@@ -3,8 +3,8 @@ import json
 import math
 import re
 
-from data.cache import free_up_vehicles
-from data.config_settings import get_dispatch_type, get_dispatch_incomplete
+from regions.us.data.cache import free_up_vehicles
+from config.config_settings import get_dispatch_type, get_dispatch_incomplete
 from utils.pretty_print import display_info, display_error
 from .vehicles import find_vehicle_ids, select_vehicles
 from .personnel import handle_personnel
@@ -14,7 +14,7 @@ async def read_water_status(page):
     bar = await page.query_selector('div[class*="mission_water_bar_selected_"]')
     if not bar:
         return 0, 0
-    need_attr = await bar.get_attribute("data-need_water")
+    need_attr = await bar.get_attribute("config-need_water")
     need = int(need_attr) if need_attr and need_attr.isdigit() else 0
     txt = await bar.inner_text()
     m = re.search(r"Selected:\s*([\d,]+)\s*gal", txt)
@@ -49,7 +49,7 @@ async def handle_water_requirement(page, missing, mission_id):
         missing.append(("Water", need - selected))
 
 async def navigate_and_dispatch(contexts, url):
-    with open('data/mission_data.json') as f:
+    with open('regions/us/data/mission_data.json') as f:
         missions = list(json.load(f).items())
     pages = [ctx.pages[0] for ctx in contexts if ctx.pages]
     if not pages:

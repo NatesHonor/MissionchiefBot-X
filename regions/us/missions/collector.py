@@ -1,6 +1,14 @@
-import os, json
+import json
+from pathlib import Path
+from config.config_settings import get_region
 from utils.pretty_print import display_info, display_error
-from .threading import split_mission_ids_among_threads
+from utils.threading import split_mission_ids_among_threads
+
+BASE_DIR = Path(__file__).resolve().parents[3]
+REGION = get_region().lower()
+DATA_DIR = BASE_DIR / "regions" / REGION / "data"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+MISSION_FILE = DATA_DIR / "mission_data.json"
 
 async def check_and_grab_missions(contexts, num_threads, url):
     if not isinstance(contexts, list):
@@ -10,8 +18,8 @@ async def check_and_grab_missions(contexts, num_threads, url):
     if not contexts[0].pages:
         await contexts[0].new_page()
     try:
-        if os.path.exists("data/mission_data.json"):
-            os.remove("data/mission_data.json")
+        if MISSION_FILE.exists():
+            MISSION_FILE.unlink()
         page = contexts[0].pages[0]
         await page.goto(url)
         await page.wait_for_load_state("networkidle")
@@ -22,8 +30,8 @@ async def check_and_grab_missions(contexts, num_threads, url):
         ids = [(await p.get_attribute("id")).split("_")[-1] for p in panels]
         display_info(f"Found {len(ids)} mission IDs.")
         data = await split_mission_ids_among_threads(ids, contexts, min(num_threads, len(contexts)), url)
-        with open("data/mission_data.json", "w") as f:
+        with open(MISSION_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4)
-        display_info("Mission data collection complete. Stored mission data in mission_data.json.")
+        display_info("Mission config collection complete. Stored mission config in mission_data.json.")
     except Exception as e:
-        display_error(f"Error gathering mission data: {e}")
+        display_error(f"Error gathering mission config: {e}")

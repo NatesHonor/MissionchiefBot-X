@@ -1,4 +1,4 @@
-from data.config_settings import get_region
+from config.config_settings import get_region
 
 _url = None
 

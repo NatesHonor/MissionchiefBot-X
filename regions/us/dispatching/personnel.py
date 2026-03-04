@@ -1,5 +1,5 @@
 import re
-from data.config_settings import get_dispatch_incomplete
+from config.config_settings import get_dispatch_incomplete
 from utils.personnel_options import get_personnel_options
 from .vehicles import find_vehicle_ids, select_vehicles
 from .utils import normalize_key, canonical_personnel

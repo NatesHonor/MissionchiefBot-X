@@ -3,7 +3,7 @@ import json
 from utils.pretty_print import display_info, display_error
 
 
-async def gather_vehicle_data(contexts, num_threads, url):
+async def gather_vehicle_data(contexts, num_threads, url, save_path):
     if not isinstance(contexts, list):
         contexts = [contexts]
     if not contexts:
@@ -25,12 +25,12 @@ async def gather_vehicle_data(contexts, num_threads, url):
         threads = min(num_threads, len(contexts)) if num_threads else len(contexts)
         vehicle_data = await split_vehicle_ids_among_threads(vehicle_ids, contexts, threads, url)
 
-        with open("data/vehicle_data.json", "w") as outfile:
+        with open(save_path, "w", encoding="utf-8") as outfile:
             json.dump(vehicle_data, outfile, indent=4)
 
-        display_info("Vehicle data collection complete. Stored vehicle data in vehicle_data.json.")
+        display_info(f"Vehicle config collection complete. Stored vehicle config in {save_path}.")
     except Exception as e:
-        display_error(f"Error gathering vehicle data: {e}")
+        display_error(f"Error gathering vehicle config: {e}")
 
 
 async def gather_vehicle_info(vehicle_ids, context, thread_id, url):
