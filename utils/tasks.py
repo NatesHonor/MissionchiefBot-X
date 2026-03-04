@@ -3,7 +3,7 @@ import os
 import re
 from utils.pretty_print import display_info, display_error
 
-TASKS_FILE = "data/tasks.json"
+TASKS_FILE = "config/tasks.json"
 
 def clean_text(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
@@ -57,7 +57,7 @@ async def grab_tasks(context, url):
                 "rewards": rewards
             })
 
-        os.makedirs("data", exist_ok=True)
+        os.makedirs("config", exist_ok=True)
         with open(TASKS_FILE, "w", encoding="utf-8") as f:
             json.dump(tasks, f, indent=2, ensure_ascii=False)
 

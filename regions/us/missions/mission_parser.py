@@ -1,12 +1,19 @@
 import re
 import json
-import os
-from utils.pretty_print import display_info, display_error
+from pathlib import Path
+from config.config_settings import get_region
 from .helpers import get_val, normalize_name
 from .requirements import gather_requirements
 from .prisoners import handle_prisoner_transport
+from utils.pretty_print import display_info, display_error
 
 _LOCKED_VEHICLES = {}
+
+BASE_DIR = Path(__file__).resolve().parents[3]
+REGION = get_region().lower()
+DATA_DIR = BASE_DIR / "regions" / REGION / "data"
+CACHE_DIR = DATA_DIR / "cache"
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 def free_up_vehicles(mission_id):
     global _LOCKED_VEHICLES
@@ -14,8 +21,7 @@ def free_up_vehicles(mission_id):
     display_info(f"Freeing up mission: {mission_id}")
 
 def load_vehicle_aliases():
-    parent_dir = os.path.dirname(os.path.dirname(__file__))
-    alias_file = os.path.join(parent_dir, "data", "vehicle_aliases.json")
+    alias_file = DATA_DIR / "vehicle_aliases.json"
     with open(alias_file, "r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -36,9 +42,9 @@ def resolve_vehicle_entry(raw_name: str, count: int):
 
 async def gather_mission_info(ids, context, tid, url):
     data = {}
-    old_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "cache", "mission_data.json")
+    old_file = CACHE_DIR / "mission_data.json"
     old_ids = set()
-    if os.path.exists(old_file):
+    if old_file.exists():
         try:
             with open(old_file, "r", encoding="utf-8") as f:
                 old_data = json.load(f)
@@ -62,7 +68,7 @@ async def gather_mission_info(ids, context, tid, url):
                 continue
             name = (await name_el.inner_text()).strip()
             requirements_handled = False
-            missing_alerts = await page.query_selector_all("div.alert-missing-vehicles div[data-requirement-type='personnel']")
+            missing_alerts = await page.query_selector_all("div.alert-missing-vehicles div[config-requirement-type='personnel']")
             if missing_alerts:
                 personnel_reqs = []
                 for alert in missing_alerts:

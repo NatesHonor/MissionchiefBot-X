@@ -4,11 +4,11 @@ import asyncio
 from utils.pretty_print import display_info, display_error
 from deep_translator import GoogleTranslator
 
-BUILDING_FILE = os.path.join("data", "building_data.json")
+BUILDING_FILE = os.path.join("config", "building_data.json")
 
 async def gather_building_data_single(context, thread_id, url):
     try:
-        display_info(f"[Building Thread {thread_id}] Starting building data grab")
+        display_info(f"[Building Thread {thread_id}] Starting building config grab")
         page = context.pages[0]
         display_info(f"[Building Thread {thread_id}] Navigating to {url}")
         await page.goto(url)
@@ -60,7 +60,7 @@ async def gather_building_data_single(context, thread_id, url):
         display_info(f"[Building Thread {thread_id}] Finished with {len(building_data)} categories")
         return building_data
     except Exception as e:
-        display_error(f"[Building Thread {thread_id}] Error gathering building data: {e}")
+        display_error(f"[Building Thread {thread_id}] Error gathering building config: {e}")
         return {}
 
 async def gather_building_data(contexts, thread_count, url):
@@ -76,16 +76,16 @@ async def gather_building_data(contexts, thread_count, url):
             merged.setdefault(k, []).extend(v)
             display_info(f"[Building] Category {k} now has {len(merged[k])} ids")
 
-    os.makedirs("data", exist_ok=True)
+    os.makedirs("config", exist_ok=True)
     with open(BUILDING_FILE, "w", encoding="utf-8") as f:
         json.dump(merged, f, indent=2, ensure_ascii=False)
 
-    display_info(f"[Building] Saved building data to {BUILDING_FILE} with {len(merged)} categories total")
+    display_info(f"[Building] Saved building config to {BUILDING_FILE} with {len(merged)} categories total")
 
 async def ensure_building_data(contexts, thread_count, url):
-    display_info("[Building] Ensuring building data file exists")
+    display_info("[Building] Ensuring building config file exists")
     if not os.path.exists(BUILDING_FILE):
-        display_info("[Building] File missing, gathering data now")
+        display_info("[Building] File missing, gathering config now")
         await gather_building_data(contexts, thread_count, url)
     else:
         display_info("[Building] File already exists, skipping gather")
