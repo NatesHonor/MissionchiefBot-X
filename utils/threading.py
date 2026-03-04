@@ -1,5 +1,5 @@
 import asyncio
-from .mission_parser import gather_mission_info
+from regions.us.missions.mission_parser import gather_mission_info
 
 async def split_mission_ids_among_threads(ids, contexts, n, url):
     for ctx in contexts:
