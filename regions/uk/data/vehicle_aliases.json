@@ -1,0 +1,37 @@
+{
+  "firetrucks": ["firetruck", "fire trucks"],
+  "platform truck": ["Platform truck", "Quint"],
+  "Battalion chief unit": ["Battalion chief unit", "Battalion", "battalion chief"],
+  "mobile air vehicles": ["Mobile air"],
+  "heavy rescue vehicles": ["Heavy rescue"],
+  "hazmat vehicles": ["HazMat"],
+  "mobile command vehicles": ["mobile command"],
+  "Fire Investigator Unit": ["fire investigation unit"],
+  "arffs": ["Small ARFF Crash Tender", "Medium ARFF Crash Tender", "Large ARFF Crash Tender", "arff"],
+  "wildland fire engine": ["Type 3 engine", "Type 4 engine", "Type 5 engine", "Type 6 engine", "Type 7 engine"],
+  "wildland fire vehicle": ["Type 3 engine", "Type 4 engine", "Type 5 engine", "Type 6 engine", "Type 7 engine"],
+  "Energy Generator Trailer": ["energy generator"],
+  "ambulance": ["ALS Ambulance", "BLS Ambulance"],
+  "ems chief": ["EMS Chief"],
+  "ems mobile command units": ["EMS Mobile Command Unit"],
+
+  "k-9 unit": ["K-9 Unit"],
+  "patrol car": ["Police car"],
+  "riot police unit": ["Riot Police Van", "Riot Police Bus"],
+  "Warden's Truck": ["warden truck"],
+  "sheriff": ["police supervisors / sheriff"],
+  "Police helicopter": ["police helicopter"],
+
+  "atf lab": ["ATF Lab Vehicle"],
+  "dea unit": ["DEA Unit"],
+  "dea clan lab": ["DEA Clan Lab1"],
+  "fbi investigation wagon": ["FBI Investigation Wagon"],
+  "fbi unit": ["FBI Unit"],
+  "FBI Bomb Technician Vehicle": ["fbi bomb technician"],
+  "FBI Surveillance Drone": ["FBI Drone"],
+
+
+  "SWAT Armoured Vehicle": ["SWAT SUV", "SWAT Armoured Vehicle", "swat armoured"],
+
+  "light boat": ["Small Coastal Boat" , "Large Coastal Boat"]
+}
