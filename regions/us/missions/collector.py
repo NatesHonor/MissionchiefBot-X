@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from config.config_settings import get_region
 from utils.pretty_print import display_info, display_error
-from utils.threading import split_mission_ids_among_threads
+from regions.uk.utils.threading import split_mission_ids_among_threads
 
 BASE_DIR = Path(__file__).resolve().parents[3]
 REGION = get_region().lower()

@@ -1,7 +1,7 @@
 from utils.pretty_print import display_info, display_error
-from utils.vehicle_options import get_vehicle_options
+from regions.uk.data.vehicle_options import get_vehicle_options
 from .utils import format_distance, normalize_key
-from regions.us.data.cache import get_vehicle_data, lock_vehicle, is_vehicle_locked
+from regions.uk.data.cache import get_vehicle_data, lock_vehicle, is_vehicle_locked
 
 async def get_all_vehicle_distances(page, ids):
     script = """
