@@ -2,13 +2,19 @@ import asyncio
 import json
 import math
 import re
+from pathlib import Path
 
-from regions.us.data.cache import free_up_vehicles
-from config.config_settings import get_dispatch_type, get_dispatch_incomplete
+from regions.uk.data.cache import free_up_vehicles
+from config.config_settings import get_dispatch_type, get_dispatch_incomplete, get_region
 from utils.pretty_print import display_info, display_error
 from .vehicles import find_vehicle_ids, select_vehicles
 from .personnel import handle_personnel
 from .navigation import load_mission_page
+
+REGION = get_region().lower()
+BASE_DIR = Path(__file__).resolve().parents[3]
+DATA_DIR = BASE_DIR / "regions" / REGION / "data"
+
 
 async def read_water_status(page):
     bar = await page.query_selector('div[class*="mission_water_bar_selected_"]')
@@ -49,7 +55,8 @@ async def handle_water_requirement(page, missing, mission_id):
         missing.append(("Water", need - selected))
 
 async def navigate_and_dispatch(contexts, url):
-    with open('regions/us/data/mission_data.json') as f:
+    data_file = DATA_DIR / "mission_data.json"
+    with open(data_file, "r") as f:
         missions = list(json.load(f).items())
     pages = [ctx.pages[0] for ctx in contexts if ctx.pages]
     if not pages:

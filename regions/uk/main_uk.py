@@ -3,9 +3,9 @@ import os
 from playwright.async_api import async_playwright
 
 from config.region_tracker import get_url, setup_region
-from regions.us.missions.buildings import gather_building_data
+from regions.uk.missions.buildings import gather_building_data
 from utils.tasks import grab_tasks
-from regions.us.setup.login_manager import BrowserPool, login_single
+from regions.uk.setup.login_manager import BrowserPool, login_single
 from config.config_settings import (
     get_username,
     get_password,
@@ -17,14 +17,14 @@ from config.config_settings import (
     get_auto_tasks,
     get_dispatch_type
 )
-from regions.us.dispatching import navigate_and_dispatch
-from regions.us.missions import check_and_grab_missions
+from regions.uk.dispatching import navigate_and_dispatch
+from regions.uk.missions import check_and_grab_missions
 from utils.pretty_print import display_info, display_error
 from utils.transport import handle_transport_requests
 from utils.vehicle_data import gather_vehicle_data
 
 
-REGION = "us"
+REGION = "uk"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 os.makedirs(DATA_DIR, exist_ok=True)
