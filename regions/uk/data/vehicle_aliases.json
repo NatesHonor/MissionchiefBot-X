@@ -1,5 +1,5 @@
 {
-  "firetrucks": ["firetruck", "fire trucks"],
+  "firetruck": ["fire trucks", "fireengine", "fire engine", "fire officers", "fire officer"],
   "platform truck": ["Platform truck", "Quint"],
   "Battalion chief unit": ["Battalion chief unit", "Battalion", "battalion chief"],
   "mobile air vehicles": ["Mobile air"],
@@ -16,7 +16,7 @@
   "ems mobile command units": ["EMS Mobile Command Unit"],
 
   "k-9 unit": ["K-9 Unit"],
-  "patrol car": ["Police car"],
+  "patrol car": ["Police car", "traffic car"],
   "riot police unit": ["Riot Police Van", "Riot Police Bus"],
   "Warden's Truck": ["warden truck"],
   "sheriff": ["police supervisors / sheriff"],
