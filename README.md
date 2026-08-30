@@ -39,6 +39,10 @@ The repository's `config.ini` is intentionally excluded from the image. Docker s
 can be supplied with the `MISSIONCHIEF_*` environment variables; a custom config can also
 be mounted at `/app/config.ini` if needed.
 
+GitHub Actions builds the image for pull requests and publishes it to GitHub Container
+Registry for pushes to `main` and version tags. Published images are available as
+`ghcr.io/nateshonor/missionchiefbot-x`.
+
 ---
 
 ## 📥 Download
