@@ -1,0 +1,14 @@
+services:
+  missionchiefbot:
+    build:
+      context: .
+    image: missionchiefbotx:latest
+    environment:
+      MISSIONCHIEF_USERNAME: ${MISSIONCHIEF_USERNAME}
+      MISSIONCHIEF_PASSWORD: ${MISSIONCHIEF_PASSWORD}
+      MISSIONCHIEF_REGION: ${MISSIONCHIEF_REGION:-UK}
+      MISSIONCHIEF_HEADLESS: ${MISSIONCHIEF_HEADLESS:-true}
+      MISSIONCHIEF_BROWSERS: ${MISSIONCHIEF_BROWSERS:-3}
+    volumes:
+      - ./logs:/app/logs
+    init: true

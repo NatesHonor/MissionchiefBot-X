@@ -16,6 +16,31 @@ It handles everything from credit gathering to auto-dispatching, employee traini
 
 ---
 
+## 🐳 Run with Docker
+
+The image includes Python, the project dependencies, and the Playwright Chromium browser.
+
+1. Copy `.env.example` to `.env` and set `MISSIONCHIEF_USERNAME` and `MISSIONCHIEF_PASSWORD`.
+2. Build and start the bot:
+
+   ```bash
+   docker compose up --build
+   ```
+
+The container runs headless by default, stores runtime logs in `./logs`, and builds the
+`missionchiefbotx:latest` image. To build or run it directly:
+
+```bash
+docker build -t missionchiefbotx:latest .
+docker run --rm --name missionchiefbotx --env-file .env -v "${PWD}/logs:/app/logs" missionchiefbotx:latest
+```
+
+The repository's `config.ini` is intentionally excluded from the image. Docker settings
+can be supplied with the `MISSIONCHIEF_*` environment variables; a custom config can also
+be mounted at `/app/config.ini` if needed.
+
+---
+
 ## 📥 Download
 
 To download Mission Helper, click [here](https://files.natemarcellus.com/download/MissionchiefBot).

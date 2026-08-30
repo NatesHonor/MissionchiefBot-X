@@ -1,0 +1,36 @@
+; Copy this file to config.ini for local use, or provide the credential
+; environment variables listed in .env.example when running in Docker.
+[bot]
+version = 3.0.2
+region = UK
+
+[credentials]
+username =
+password =
+
+[browser_settings]
+headless = true
+browsers = 3
+browser_scaling = false
+
+[missions]
+dispatch = Default
+dispatch_concurrent_missions = true
+dispatch_incomplete_missions = false
+dispatch_vehicles_by_distance = false
+dynamic_missions = false
+
+[other]
+auto_training = false
+auto_tasks = false
+
+[delays]
+dynamic_delays = false
+dynamic_missions = false
+dynamic_transport = false
+missions = 30
+other = 60
+
+[trainings]
+[trainings.fire_school]
+training = all
