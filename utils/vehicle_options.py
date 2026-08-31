@@ -16,7 +16,13 @@ VEHICLE_OPTIONS = {
         "Medium ARFF Crash Tender",
         "Large ARFF Crash Tender",
     ],
-    "firetruck": ["Type 1 fire engine", "Type 2 fire engine", "Platform truck", "Quint"],
+    "firetruck": [
+        "Type 1 fire engine",
+        "Type 2 fire engine",
+        "Platform truck",
+        "Quint",
+        "Rescue Engine",
+    ],
     "firetrucks, heavy rescue vehicles, or platform trucks": [
         "Type 1 fire engine",
         "Type 2 fire engine",
