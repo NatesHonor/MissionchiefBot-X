@@ -11,6 +11,7 @@ from core.missionchief_api import (
     records_from_payload,
     vehicle_inventory_from_records,
 )
+from core.mission_collector import limit_mission_ids
 from utils.transport import transport_option_key
 
 
@@ -52,6 +53,12 @@ class ApiAndTransportTests(unittest.TestCase):
             mission_marker_endpoints(False),
             ("/map/mission_markers_own.js.erb",),
         )
+
+    def test_large_mission_feeds_are_bounded_without_dropping_active_cache_state(self):
+        ids, omitted = limit_mission_ids(["1", "2", "3"], 2)
+        self.assertEqual(ids, ["1", "2"])
+        self.assertEqual(omitted, 1)
+        self.assertEqual(limit_mission_ids(["1", "2"], 0), (["1", "2"], 0))
         self.assertEqual(
             mission_marker_endpoints(True),
             (
