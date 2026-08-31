@@ -19,6 +19,7 @@ dispatch_concurrent_missions = true
 dispatch_incomplete_missions = false
 dispatch_vehicles_by_distance = false
 dynamic_missions = false
+include_alliance_missions = true
 
 [other]
 auto_training = false
