@@ -89,15 +89,15 @@ does not require copying the login, browser, parser, or dispatch loops.
 - `regions/uk` and `regions/us` keep thin adapters for existing imports and
   region-specific vehicle mappings.
 
-US, UK, Australia, Germany, the Netherlands, Sweden, and Portugal are wired into the
+US, UK, Australia, Germany, the Netherlands, Sweden, Portugal, and Denmark are wired into the
 same automation runtime.  Each region keeps its own vehicle aliases, requirement
 classification, localized labels, and cache directory, while browser/login/API,
 mission parsing, dispatching, transport, and background loops remain shared.
 
-The project does not invent regional servers for requests such as Denmark or New
-Zealand.  A region must have a real MissionChief service URL and a verified set of
-game vehicle names before it can be enabled; those requests remain explicitly
-unsupported until an official service is identified.
+The project does not invent a regional server for New Zealand.  A region must have a
+real MissionChief service URL and a verified set of game vehicle names before it can be
+enabled.  New Zealand remains explicitly unsupported until an official service is
+identified; the launcher rejects it instead of silently using another country's site.
 
 ---
 
