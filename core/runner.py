@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 
 from utils.pretty_print import display_error, display_info
 from utils.tasks import grab_tasks
@@ -26,6 +27,17 @@ async def _sleep_or_stop(seconds: int, stop_event: asyncio.Event) -> None:
         await asyncio.wait_for(stop_event.wait(), timeout=max(0.1, seconds))
     except asyncio.TimeoutError:
         pass
+
+
+def _cache_has_records(path) -> bool:
+    """Treat missing, empty, or corrupt regional caches as needing refresh."""
+
+    try:
+        with path.open("r", encoding="utf-8") as stream:
+            value = json.load(stream)
+        return bool(value)
+    except (FileNotFoundError, OSError, json.JSONDecodeError, TypeError):
+        return False
 
 
 async def run_transport_loop(context, profile: RegionProfile, settings: Settings, stop_event):
@@ -59,14 +71,14 @@ async def run_mission_loop(
     display_info("Starting mission logic.")
     while not stop_event.is_set():
         try:
-            if not profile.vehicle_file.exists():
+            if not _cache_has_records(profile.vehicle_file):
                 await gather_vehicle_data(
                     grabbing_contexts,
                     len(grabbing_contexts),
                     profile.base_url,
                     profile.vehicle_file,
                 )
-            if not profile.building_file.exists():
+            if not _cache_has_records(profile.building_file):
                 await gather_building_data(
                     grabbing_contexts,
                     len(grabbing_contexts),

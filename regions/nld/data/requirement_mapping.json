@@ -1,0 +1,10 @@
+{
+  "schuim": "liquid",
+  "water": "liquid",
+  "benodigd personeel": "personnel",
+  "personeel nodig": "personnel",
+  "voertuigen om te slepen": "tow_vehicle",
+  "auto's om te slepen": "tow_vehicle",
+  "minimaal aantal brandweerlieden": "pass",
+  "minimaal aantal politiemensen": "pass"
+}
