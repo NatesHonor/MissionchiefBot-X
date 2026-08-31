@@ -28,6 +28,7 @@ class ApiAndTransportTests(unittest.TestCase):
 
         self.assertEqual([record["id"] for record in records], [11, 12])
         self.assertEqual(inventory["01 Ambulance"], ["11"])
+        self.assertEqual(inventory["Ambulance"], ["11"])
         self.assertEqual(inventory["HazMat"], ["12"])
 
     def test_marker_ids_are_deduplicated(self):
