@@ -90,7 +90,11 @@ async def gather_requirements(page, profile=None):
             if count is None or count <= 0:
                 continue
             entry = {"name": name, "count": count}
-            if kind == "liquid":
+            if kind == "personnel":
+                requirements["personnel"].append(
+                    {"name": resolve_personnel(name, profile), "count": count}
+                )
+            elif kind == "liquid":
                 requirements["liquid"].append(entry)
             else:
                 requirements["vehicles"].append({"name": name, "count": count})

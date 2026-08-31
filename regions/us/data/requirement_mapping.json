@@ -1,6 +1,7 @@
 {
   "foam": "liquid",
   "swat personnel (in swat )": "personnel",
+  "swat personnel in swat vehicle": "personnel",
   "tow vehicles": "tow_vehicle",
   "minimum firefighter": "pass",
   "minimum policemen": "pass"
