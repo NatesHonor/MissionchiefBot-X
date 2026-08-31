@@ -1,4 +1,5 @@
 import unittest
+import importlib
 from types import SimpleNamespace
 
 import sys
@@ -155,6 +156,14 @@ class RegionRegistryTests(unittest.TestCase):
             self.assertTrue(profile.base_url.endswith("/"))
             self.assertTrue(profile.vehicle_options("firetruck"))
             self.assertEqual(profile.validate_data_contract(), [])
+
+    def test_every_registered_region_has_a_compatibility_entrypoint(self):
+        for region in supported_regions():
+            with self.subTest(region=region):
+                profile = get_region_profile(region)
+                module_name, function_name = profile.entrypoint.split(":")
+                module = importlib.import_module(module_name)
+                self.assertTrue(callable(getattr(module, function_name)))
 
     def test_region_aliases_resolve_to_canonical_profiles(self):
         self.assertEqual(get_region_profile("usa").key, "us")
