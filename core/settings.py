@@ -41,6 +41,7 @@ class Settings:
     concurrent_missions: bool
     auto_training: bool
     auto_recruiting: bool
+    auto_special_resources: bool
     auto_tasks: bool
     dynamic_delays: bool
     dynamic_delay_missions: bool
@@ -229,6 +230,17 @@ def load_settings(path: str | os.PathLike[str] | None = None) -> Settings:
                 default="false",
             ),
             "MISSIONCHIEF_AUTO_RECRUITING",
+        ),
+        auto_special_resources=_boolean(
+            _value(
+                parser,
+                config_file,
+                "other",
+                "auto_special_resources",
+                "MISSIONCHIEF_AUTO_SPECIAL_RESOURCES",
+                default="false",
+            ),
+            "MISSIONCHIEF_AUTO_SPECIAL_RESOURCES",
         ),
         auto_tasks=_boolean(
             _value(parser, config_file, "other", "auto_tasks", "MISSIONCHIEF_AUTO_TASKS"),

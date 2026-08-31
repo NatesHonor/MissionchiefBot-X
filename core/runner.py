@@ -79,6 +79,7 @@ async def run_mission_loop(
                 profile.base_url,
                 profile,
                 state,
+                settings,
             )
             await navigate_and_dispatch(
                 dispatch_contexts,

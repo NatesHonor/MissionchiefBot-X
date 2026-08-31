@@ -59,6 +59,10 @@ def get_auto_recruiting():
     return get_settings().auto_recruiting
 
 
+def get_auto_special_resources():
+    return get_settings().auto_special_resources
+
+
 def get_recruiting_days():
     return get_settings().recruiting_days
 
