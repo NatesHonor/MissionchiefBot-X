@@ -31,6 +31,20 @@ def limit_mission_ids(mission_ids, maximum: int) -> tuple[list[str], int]:
     return ids[:maximum], len(ids) - maximum
 
 
+async def scan_event_resources(page, base_url: str, enabled: bool) -> int:
+    """Scan event controls after the active mission list is identified."""
+
+    if not enabled:
+        return 0
+    collected = await collect_special_resources(page, base_url)
+    if collected:
+        noun = "resource" if collected == 1 else "resources"
+        display_info(f"Collected {collected} event {noun} during mission gathering.")
+    else:
+        display_info("Event-resource scan complete; no new resources found.")
+    return collected
+
+
 async def check_and_grab_missions(
     contexts,
     num_threads,
@@ -51,11 +65,6 @@ async def check_and_grab_missions(
         await page.goto(url)
         await page.wait_for_load_state("networkidle")
         mission_index = await refresh_mission_index(page, url, profile.mission_index_file)
-        if settings.auto_special_resources:
-            collected = await collect_special_resources(page, url)
-            if collected:
-                await page.goto(url)
-                await page.wait_for_load_state("networkidle")
         marker_records = await fetch_mission_marker_records(
             page,
             url,
@@ -75,6 +84,7 @@ async def check_and_grab_missions(
                 if panel_id:
                     ids.append(panel_id.split("_")[-1])
         ids = list(dict.fromkeys(ids))
+        await scan_event_resources(page, url, settings.auto_special_resources)
         cached_missions = {}
         if profile.mission_file.exists():
             try:
