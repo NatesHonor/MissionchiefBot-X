@@ -51,6 +51,10 @@ class RegionProfile:
         return self.data_dir / "mission_index.json"
 
     @property
+    def mission_ignore_file(self) -> Path:
+        return self.data_dir / "mission_ignore_list.json"
+
+    @property
     def vehicle_file(self) -> Path:
         return self.data_dir / "vehicle_data.json"
 

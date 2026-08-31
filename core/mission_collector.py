@@ -9,6 +9,8 @@ from utils.progress import ProgressBar
 
 from .concurrency import split_mission_ids_among_threads
 from .missionchief_api import fetch_mission_markers, refresh_mission_index
+from .missionchief_api import fetch_mission_marker_records
+from .mission_ignore import filter_ignored_mission_ids, load_mission_ignore_rules
 from .pages import ensure_page
 from .regions import get_region_profile
 from .settings import get_settings
@@ -35,13 +37,16 @@ async def check_and_grab_missions(
         page = await ensure_page(contexts[0])
         await page.goto(url)
         await page.wait_for_load_state("networkidle")
-        await refresh_mission_index(page, url, profile.mission_index_file)
+        mission_index = await refresh_mission_index(page, url, profile.mission_index_file)
         if settings.auto_special_resources:
             collected = await collect_special_resources(page, url)
             if collected:
                 await page.goto(url)
                 await page.wait_for_load_state("networkidle")
-        ids = await fetch_mission_markers(page, url)
+        marker_records = await fetch_mission_marker_records(page, url)
+        ids = [record["id"] for record in marker_records]
+        if not ids:
+            ids = await fetch_mission_markers(page, url)
         panels = await page.query_selector_all(".mission_panel_red")
         if not ids:
             for panel in panels:
@@ -49,14 +54,26 @@ async def check_and_grab_missions(
                 if panel_id:
                     ids.append(panel_id.split("_")[-1])
         ids = list(dict.fromkeys(ids))
+        cached_missions = {}
+        if profile.mission_file.exists():
+            try:
+                cached_missions = json.loads(profile.mission_file.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError, TypeError):
+                cached_missions = {}
+        rules = load_mission_ignore_rules(profile)
+        ids, ignored = filter_ignored_mission_ids(
+            ids,
+            rules,
+            mission_index,
+            {record["id"]: record for record in marker_records},
+            cached_missions,
+        )
+        if ignored:
+            display_info(f"Ignored {len(ignored)} configured mission(s) before detail scanning.")
+        for mission_id in cached_missions:
+            if mission_id not in ids:
+                state.free_for_mission(mission_id)
         if not ids:
-            if profile.mission_file.exists():
-                try:
-                    previous = json.loads(profile.mission_file.read_text(encoding="utf-8"))
-                    for mission_id in previous:
-                        state.free_for_mission(mission_id)
-                except (OSError, json.JSONDecodeError, TypeError):
-                    pass
             profile.mission_file.write_text("{}", encoding="utf-8")
             display_info("No missions found, stored an empty mission snapshot.")
             return
