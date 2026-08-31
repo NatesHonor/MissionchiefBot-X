@@ -84,6 +84,40 @@ class VehicleMappingTests(unittest.TestCase):
                 self.assertIn(f"{region}-rescue-engine", firetruck_ids)
                 self.assertIn(f"{region}-rescue-engine", heavy_rescue_ids)
 
+    def test_specific_us_vehicle_requirements_resolve_to_inventory_labels(self):
+        profile = get_region_profile("us")
+        state = SimpleNamespace(
+            get_data=lambda: {
+                "Patrol Boat": ["boat-1"],
+                "Large Coastal Boat": ["boat-2"],
+                "Quint": ["quint-1"],
+                "Type 5 engine": ["wildland-1"],
+                "Smoke Jumper Vehicle": ["smoke-1"],
+            },
+            is_locked=lambda vehicle_id: False,
+        )
+
+        self.assertEqual(
+            asyncio.run(find_vehicle_ids("patrol boat", profile, state, quiet=True)),
+            ["boat-1"],
+        )
+        self.assertEqual(
+            asyncio.run(find_vehicle_ids("large rescue boat", profile, state, quiet=True)),
+            ["boat-2"],
+        )
+        self.assertEqual(
+            asyncio.run(find_vehicle_ids("platform", profile, state, quiet=True)),
+            ["quint-1"],
+        )
+        self.assertEqual(
+            asyncio.run(find_vehicle_ids("wildland trucks", profile, state, quiet=True)),
+            ["wildland-1"],
+        )
+        self.assertEqual(
+            asyncio.run(find_vehicle_ids("smoke jumpers", profile, state, quiet=True)),
+            ["smoke-1"],
+        )
+
     def test_every_region_passes_the_mapping_audit(self):
         for region in supported_regions():
             with self.subTest(region=region):
