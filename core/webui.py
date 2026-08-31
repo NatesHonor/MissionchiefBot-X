@@ -11,6 +11,7 @@ import configparser
 import json
 import logging
 import os
+import re
 import tempfile
 import threading
 from dataclasses import asdict, dataclass
@@ -161,6 +162,99 @@ def save_settings(updates: dict[str, Any], path: str | os.PathLike[str] | None =
         else:
             typed_values[name] = value
     return typed_values
+
+
+def _redact_config_password(content: str) -> str:
+    """Remove only the credentials password while preserving config formatting."""
+
+    section = ""
+    redacted = []
+    for line in content.splitlines(keepends=True):
+        section_match = re.match(r"\s*\[([^]]+)\]", line)
+        if section_match:
+            section = section_match.group(1).strip().casefold()
+        if section == "credentials" and re.match(r"\s*password\s*=", line, re.IGNORECASE):
+            newline = "\r\n" if line.endswith("\r\n") else "\n" if line.endswith("\n") else ""
+            line = re.sub(r"(\s*password\s*=).*", rf"\1{newline}", line, flags=re.IGNORECASE)
+        redacted.append(line)
+    return "".join(redacted)
+
+
+def read_config(path: str | os.PathLike[str] | None = None) -> str:
+    """Read the local config for editing without returning the saved password."""
+
+    config_path = _config_path(path)
+    try:
+        return _redact_config_password(config_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return ""
+    except OSError as error:
+        raise ValueError(f"could not read config.ini: {error}") from error
+
+
+def _replace_config_password(content: str, password: str) -> str:
+    section = ""
+    lines = []
+    replaced = False
+    for line in content.splitlines(keepends=True):
+        section_match = re.match(r"\s*\[([^]]+)\]", line)
+        if section_match:
+            section = section_match.group(1).strip().casefold()
+        if section == "credentials" and re.match(r"\s*password\s*=", line, re.IGNORECASE):
+            newline = "\r\n" if line.endswith("\r\n") else "\n" if line.endswith("\n") else ""
+            prefix = line[: line.index("=") + 1]
+            line = f"{prefix} {password}{newline}"
+            replaced = True
+        lines.append(line)
+    if not replaced:
+        raise ValueError("config.ini must contain [credentials] password.")
+    return "".join(lines)
+
+
+def save_config(content: Any, path: str | os.PathLike[str] | None = None) -> dict[str, Any]:
+    """Validate and atomically save the complete config while preserving a blank password."""
+
+    if not isinstance(content, str) or not content.strip():
+        raise ValueError("config.ini content must not be empty.")
+    if len(content.encode("utf-8")) > 256 * 1024:
+        raise ValueError("config.ini content is too large.")
+
+    config_path = _config_path(path)
+    parser = configparser.ConfigParser(interpolation=None)
+    try:
+        parser.read_string(content)
+    except configparser.Error as error:
+        raise ValueError(f"config.ini is invalid: {error}") from error
+    if not parser.has_section("credentials") or not parser.has_option("credentials", "password"):
+        raise ValueError("config.ini must contain a [credentials] password setting.")
+
+    submitted_password = parser.get("credentials", "password", raw=True).strip()
+    if not submitted_password:
+        existing = configparser.ConfigParser(interpolation=None)
+        try:
+            existing.read(config_path)
+            existing_password = existing.get("credentials", "password", fallback="").strip()
+        except configparser.Error as error:
+            raise ValueError(f"existing config.ini is invalid: {error}") from error
+        content = _replace_config_password(content, existing_password)
+
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f"{config_path.stem}.", suffix=".tmp", dir=config_path.parent
+    )
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8", newline="") as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary_name, config_path)
+    except Exception:
+        try:
+            os.unlink(temporary_name)
+        except OSError:
+            pass
+        raise
+    return {"saved": True, "restart_required": True, "path": str(config_path)}
 
 
 def _log_path() -> Path:
@@ -353,6 +447,13 @@ class BotWebUI:
                     with webui._lock:
                         settings = dict(webui._state.settings or {})
                     self._send_json({"settings": settings, "restart_required": True})
+                elif path == "/api/config":
+                    self._send_json(
+                        {
+                            "content": read_config(webui.config_path),
+                            "restart_required": True,
+                        }
+                    )
                 else:
                     self._send_json({"error": "not found"}, HTTPStatus.NOT_FOUND)
 
@@ -372,6 +473,14 @@ class BotWebUI:
                                 "settings": saved,
                                 "restart_required": True,
                                 "message": "Settings saved. Restart the bot to apply them.",
+                            }
+                        )
+                    elif path == "/api/config":
+                        result = save_config(body.get("content"), webui.config_path)
+                        self._send_json(
+                            {
+                                **result,
+                                "message": "config.ini saved. Restart the bot to apply the changes.",
                             }
                         )
                     elif path == "/api/control":
@@ -409,38 +518,38 @@ DASHBOARD_HTML = r"""<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MissionchiefBot-X</title>
 <style>
-:root { color-scheme: dark; --background:#071a2d; --surface:#0d2741; --border:#24557b; --text:#f3f8fc; --muted:#9db9cf; --blue:#238ddd; --red:#d75b6d; }
-* { box-sizing:border-box; }
-body { margin:0; background:var(--background); color:var(--text); font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; }
-.page { width:min(100% - 32px,960px); margin:0 auto; padding:28px 0 44px; }
-h1,h2,h3,p { margin:0; } h1 { font-size:24px; } h2 { font-size:17px; } h3 { font-size:14px; margin-bottom:12px; }
-header { border-bottom:1px solid var(--border); padding-bottom:18px; margin-bottom:18px; } header p { color:var(--muted); margin-top:4px; }
-.summary { display:flex; flex-wrap:wrap; gap:26px; padding:16px 0 20px; } .summary div { min-width:120px; } .label { display:block; color:var(--muted); font-size:12px; } .value { display:block; margin-top:2px; font-weight:650; }
-.message { color:var(--muted); margin-bottom:18px; }
-.section { margin-top:18px; padding:18px; border:1px solid var(--border); background:var(--surface); } .section-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
-.actions { display:flex; gap:8px; flex-wrap:wrap; } button { border:1px solid var(--border); border-radius:4px; padding:9px 14px; color:var(--text); background:#123453; cursor:pointer; font:inherit; } button:hover { border-color:#52a8e7; } button.start { background:var(--blue); border-color:var(--blue); } button.stop { background:#642b38; border-color:var(--red); }
-.logs { height:360px; overflow:auto; margin:0; padding:12px; white-space:pre-wrap; overflow-wrap:anywhere; background:#04111e; border:1px solid #163b5c; color:#d5e9f8; font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace; }
-.form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 16px; } label { display:flex; flex-direction:column; gap:5px; color:var(--muted); font-size:12px; } input,select { width:100%; padding:9px 10px; color:var(--text); background:#071a2d; border:1px solid var(--border); border-radius:4px; font:inherit; } input:focus,select:focus { outline:2px solid #238ddd66; border-color:#52a8e7; } .check { flex-direction:row; align-items:center; padding-top:22px; } .check input { width:auto; }
-.note { min-height:20px; padding-top:10px; color:var(--muted); } footer { margin-top:20px; color:var(--muted); font-size:12px; }
-@media (max-width:600px) { .page { width:min(100% - 20px,960px); padding-top:18px; } .form { grid-template-columns:1fr; } .check { padding-top:0; } }
+:root { color-scheme:dark; --background:#071a2d; --surface:#0d2741; --border:#24557b; --text:#f3f8fc; --muted:#9db9cf; --blue:#238ddd; --red:#d75b6d; }
+* { box-sizing:border-box; } body { margin:0; background:var(--background); color:var(--text); font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; }
+.layout { display:grid; grid-template-columns:170px minmax(0,1fr); min-height:100vh; } .sidebar { padding:22px 12px; border-right:1px solid var(--border); } .sidebar h1 { padding:0 10px 20px; font-size:18px; } .tabs { display:grid; gap:4px; } .tab { width:100%; padding:10px; border:1px solid transparent; border-radius:4px; color:var(--muted); background:transparent; text-align:left; cursor:pointer; font:inherit; } .tab:hover { color:var(--text); background:#123453; } .tab.active { color:var(--text); border-color:var(--blue); background:#123b5c; }
+.page { width:min(100% - 40px,960px); margin:0 auto; padding:30px 0 44px; } header { border-bottom:1px solid var(--border); padding-bottom:18px; margin-bottom:18px; } h1,h2,p { margin:0; } h1 { font-size:24px; } h2 { font-size:17px; } header p,.message,.label,.note,footer { color:var(--muted); } header p { margin-top:4px; }
+.view { display:none; } .view.active { display:block; } .summary { display:flex; flex-wrap:wrap; gap:28px; padding:16px 0 20px; } .summary div { min-width:120px; } .label { display:block; font-size:12px; } .value { display:block; margin-top:2px; font-weight:650; } .message { margin-bottom:18px; }
+.section { margin-top:18px; padding:18px; border:1px solid var(--border); background:var(--surface); } .section-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; } .actions { display:flex; gap:8px; flex-wrap:wrap; }
+button { border:1px solid var(--border); border-radius:4px; padding:9px 14px; color:var(--text); background:#123453; cursor:pointer; font:inherit; } button:hover { border-color:#52a8e7; } button.start { background:var(--blue); border-color:var(--blue); } button.stop { background:#642b38; border-color:var(--red); }
+.logs { height:calc(100vh - 210px); min-height:280px; overflow:auto; margin:0; padding:12px; white-space:pre-wrap; overflow-wrap:anywhere; background:#04111e; border:1px solid #163b5c; color:#d5e9f8; font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace; } .option { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:12px; }
+.config { width:100%; min-height:560px; padding:12px; resize:vertical; color:var(--text); background:#071a2d; border:1px solid var(--border); border-radius:4px; font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace; } .config:focus { outline:2px solid #238ddd66; border-color:#52a8e7; } .note { min-height:20px; padding-top:10px; } footer { margin-top:20px; font-size:12px; }
+@media (max-width:650px) { .layout { grid-template-columns:1fr; } .sidebar { padding:12px; border-right:0; border-bottom:1px solid var(--border); } .sidebar h1 { padding:0 0 10px; } .tabs { grid-template-columns:repeat(3,1fr); } .tab { text-align:center; } .page { width:min(100% - 20px,960px); padding-top:18px; } .logs { height:60vh; } }
 </style>
 </head>
 <body>
-<main class="page">
-<header><h1>MissionchiefBot-X</h1><p>Local control page</p></header>
-<section class="summary"><div><span class="label">Status</span><span id="status" class="value">Starting</span></div><div><span class="label">Region</span><span id="region" class="value">—</span></div><div><span class="label">Version</span><span id="version" class="value">—</span></div></section>
-<p id="message" class="message">Waiting for the bot.</p>
-<section class="section"><div class="section-head"><h2>Bot control</h2><div class="actions"><button class="start" onclick="control('start')">Start bot</button><button class="stop" onclick="control('stop')">Stop bot</button></div></div><div id="control-note" class="note"></div></section>
-<section class="section"><div class="section-head"><h2>MissionChief output</h2><button onclick="refresh()">Refresh</button></div><pre id="logs" class="logs">No MissionChief output yet.</pre></section>
-<section class="section"><div class="section-head"><h2>Bot settings</h2><span class="label">Saved for next start</span></div><form id="settings-form"><div class="form"><label>Region<select name="region"><option value="us">United States</option><option value="uk">United Kingdom</option><option value="ger">Germany</option><option value="swe">Sweden</option><option value="pl">Poland</option><option value="fr">France</option><option value="nld">Netherlands</option><option value="pt">Portugal</option><option value="aus">Australia</option><option value="dk">Denmark</option></select></label><label>Dispatch type<input name="dispatch_type" type="text" maxlength="80"></label><label>Browsers<input name="browsers" type="number" min="2" max="32"></label><label>Mission delay (seconds)<input name="mission_delay" type="number" min="0" max="10000"></label><label>Transport delay (seconds)<input name="other_delay" type="number" min="0" max="10000"></label><label>Dispatch delay (seconds)<input name="dispatch_delay" type="number" min="0" max="10000"></label><label class="check"><input name="headless" type="checkbox"> Run browsers headless</label><label class="check"><input name="concurrent_missions" type="checkbox"> Dispatch missions concurrently</label></div><div class="actions" style="margin-top:16px"><button class="start" type="submit">Save settings</button></div><div id="settings-note" class="note"></div></form></section>
-<footer>The page is served on the local machine. Bot settings are read again when the bot starts.</footer>
-</main>
+<div class="layout"><aside class="sidebar"><h1>MissionchiefBot-X</h1><nav class="tabs"><button class="tab active" data-view="dashboard">Overview</button><button class="tab" data-view="logs">Console</button><button class="tab" data-view="settings">Configuration</button></nav></aside>
+<main class="page"><header><h1 id="page-title">Overview</h1><p>Local BotX control page</p></header>
+<section id="view-dashboard" class="view active"><section class="summary"><div><span class="label">Status</span><span id="status" class="value">Ready</span></div><div><span class="label">Region</span><span id="region" class="value">—</span></div><div><span class="label">Version</span><span id="version" class="value">—</span></div></section><p id="message" class="message">Waiting for the bot.</p><section class="section"><div class="section-head"><h2>Bot control</h2><div class="actions"><button class="start" onclick="control('start')">Start bot</button><button class="stop" onclick="control('stop')">Stop bot</button></div></div><div id="control-note" class="note"></div></section></section>
+<section id="view-logs" class="view"><section class="section" style="margin-top:0"><div class="section-head"><h2>MissionChief output</h2><div class="actions"><label class="option"><input id="auto-scroll" type="checkbox"> Auto-scroll</label><button onclick="refresh()">Refresh</button></div></div><pre id="logs" class="logs">No MissionChief output yet.</pre></section></section>
+<section id="view-settings" class="view"><section class="section" style="margin-top:0"><div class="section-head"><h2>Complete config.ini</h2><span class="label">Saved for next start</span></div><p class="message">Edit the complete BotX configuration here. The password is hidden when loaded; leaving it blank keeps the saved password.</p><textarea id="config" class="config" spellcheck="false" aria-label="Complete BotX configuration"></textarea><div class="actions" style="margin-top:16px"><button class="start" onclick="saveConfig()">Save config.ini</button></div><div id="settings-note" class="note"></div></section></section>
+<footer>Bot settings are read again when the bot starts.</footer></main></div>
 <script>
 const $ = (id) => document.getElementById(id);
-function fillSettings(settings) { const form=$('settings-form'); Object.entries(settings || {}).forEach(([key,value]) => { const input=form.elements[key]; if (!input) return; if (input.type === 'checkbox') input.checked=Boolean(value); else input.value=value; }); }
-async function refresh() { try { const response=await fetch('/api/status',{cache:'no-store'}); const data=await response.json(); $('status').textContent=data.status || '—'; $('region').textContent=(data.region || '—').toUpperCase(); $('version').textContent=data.version || '—'; $('message').textContent=data.message || ''; $('logs').textContent=(data.recent_logs || []).join('\n') || 'No MissionChief output yet.'; fillSettings(data.settings); } catch(error) { $('message').textContent='Could not load bot status.'; } }
+let autoScroll = localStorage.getItem('missionchief.autoScroll') !== 'false';
+let configDirty = false;
+function showView(view) { document.querySelectorAll('.view').forEach((item)=>item.classList.toggle('active',item.id==='view-'+view)); document.querySelectorAll('.tab').forEach((item)=>item.classList.toggle('active',item.dataset.view===view)); $('page-title').textContent = view === 'dashboard' ? 'Overview' : view === 'logs' ? 'Console' : 'Configuration'; if(view === 'settings' && !$('config').value) loadConfig(); }
+document.querySelectorAll('.tab').forEach((tab)=>tab.addEventListener('click',()=>showView(tab.dataset.view)));
+$('auto-scroll').checked=autoScroll; $('auto-scroll').addEventListener('change',()=>{ autoScroll=$('auto-scroll').checked; localStorage.setItem('missionchief.autoScroll',String(autoScroll)); if(autoScroll) $('logs').scrollTop=$('logs').scrollHeight; });
+function updateLogs(lines) { const logs=$('logs'); const wasAtBottom=logs.scrollHeight-logs.scrollTop-logs.clientHeight<24; logs.textContent=(lines || []).join('\n') || 'No MissionChief output yet.'; if(autoScroll || wasAtBottom) logs.scrollTop=logs.scrollHeight; }
+async function refresh() { try { const response=await fetch('/api/status',{cache:'no-store'}); const data=await response.json(); $('status').textContent=data.status || '—'; $('region').textContent=(data.region || '—').toUpperCase(); $('version').textContent=data.version || '—'; $('message').textContent=data.message || ''; updateLogs(data.recent_logs); } catch(error) { $('message').textContent='Could not load bot status.'; } }
+async function loadConfig() { try { const response=await fetch('/api/config',{cache:'no-store'}); const data=await response.json(); if(!configDirty) $('config').value=data.content || ''; } catch(error) { $('settings-note').textContent='config.ini could not be loaded.'; } }
+async function saveConfig() { $('settings-note').textContent='Saving…'; try { const response=await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:$('config').value})}); const data=await response.json(); $('settings-note').textContent=data.message || data.error || 'Saved.'; if(response.ok) configDirty=false; } catch(error) { $('settings-note').textContent='config.ini could not be saved.'; } }
 async function control(action) { $('control-note').textContent='Sending '+action+' request…'; try { const response=await fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})}); const data=await response.json(); $('control-note').textContent=data.accepted ? action+' request accepted.' : (data.error || 'Request failed.'); setTimeout(refresh,300); } catch(error) { $('control-note').textContent='Control request failed.'; } }
-$('settings-form').addEventListener('submit',async(event)=>{ event.preventDefault(); const form=new FormData(event.target); const body={region:form.get('region'),dispatch_type:form.get('dispatch_type'),browsers:Number(form.get('browsers')),mission_delay:Number(form.get('mission_delay')),other_delay:Number(form.get('other_delay')),dispatch_delay:Number(form.get('dispatch_delay')),headless:form.get('headless')==='on',concurrent_missions:form.get('concurrent_missions')==='on'}; $('settings-note').textContent='Saving…'; try { const response=await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const data=await response.json(); $('settings-note').textContent=data.message || data.error || 'Saved.'; if(data.settings) fillSettings(data.settings); } catch(error) { $('settings-note').textContent='Settings could not be saved.'; } });
+$('config').addEventListener('input',()=>{ configDirty=true; });
 refresh(); setInterval(refresh,2000);
 </script>
 </body></html>"""

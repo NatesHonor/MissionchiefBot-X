@@ -7,7 +7,7 @@ from types import SimpleNamespace
 from urllib.request import Request, urlopen
 
 from core.settings import load_settings
-from core.webui import BotWebUI, read_log_tail, save_settings
+from core.webui import BotWebUI, read_config, read_log_tail, save_config, save_settings
 
 
 class WebUITests(unittest.TestCase):
@@ -56,6 +56,8 @@ class WebUITests(unittest.TestCase):
                 page = response.read()
             self.assertIn(b"MissionchiefBot-X", page)
             self.assertIn(b"Start bot", page)
+            self.assertIn(b"Auto-scroll", page)
+            self.assertIn(b"Configuration", page)
             self.assertNotIn(b"Unavailable", page)
             self.assertNotIn(b'class="mark"', page)
         finally:
@@ -126,6 +128,19 @@ class WebUITests(unittest.TestCase):
                     os.environ.pop("MISSIONCHIEF_LOG_FILE", None)
                 else:
                     os.environ["MISSIONCHIEF_LOG_FILE"] = previous
+
+    def test_config_editor_hides_and_preserves_password(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "config.ini"
+            original = "[credentials]\nusername = test-user\npassword = test-secret\n[bot]\nregion = us\n"
+            path.write_text(original, encoding="utf-8")
+            editable = read_config(path)
+            self.assertNotIn("test-secret", editable)
+            self.assertIn("password =", editable)
+            save_config(editable.replace("region = us", "region = uk"), path)
+            saved = path.read_text(encoding="utf-8")
+            self.assertIn("password = test-secret", saved)
+            self.assertIn("region = uk", saved)
 
 
 if __name__ == "__main__":
