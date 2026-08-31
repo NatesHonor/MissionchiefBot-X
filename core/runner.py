@@ -20,6 +20,7 @@ from .mission_collector import check_and_grab_missions
 from .regions import RegionProfile, get_region_profile
 from .settings import Settings, load_settings
 from .vehicle_state import get_vehicle_state
+from .webui import BotWebUI
 
 
 async def _sleep_or_stop(seconds: int, stop_event: asyncio.Event) -> None:
@@ -165,19 +166,49 @@ async def run_mission_loop(
         await _sleep_or_stop(settings.mission_delay, stop_event)
 
 
-async def run_bot(settings: Settings | None = None, profile: RegionProfile | None = None):
+async def run_bot(
+    settings: Settings | None = None,
+    profile: RegionProfile | None = None,
+    *,
+    webui: BotWebUI | None = None,
+    stop_event: asyncio.Event | None = None,
+):
     """Start the bot for one validated settings/profile snapshot."""
 
     settings = settings or load_settings()
     profile = profile or get_region_profile(settings.region)
+    local_webui = webui or BotWebUI()
+    owns_webui = webui is None
+    if owns_webui:
+        local_webui.start()
+    local_webui.set_settings(settings)
+    stop_event = stop_event or asyncio.Event()
+    loop = asyncio.get_running_loop()
+    local_webui.set_control_callbacks(
+        stop=lambda: loop.call_soon_threadsafe(stop_event.set),
+    )
+    local_webui.update(
+        status="starting",
+        message=f"Starting {profile.key.upper()} runtime.",
+        running=True,
+        region=profile.key,
+        version=settings.version,
+    )
+    failed = False
     if not profile.runtime_supported:
+        local_webui.update(
+            status="error",
+            message=f"The {profile.key.upper()} region is not supported by the runtime.",
+            running=False,
+        )
+        if owns_webui:
+            local_webui.stop()
         raise RuntimeError(
             f"The {profile.key.upper()} region has metadata but no automation adapter yet."
         )
     profile.ensure_data_dir()
     state = get_vehicle_state(profile)
     state.clear_locks()
-    stop_event = asyncio.Event()
     browser_pool = None
     contexts = []
 
@@ -205,6 +236,12 @@ async def run_bot(settings: Settings | None = None, profile: RegionProfile | Non
                     f"Startup aborted: only {len(contexts)} of {settings.browsers} browser logins succeeded; "
                     "at least 2 are required for mission and transport loops. Review the login errors above."
                 )
+
+            local_webui.update(
+                status="running",
+                message="Bot is running and monitoring missions.",
+                running=True,
+            )
 
             display_info("Pooled settings:")
             display_info(f"Region: {profile.key.upper()}")
@@ -241,6 +278,14 @@ async def run_bot(settings: Settings | None = None, profile: RegionProfile | Non
                 ],
                 stop_event,
             )
+        except Exception as error:
+            failed = True
+            local_webui.update(
+                status="error",
+                message=f"Bot stopped with an error: {error}",
+                running=False,
+            )
+            raise
         finally:
             stop_event.set()
             for context in contexts:
@@ -250,3 +295,11 @@ async def run_bot(settings: Settings | None = None, profile: RegionProfile | Non
                     pass
             if browser_pool:
                 await browser_pool.close_all()
+            if not failed:
+                local_webui.update(
+                    status="stopped",
+                    message="Bot stopped cleanly.",
+                    running=False,
+                )
+            if owns_webui:
+                local_webui.stop()

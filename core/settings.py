@@ -53,6 +53,7 @@ class Settings:
     dispatch_delay: int
     training_plans: tuple[TrainingPlan, ...] = ()
     recruiting_days: int = 1
+    version: str = "dev"
 
 
 def _config_path(path: str | os.PathLike[str] | None = None) -> Path:
@@ -325,6 +326,14 @@ def load_settings(path: str | os.PathLike[str] | None = None) -> Settings:
             "[recruiting] days",
             minimum=1,
         ),
+        version=_value(
+            parser,
+            config_file,
+            "bot",
+            "version",
+            "MISSIONCHIEF_VERSION",
+            default="dev",
+        ).strip(),
     )
 
 
