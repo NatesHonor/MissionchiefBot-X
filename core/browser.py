@@ -32,7 +32,6 @@ class BrowserPool:
             for _ in range(self.size):
                 browser = await self.playwright.chromium.launch(
                     headless=self.headless,
-                    devtools=False,
                 )
                 self._browsers.append(browser)
                 await self._queue.put(browser)
