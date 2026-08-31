@@ -12,7 +12,7 @@ from core.missionchief_api import (
     vehicle_inventory_from_records,
 )
 from core.mission_collector import limit_mission_ids
-from utils.transport import transport_option_key
+from utils.transport import is_transport_request, transport_option_key
 
 
 class ApiAndTransportTests(unittest.TestCase):
@@ -82,6 +82,12 @@ class ApiAndTransportTests(unittest.TestCase):
         }
 
         self.assertLess(transport_option_key(best), transport_option_key(closer_but_wrong_department))
+
+    def test_transport_request_accepts_api_flag_variants(self):
+        self.assertTrue(is_transport_request({"fms_real": 5}))
+        self.assertTrue(is_transport_request({"transport_requested": True}))
+        self.assertTrue(is_transport_request({"needs_transport": "yes"}))
+        self.assertFalse(is_transport_request({"fms_real": 1}))
 
 
 if __name__ == "__main__":
