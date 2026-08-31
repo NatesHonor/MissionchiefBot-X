@@ -7,6 +7,7 @@ import asyncio
 from utils.pretty_print import display_error, display_info
 from utils.tasks import grab_tasks
 from utils.transport import handle_transport_requests
+from utils.training import run_training_once
 from utils.vehicle_data import gather_vehicle_data
 
 from .auth import login_single
@@ -31,6 +32,8 @@ async def run_transport_loop(context, profile: RegionProfile, settings: Settings
     while not stop_event.is_set():
         try:
             await handle_transport_requests(context, profile.base_url)
+            if settings.auto_training:
+                await run_training_once(context, profile.base_url, settings.training_plans)
             if settings.auto_tasks:
                 await grab_tasks(context, profile.base_url)
         except asyncio.CancelledError:
