@@ -1,12 +1,10 @@
 import asyncio
-import importlib
-from config.config_settings import get_region
+
+from core.runner import run_bot
+
 
 async def main():
-
-    region = get_region().lower()
-    module = importlib.import_module(f"regions.{region}.main_{region}")
-    await module.main()
+    await run_bot()
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -1,17 +1,20 @@
 import json
-import os
 import re
+from pathlib import Path
+
+from core.pages import ensure_page
+from core.settings import PROJECT_ROOT
 from utils.pretty_print import display_info, display_error
 
-TASKS_FILE = "config/tasks.json"
+TASKS_FILE = PROJECT_ROOT / "config" / "tasks.json"
 
 def clean_text(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 async def grab_tasks(context, url):
     try:
-        page = context.pages[0]
-        await page.goto(url + f"/tasks/index")
+        page = await ensure_page(context)
+        await page.goto(f"{url.rstrip('/')}/tasks/index")
         await page.wait_for_load_state("networkidle")
 
         panels = await page.query_selector_all("div.task_panel")
@@ -57,8 +60,8 @@ async def grab_tasks(context, url):
                 "rewards": rewards
             })
 
-        os.makedirs("config", exist_ok=True)
-        with open(TASKS_FILE, "w", encoding="utf-8") as f:
+        TASKS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with TASKS_FILE.open("w", encoding="utf-8") as f:
             json.dump(tasks, f, indent=2, ensure_ascii=False)
 
         display_info(f"Saved {len(tasks)} unique tasks to {TASKS_FILE}")
