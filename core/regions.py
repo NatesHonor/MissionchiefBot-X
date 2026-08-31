@@ -244,6 +244,12 @@ _REGION_DEFINITIONS = {
         "vehicle_options_module": "regions.pl.data.vehicle_options",
         "language": "pl",
     },
+    "fr": {
+        "display_name": "France",
+        "base_url": "https://www.operateur112.fr/",
+        "vehicle_options_module": "regions.fr.data.vehicle_options",
+        "language": "fr",
+    },
 }
 
 _REGION_ALIASES = {
@@ -269,6 +275,8 @@ _REGION_ALIASES = {
     "dk": "dk",
     "poland": "pl",
     "pl": "pl",
+    "france": "fr",
+    "fr": "fr",
 }
 
 

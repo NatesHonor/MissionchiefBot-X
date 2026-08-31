@@ -1,0 +1,10 @@
+{
+  "mousse": "liquid",
+  "eau": "liquid",
+  "eau nécessaire": "liquid",
+  "personnel requis": "personnel",
+  "personnel nécessaire": "personnel",
+  "véhicules à remorquer": "tow_vehicle",
+  "minimum de pompiers": "pass",
+  "minimum de policiers": "pass"
+}
