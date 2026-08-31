@@ -5,10 +5,17 @@ from types import SimpleNamespace
 sys.modules.setdefault("art", SimpleNamespace())
 
 from core.mission_requirements import normalize_cached_requirements
+from core.mission_requirements import resolve_personnel
 from core.regions import get_region_profile
 
 
 class CachedRequirementMigrationTests(unittest.TestCase):
+    def test_swat_vehicle_variant_resolves_to_personnel(self):
+        self.assertEqual(
+            resolve_personnel("SWAT personnel in SWAT vehicles", get_region_profile("us")),
+            "swat personnel",
+        )
+
     def test_old_cached_swat_requirement_is_migrated_before_dispatch(self):
         data = {
             "vehicles": [
