@@ -31,6 +31,28 @@ _VEHICLE_UNIT_PAIRS = {
     "vehicles": "units",
     "units": "vehicles",
 }
+_AIRCRAFT_TERMS = {
+    "aircraft",
+    "airplane",
+    "airplanes",
+    "plane",
+    "planes",
+    "mobile air",
+    "mobile air vehicle",
+    "mobile air vehicles",
+    "air ambulance",
+}
+_AIRCRAFT_VARIANTS = {
+    "aircraft",
+    "airplane",
+    "airplanes",
+    "plane",
+    "planes",
+    "mobile air",
+    "mobile air vehicle",
+    "mobile air vehicles",
+    "air ambulance",
+}
 
 
 def normalize_vehicle_name(value: object) -> str:
@@ -56,6 +78,8 @@ def vehicle_name_variants(value: object) -> set[str]:
         return set()
 
     variants = {normalized}
+    if normalized in _AIRCRAFT_TERMS:
+        variants.update(_AIRCRAFT_VARIANTS)
     words = normalized.split()
     last = words[-1]
     if last in _PLURAL_TO_SINGULAR:
