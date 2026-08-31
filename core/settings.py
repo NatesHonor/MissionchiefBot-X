@@ -38,6 +38,7 @@ class Settings:
     dispatch_by_distance: bool
     dispatch_incomplete: bool
     dynamic_missions: bool
+    include_alliance_missions: bool
     concurrent_missions: bool
     auto_training: bool
     auto_recruiting: bool
@@ -205,6 +206,17 @@ def load_settings(path: str | os.PathLike[str] | None = None) -> Settings:
                 default="false",
             ),
             "MISSIONCHIEF_DYNAMIC_MISSIONS",
+        ),
+        include_alliance_missions=_boolean(
+            _value(
+                parser,
+                config_file,
+                "missions",
+                "include_alliance_missions",
+                "MISSIONCHIEF_INCLUDE_ALLIANCE_MISSIONS",
+                default="true",
+            ),
+            "MISSIONCHIEF_INCLUDE_ALLIANCE_MISSIONS",
         ),
         concurrent_missions=_boolean(
             _value(

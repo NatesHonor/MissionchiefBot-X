@@ -203,27 +203,38 @@ def extract_mission_marker_records(value) -> list[dict]:
     return list({record["id"]: record for record in records}.values())
 
 
-async def fetch_mission_markers(page, base_url: str) -> list[str]:
-    """Fetch own and alliance marker endpoints and combine their mission IDs."""
+def mission_marker_endpoints(include_alliance_missions: bool = True) -> tuple[str, ...]:
+    """Return marker feeds selected by the personal/alliance collection setting."""
+
+    endpoints = ["/map/mission_markers_own.js.erb"]
+    if include_alliance_missions:
+        endpoints.append("/map/mission_markers_alliance.js.erb")
+    return tuple(endpoints)
+
+
+async def fetch_mission_markers(
+    page,
+    base_url: str,
+    include_alliance_missions: bool = True,
+) -> list[str]:
+    """Fetch selected mission marker endpoints and combine their mission IDs."""
 
     ids = []
-    for endpoint in (
-        "/map/mission_markers_own.js.erb",
-        "/map/mission_markers_alliance.js.erb",
-    ):
+    for endpoint in mission_marker_endpoints(include_alliance_missions):
         content = await fetch_text(page, base_url, [endpoint])
         ids.extend(extract_mission_ids(content))
     return list(dict.fromkeys(ids))
 
 
-async def fetch_mission_marker_records(page, base_url: str) -> list[dict]:
+async def fetch_mission_marker_records(
+    page,
+    base_url: str,
+    include_alliance_missions: bool = True,
+) -> list[dict]:
     """Fetch marker metadata needed to match ignore rules by mission type."""
 
     records = []
-    for endpoint in (
-        "/map/mission_markers_own.js.erb",
-        "/map/mission_markers_alliance.js.erb",
-    ):
+    for endpoint in mission_marker_endpoints(include_alliance_missions):
         content = await fetch_text(page, base_url, [endpoint])
         records.extend(extract_mission_marker_records(content))
     return list({record["id"]: record for record in records}.values())

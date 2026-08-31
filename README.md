@@ -116,6 +116,11 @@ missions, exact names for stable mission types, or `contains` for a name fragmen
 The list is read before detailed mission pages are scanned.  Mission names are matched
 without accents or punctuation, and an empty or missing file disables filtering.
 
+Mission collection includes alliance missions by default so existing configurations keep
+their current behavior.  Set `include_alliance_missions = false` under `[missions]`, or
+set `MISSIONCHIEF_INCLUDE_ALLIANCE_MISSIONS=false`, to collect and dispatch only your own
+missions.  This setting controls the marker feed before the ignore-list rules are applied.
+
 ---
 
 ## 🐳 Run with Docker

@@ -7,6 +7,7 @@ sys.modules.setdefault("art", SimpleNamespace())
 from core.missionchief_api import (
     extract_mission_ids,
     extract_mission_marker_records,
+    mission_marker_endpoints,
     records_from_payload,
     vehicle_inventory_from_records,
 )
@@ -43,6 +44,19 @@ class ApiAndTransportTests(unittest.TestCase):
                 {"id": "42", "type_id": "9", "name": None},
                 {"id": "43", "type_id": "10", "name": None},
             ],
+        )
+
+    def test_mission_marker_feeds_can_be_limited_to_personal_missions(self):
+        self.assertEqual(
+            mission_marker_endpoints(False),
+            ("/map/mission_markers_own.js.erb",),
+        )
+        self.assertEqual(
+            mission_marker_endpoints(True),
+            (
+                "/map/mission_markers_own.js.erb",
+                "/map/mission_markers_alliance.js.erb",
+            ),
         )
 
     def test_transport_priority_is_department_ownership_tax_then_distance(self):
