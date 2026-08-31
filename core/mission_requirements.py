@@ -6,6 +6,7 @@ import json
 import re
 
 from .mission_helpers import normalize_name
+from .localization import contains_localized_term, get_localized_terms
 from .regions import get_region_profile
 
 
@@ -35,8 +36,20 @@ async def gather_requirements(page, profile=None):
     table = await page.query_selector(
         'div.col-md-4 > table:has(th:has-text("Vehicle and Personnel Requirements"))'
     )
+    if not table:
+        tables = await page.query_selector_all("div.col-md-4 > table")
+        for candidate in tables:
+            if contains_localized_term(
+                await candidate.inner_text(), profile.language, "required"
+            ):
+                table = candidate
+                break
     if table:
-        for row in await table.query_selector_all('tr:has(td:has-text("Required"))'):
+        for row in await table.query_selector_all("tr:has(td)"):
+            if not contains_localized_term(
+                await row.inner_text(), profile.language, "required"
+            ):
+                continue
             name_element = await row.query_selector("td:first-child")
             count_element = await row.query_selector("td:nth-child(2)")
             if not name_element or not count_element:
@@ -56,6 +69,14 @@ async def gather_requirements(page, profile=None):
     table = await page.query_selector(
         'div.col-md-4 > table:has(th:has-text("Other information"))'
     )
+    if not table:
+        tables = await page.query_selector_all("div.col-md-4 > table")
+        for candidate in tables:
+            if contains_localized_term(
+                await candidate.inner_text(), profile.language, "personnel"
+            ):
+                table = candidate
+                break
     if table:
         for row in await table.query_selector_all("tr"):
             header_element = await row.query_selector("td:first-child")
@@ -63,7 +84,7 @@ async def gather_requirements(page, profile=None):
             if not header_element or not value_element:
                 continue
             header = (await header_element.inner_text()).lower()
-            if "required personnel" not in header:
+            if not contains_localized_term(header, profile.language, "personnel"):
                 continue
             html = await value_element.inner_html()
             text = re.sub(r"<br\s*/?>", "\n", html)

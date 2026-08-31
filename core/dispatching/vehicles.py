@@ -91,9 +91,16 @@ async def find_vehicle_ids(name: str, profile=None, state=None):
     normalized = normalize_key(name)
     ids = []
     names = [name, *profile.vehicle_options(name)]
-    normalized_names = {normalize_key(item) for item in names}
+    normalized_names = {normalize_key(item) for item in names if item}
     for vehicle_type, vehicle_ids in vehicle_data.items():
-        if normalize_key(vehicle_type) in normalized_names:
+        normalized_type = normalize_key(vehicle_type)
+        matches_name = normalized_type in normalized_names
+        matches_variant = any(
+            len(candidate) >= 4
+            and (candidate in normalized_type or normalized_type in candidate)
+            for candidate in normalized_names
+        )
+        if matches_name or matches_variant:
             ids.extend(str(vehicle_id) for vehicle_id in vehicle_ids)
     unique_ids = list(dict.fromkeys(ids))
     if not unique_ids:
