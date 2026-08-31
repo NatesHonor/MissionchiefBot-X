@@ -23,6 +23,7 @@ dynamic_missions = false
 [other]
 auto_training = false
 auto_recruiting = false
+auto_special_resources = false
 auto_tasks = false
 
 [delays]
