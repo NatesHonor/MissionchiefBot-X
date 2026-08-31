@@ -238,6 +238,12 @@ _REGION_DEFINITIONS = {
         "vehicle_options_module": "regions.dk.data.vehicle_options",
         "language": "da",
     },
+    "pl": {
+        "display_name": "Poland",
+        "base_url": "https://www.operatorratunkowy.pl/",
+        "vehicle_options_module": "regions.pl.data.vehicle_options",
+        "language": "pl",
+    },
 }
 
 _REGION_ALIASES = {
@@ -261,6 +267,8 @@ _REGION_ALIASES = {
     "denmark": "dk",
     "danish": "dk",
     "dk": "dk",
+    "poland": "pl",
+    "pl": "pl",
 }
 
 
