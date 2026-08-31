@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 from ..regions import get_region_profile
-from ..mission_requirements import parse_requirement_count
+from ..mission_requirements import parse_requirement_count, resolve_personnel
 from ..settings import get_settings
 from utils.personnel_options import get_personnel_options
 
@@ -74,6 +74,7 @@ async def handle_personnel(page, data, missing, mission_id, profile=None, state=
     skip_roles = {"technical rescuer", "usar", "sharpshooter"}
     for person in data.get("personnel", []):
         original = person["name"]
+        resolved = resolve_personnel(original, profile)
         needed = parse_requirement_count(person.get("count", 0))
         if needed is None or needed <= 0:
             continue
@@ -81,12 +82,17 @@ async def handle_personnel(page, data, missing, mission_id, profile=None, state=
             continue
         stripped = re.sub(r"\([^)]*\)", "", original)
         mapping = {}
-        for key in (canonical_personnel(original), normalize_key(original), normalize_key(stripped)):
+        for key in (
+            resolved,
+            canonical_personnel(original),
+            normalize_key(original),
+            normalize_key(stripped),
+        ):
             mapping = get_personnel_options(key)
             if mapping:
                 break
         candidate_data = {}
-        exact_lookup = normalize_key(original) == "swat personnel"
+        exact_lookup = normalize_key(resolved) == "swat personnel"
         for vehicle_type, per_vehicle in mapping.items():
             lookup_options = {"exact": True, "quiet": True} if exact_lookup else {}
             ids = await find_vehicle_ids(vehicle_type, profile, state, **lookup_options)
