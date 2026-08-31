@@ -1,0 +1,11 @@
+{
+  "skum": "liquid",
+  "skumenhet": "liquid",
+  "vatten": "liquid",
+  "nödvändig personal": "personnel",
+  "behövlig personal": "personnel",
+  "fordon att bogsera": "tow_vehicle",
+  "fordon som ska bogseras": "tow_vehicle",
+  "minst brandmän": "pass",
+  "minst poliser": "pass"
+}

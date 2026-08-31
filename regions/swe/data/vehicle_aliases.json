@@ -1,0 +1,16 @@
+{
+  "firetruck": ["BAS 1", "BAS 2", "släckbil", "släckbilar", "Räddningsbil"],
+  "platform truck": ["Stegbil", "Stegbilar"],
+  "heavy rescue vehicles": ["Räddningsbil", "Haveribil"],
+  "hazmat vehicles": ["Kemskyddsenhet", "Kemskyddsenheter"],
+  "mobile command vehicles": ["Räddningsledningsfordon", "Brandbefäl"],
+  "mobile air vehicles": ["Luftfordon", "Ambulanshelikopter", "Brandhelikopter"],
+  "ambulance": ["Ambulans", "Lättvårdsambulans", "Ambulans Kritisk Transport"],
+  "ems chief": ["Akutläkarbil", "Jourläkare", "IVPA"],
+  "patrol car": ["Radiobil", "Trafikpolis", "Polismotorcykel", "Cykelpolis"],
+  "police helicopter": ["Polishelikopter"],
+  "wrecker": ["Haveribil", "Lastväxlare"],
+  "water tanker": ["Tankbil"],
+  "light boat": ["Liten räddningsbåt"],
+  "prisoner transport van": ["Polistransport", "Häktesbuss"]
+}

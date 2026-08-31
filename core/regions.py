@@ -62,7 +62,15 @@ _REGION_DEFINITIONS = {
     "aus": ("https://www.missionchief-australia.com/", False, "utils.vehicle_options", "en"),
     "ger": ("https://www.leitstellenspiel.de/", True, "regions.ger.data.vehicle_options", "de"),
     "nld": ("https://www.meldkamerspel.com/", False, "utils.vehicle_options", "nl"),
+    "swe": (
+        "https://www.larmcentralen-spelet.se/",
+        True,
+        "regions.swe.data.vehicle_options",
+        "sv",
+    ),
 }
+
+_REGION_ALIASES = {"se": "swe", "sweden": "swe"}
 
 
 def supported_regions() -> tuple[str, ...]:
@@ -74,7 +82,7 @@ def get_region_profile(region: str | None = None) -> RegionProfile:
         from .settings import get_settings
 
         region = get_settings().region
-    key = region.strip().lower()
+    key = _REGION_ALIASES.get(region.strip().lower(), region.strip().lower())
     try:
         base_url, runtime_supported, options_module, language = _REGION_DEFINITIONS[key]
     except KeyError as error:
