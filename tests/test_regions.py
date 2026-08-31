@@ -119,6 +119,7 @@ class DanishRegionTests(unittest.TestCase):
 class RegionRegistryTests(unittest.TestCase):
     def test_every_registered_region_has_the_shared_runtime_contract(self):
         expected = {"us", "uk", "aus", "ger", "nld", "swe", "pt", "dk"}
+        expected.add("pl")
         self.assertEqual(set(supported_regions()), expected)
         for region in expected:
             profile = get_region_profile(region)
@@ -133,6 +134,12 @@ class RegionRegistryTests(unittest.TestCase):
         self.assertEqual(get_region_profile("nl").key, "nld")
         self.assertEqual(get_region_profile("de").key, "ger")
         self.assertEqual(get_region_profile("sv").key, "swe")
+
+    def test_polish_region_accepts_its_official_hostname(self):
+        profile = get_region_profile("https://www.operatorratunkowy.pl/")
+        self.assertEqual(profile.key, "pl")
+        self.assertEqual(profile.language, "pl")
+        self.assertEqual(profile.base_url, "https://www.operatorratunkowy.pl/")
 
     def test_region_urls_and_hosts_resolve_to_their_dedicated_profiles(self):
         self.assertEqual(get_region_profile("https://www.missionchief.co.uk/").key, "uk")
