@@ -152,8 +152,10 @@ async def run_bot(settings: Settings | None = None, profile: RegionProfile | Non
                     display_error(f"Login failed: {info}")
 
             if len(contexts) < 2:
-                display_error("Not enough successful logins to start automation.")
-                return
+                raise RuntimeError(
+                    f"Startup aborted: only {len(contexts)} of {settings.browsers} browser logins succeeded; "
+                    "at least 2 are required for mission and transport loops. Review the login errors above."
+                )
 
             display_info("Pooled settings:")
             display_info(f"Region: {profile.key.upper()}")
