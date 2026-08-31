@@ -76,23 +76,39 @@ def records_from_payload(payload) -> list[dict]:
     return []
 
 
+def _inventory_labels(vehicle: dict) -> list[str]:
+    """Return the real type and safe display-caption variants for one record."""
+
+    labels = []
+    for key in ("vehicle_type_caption", "vehicle_type_name", "vehicle_type", "caption", "name"):
+        value = vehicle.get(key)
+        text = str(value or "").strip()
+        if not text or text.isdigit():
+            continue
+        labels.append(text)
+
+        # MissionChief commonly prefixes a display caption with an inventory
+        # number (for example ``01 Ambulance``).  Keep the original caption,
+        # but also index the actual type so requirements can resolve it.
+        stripped = re.sub(r"^#?\d+\s*[-:.]?\s*", "", text).strip()
+        if stripped and stripped.casefold() != text.casefold():
+            labels.append(stripped)
+    return list(dict.fromkeys(labels))
+
+
 def vehicle_inventory_from_records(records: list[dict]) -> dict[str, list[str]]:
-    """Group API vehicles by useful localized captions while preserving IDs."""
+    """Group API vehicles by real types and useful localized captions."""
 
     inventory: dict[str, list[str]] = {}
     for vehicle in records:
         vehicle_id = vehicle.get("id")
         if vehicle_id is None:
             continue
-        labels = [
-            vehicle.get("vehicle_type_caption"),
-            vehicle.get("caption"),
-            str(vehicle.get("vehicle_type")) if vehicle.get("vehicle_type") is not None else None,
-        ]
-        label = next((str(value).strip() for value in labels if str(value or "").strip()), None)
-        if not label:
-            continue
-        inventory.setdefault(label, []).append(str(vehicle_id))
+        vehicle_id = str(vehicle_id)
+        for label in _inventory_labels(vehicle):
+            values = inventory.setdefault(label, [])
+            if vehicle_id not in values:
+                values.append(vehicle_id)
     return inventory
 
 
