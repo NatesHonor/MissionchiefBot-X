@@ -101,8 +101,18 @@ identified; the launcher rejects it instead of silently using another country's 
 
 ### Run locally on Windows
 
-The supported local entrypoint is `Main.py`, launched from the repository root. After
-running setup, use `run.cmd` from Command Prompt or `./run.ps1` from PowerShell. Both
+From the repository root, run the setup script with the Python version you intend to use:
+
+```powershell
+python setup_environment.py
+```
+
+This creates `.venv` when needed, installs `requirements.txt`, installs the matching
+Playwright Chromium browser, and verifies that the executable is available. To validate
+an existing installation without changing it, run `python setup_environment.py --check`.
+
+The supported local entrypoint is `Main.py`. After setup, use `run.cmd` from Command
+Prompt or `./run.ps1` from PowerShell. Both
 wrappers resolve the project directory and always use `.venv\Scripts\python.exe`, so
 launching from another working directory does not change where configuration and regional
 data are read from. A missing environment reports a setup error instead of silently using
