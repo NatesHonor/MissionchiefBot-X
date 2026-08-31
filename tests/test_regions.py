@@ -6,7 +6,7 @@ import sys
 sys.modules.setdefault("art", SimpleNamespace())
 
 from core.dispatching.vehicles import find_vehicle_ids
-from core.regions import get_region_profile
+from core.regions import get_region_profile, supported_regions
 
 
 class GermanRegionTests(unittest.TestCase):
@@ -87,6 +87,29 @@ class PortugueseRegionTests(unittest.TestCase):
         )
 
         self.assertEqual(vehicle_ids, ["501", "502"])
+
+
+class RegionRegistryTests(unittest.TestCase):
+    def test_every_registered_region_has_the_shared_runtime_contract(self):
+        expected = {"us", "uk", "aus", "ger", "nld", "swe", "pt"}
+        self.assertEqual(set(supported_regions()), expected)
+        for region in expected:
+            profile = get_region_profile(region)
+            self.assertTrue(profile.runtime_supported)
+            self.assertTrue(profile.base_url.endswith("/"))
+            self.assertTrue(profile.vehicle_options("firetruck"))
+            self.assertEqual(profile.validate_data_contract(), [])
+
+    def test_region_aliases_resolve_to_canonical_profiles(self):
+        self.assertEqual(get_region_profile("usa").key, "us")
+        self.assertEqual(get_region_profile("australia").key, "aus")
+        self.assertEqual(get_region_profile("nl").key, "nld")
+        self.assertEqual(get_region_profile("de").key, "ger")
+        self.assertEqual(get_region_profile("sv").key, "swe")
+
+    def test_unknown_region_is_not_silently_mapped_to_another_country(self):
+        with self.assertRaisesRegex(ValueError, "no dedicated MissionChief adapter"):
+            get_region_profile("new zealand")
 
 
 if __name__ == "__main__":
