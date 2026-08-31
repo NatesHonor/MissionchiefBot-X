@@ -23,5 +23,8 @@
   "ems chief": ["Notarzteinsatzfahrzeug", "NEF"],
   "patrol car": ["Streifenwagen"],
   "police helicopter": ["Polizeihubschrauber"],
-  "wrecker": ["Abschleppwagen", "Abschleppfahrzeug"]
+  "wrecker": ["Abschleppwagen", "Abschleppfahrzeug"],
+  "flatbed carrier": ["Abschleppwagen", "Abschleppfahrzeug"],
+  "water tanker": ["Tanklöschfahrzeug", "TLF", "Löschfahrzeug"],
+  "prisoner transport van": ["Gefangenentransportwagen", "Streifenwagen"]
 }

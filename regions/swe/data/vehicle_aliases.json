@@ -12,5 +12,7 @@
   "wrecker": ["Haveribil", "Lastväxlare"],
   "water tanker": ["Tankbil"],
   "light boat": ["Liten räddningsbåt"],
-  "prisoner transport van": ["Polistransport", "Häktesbuss"]
+  "prisoner transport van": ["Polistransport", "Häktesbuss"],
+  "flatbed carrier": ["Haveribil", "Lastväxlare"],
+  "ems mobile command units": ["Räddningsledningsfordon", "Brandbefäl"]
 }

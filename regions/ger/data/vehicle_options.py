@@ -14,11 +14,15 @@ VEHICLE_OPTIONS = {
     "mobile air vehicles": ["Hubrettungsfahrzeug", "Drehleiter"],
     "ambulance": ["Rettungswagen", "RTW", "Krankentransportwagen", "KTW"],
     "ems chief": ["Notarzteinsatzfahrzeug", "NEF"],
+    "ems mobile command unit": ["Einsatzleitwagen", "ELW 1", "ELW 2"],
+    "ems mobile command units": ["Einsatzleitwagen", "ELW 1", "ELW 2"],
     "patrol car": ["Streifenwagen"],
     "police car": ["Streifenwagen"],
     "police helicopter": ["Polizeihubschrauber"],
     "wrecker": ["Abschleppwagen", "Abschleppfahrzeug"],
     "flatbed carrier": ["Abschleppwagen", "Abschleppfahrzeug"],
+    "water tanker": ["Tanklöschfahrzeug", "TLF", "Löschfahrzeug"],
+    "prisoner transport van": ["Gefangenentransportwagen", "Streifenwagen"],
 }
 
 

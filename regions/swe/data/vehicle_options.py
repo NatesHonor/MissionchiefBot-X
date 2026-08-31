@@ -11,6 +11,8 @@ VEHICLE_OPTIONS = {
     "mobile air vehicles": ["Luftfordon", "Ambulanshelikopter", "Brandhelikopter"],
     "ambulance": ["Ambulans", "Lättvårdsambulans", "Ambulans Kritisk Transport"],
     "ems chief": ["Akutläkarbil", "Jourläkare", "IVPA"],
+    "ems mobile command unit": ["Räddningsledningsfordon", "Brandbefäl"],
+    "ems mobile command units": ["Räddningsledningsfordon", "Brandbefäl"],
     "patrol car": ["Radiobil", "Trafikpolis", "Polismotorcykel", "Cykelpolis"],
     "police car": ["Radiobil", "Trafikpolis", "Polismotorcykel", "Cykelpolis"],
     "police helicopter": ["Polishelikopter"],
@@ -19,6 +21,7 @@ VEHICLE_OPTIONS = {
     "water tanker": ["Tankbil"],
     "light boat": ["Liten räddningsbåt"],
     "prisoner transport van": ["Polistransport", "Häktesbuss"],
+    "flatbed carrier": ["Haveribil", "Lastväxlare"],
 }
 
 
