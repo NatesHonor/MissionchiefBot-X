@@ -134,6 +134,11 @@ class RegionRegistryTests(unittest.TestCase):
         self.assertEqual(get_region_profile("de").key, "ger")
         self.assertEqual(get_region_profile("sv").key, "swe")
 
+    def test_region_urls_and_hosts_resolve_to_their_dedicated_profiles(self):
+        self.assertEqual(get_region_profile("https://www.missionchief.co.uk/").key, "uk")
+        self.assertEqual(get_region_profile("missionchief.co.uk").key, "uk")
+        self.assertEqual(get_region_profile("https://www.leitstellenspiel.de").key, "ger")
+
     def test_unknown_region_is_not_silently_mapped_to_another_country(self):
         with self.assertRaisesRegex(ValueError, "no dedicated MissionChief adapter"):
             get_region_profile("new zealand")

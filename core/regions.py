@@ -13,6 +13,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from .vehicle_mapping import (
     dedupe_vehicle_terms,
@@ -263,6 +264,27 @@ _REGION_ALIASES = {
 }
 
 
+def _normalize_region_key(region: str) -> str:
+    """Resolve names, hostnames, and pasted regional URLs consistently."""
+
+    value = str(region or "").strip().lower()
+    if not value:
+        return value
+
+    direct = _REGION_ALIASES.get(value, value)
+    if direct in _REGION_DEFINITIONS:
+        return direct
+
+    candidate = value if "://" in value else f"//{value}"
+    hostname = urlsplit(candidate).hostname or ""
+    hostname = hostname.removeprefix("www.")
+    for key, definition in _REGION_DEFINITIONS.items():
+        configured_host = urlsplit(definition["base_url"]).hostname or ""
+        if hostname == configured_host.removeprefix("www."):
+            return key
+    return direct
+
+
 def supported_regions() -> tuple[str, ...]:
     return tuple(_REGION_DEFINITIONS)
 
@@ -272,7 +294,7 @@ def get_region_profile(region: str | None = None) -> RegionProfile:
         from .settings import get_settings
 
         region = get_settings().region
-    key = _REGION_ALIASES.get(region.strip().lower(), region.strip().lower())
+    key = _normalize_region_key(region)
     try:
         definition = _REGION_DEFINITIONS[key]
     except KeyError as error:
