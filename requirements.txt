@@ -1,3 +1,4 @@
 deep-translator
-playwright~=1.48.0
+# Playwright 1.62 is the tested Python 3.14-compatible dependency line.
+playwright>=1.62,<1.63
 art~=6.3
