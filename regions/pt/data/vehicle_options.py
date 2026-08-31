@@ -25,6 +25,7 @@ VEHICLE_OPTIONS = {
     "ambulance": ["ABSC", "Ambulância", "Ambulância de Socorro", "VMER", "SIV"],
     "ems chief": ["VMER", "SIV"],
     "ems mobile command unit": ["VCOC", "Veículo de Comando e Comunicações"],
+    "ems mobile command units": ["VCOC", "Veículo de Comando e Comunicações"],
     "patrol car": ["Carro patrulha", "Carro de Patrulha"],
     "police car": ["Carro patrulha", "Carro de Patrulha"],
     "police helicopter": ["Heli INEM"],

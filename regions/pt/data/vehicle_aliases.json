@@ -12,5 +12,8 @@
   "police helicopter": ["Heli INEM"],
   "wrecker": ["Caminhão de reboque"],
   "water tanker": ["VTTU", "caminhão pipa", "Veículo Tanque"],
-  "light boat": ["VIC"]
+  "light boat": ["VIC"],
+  "flatbed carrier": ["Caminhão de reboque"],
+  "prisoner transport van": ["Carro patrulha"],
+  "ems mobile command units": ["VCOC", "Veículo de Comando e Comunicações"]
 }

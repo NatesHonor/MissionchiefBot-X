@@ -91,6 +91,11 @@ async def find_vehicle_ids(name: str, profile=None, state=None):
     normalized = normalize_key(name)
     ids = []
     names = [name, *profile.vehicle_options(name)]
+    alias_data = profile.vehicle_aliases() if hasattr(profile, "vehicle_aliases") else {}
+    for canonical, synonyms in alias_data.items():
+        alias_values = [canonical, *(synonyms if isinstance(synonyms, list) else [])]
+        if normalized in {normalize_key(value) for value in alias_values}:
+            names.extend(alias_values)
     normalized_names = {normalize_key(item) for item in names if item}
     for vehicle_type, vehicle_ids in vehicle_data.items():
         normalized_type = normalize_key(vehicle_type)
