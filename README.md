@@ -80,7 +80,7 @@ Need help? Visit our support page [here](https://support.natemarcellus.com).
 ## 💬 Community
 
 Join our Discord server to connect with other players and get live updates:  
-[Join Discord](https://links.natemarcellus.com)
+[Join Discord](https://discord.gg/UrGZwfjxND)
 
 ---
 
@@ -132,6 +132,6 @@ Join our Discord server to connect with other players and get live updates:
 ## 🙌 Feedback
 
 Your feedback is important! It helps us improve Mission Helper and make the game better for everyone.  
-Please share your thoughts on our [support page](https://support.natemarcellus.com) or in the [Discord server](https://links.natemarcellus.com).
+Please share your thoughts on our [support page](https://support.natemarcellus.com) or in the [Discord server](https://discord.gg/UrGZwfjxND).
 
 ---
