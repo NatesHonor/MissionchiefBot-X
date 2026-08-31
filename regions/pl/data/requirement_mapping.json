@@ -1,0 +1,11 @@
+{
+  "woda": "liquid",
+  "pianka": "liquid",
+  "piana": "liquid",
+  "wymagany personel": "personnel",
+  "potrzebny personel": "personnel",
+  "pojazdy do holowania": "tow_vehicle",
+  "samochody do holowania": "tow_vehicle",
+  "minimalna liczba strażaków": "pass",
+  "minimalna liczba policjantów": "pass"
+}
