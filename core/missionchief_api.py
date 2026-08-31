@@ -152,6 +152,57 @@ def extract_mission_ids(value) -> list[str]:
     return list(dict.fromkeys(ids))
 
 
+def extract_mission_marker_records(value) -> list[dict]:
+    """Extract active mission IDs and optional mission-type IDs from markers."""
+
+    if isinstance(value, (dict, list)):
+        records = []
+        values = value if isinstance(value, list) else [value]
+        for item in values:
+            if not isinstance(item, dict):
+                continue
+            mission_id = next(
+                (item.get(key) for key in ("mission_id", "missionId", "id") if item.get(key) is not None),
+                None,
+            )
+            if mission_id is None:
+                continue
+            type_id = next(
+                (
+                    item.get(key)
+                    for key in ("mtid", "mission_type_id", "missionTypeId", "mission_type")
+                    if item.get(key) is not None
+                ),
+                None,
+            )
+            records.append({"id": str(mission_id), "type_id": str(type_id) if type_id is not None else None, "name": item.get("name") or item.get("mission_name")})
+        return list({record["id"]: record for record in records}.values())
+
+    text = str(value or "")
+    records = []
+    id_pattern = re.compile(
+        r"(?<![A-Za-z_])(?:[\"']?(?:mission[_-]?id|missionId|id)[\"']?)\s*[:=]\s*[\"']?(\d+)",
+        re.IGNORECASE,
+    )
+    type_pattern = re.compile(
+        r"(?:[\"']?(?:mtid|mission[_-]?type[_-]?id|missionTypeId)[\"']?)\s*[:=]\s*[\"']?(\d+)",
+        re.IGNORECASE,
+    )
+    for match in id_pattern.finditer(text):
+        start = max(0, text.rfind("{", 0, match.start()))
+        end = text.find("}", match.end())
+        segment = text[start : end if end >= 0 else min(len(text), match.end() + 400)]
+        type_match = type_pattern.search(segment)
+        records.append(
+            {
+                "id": match.group(1),
+                "type_id": type_match.group(1) if type_match else None,
+                "name": None,
+            }
+        )
+    return list({record["id"]: record for record in records}.values())
+
+
 async def fetch_mission_markers(page, base_url: str) -> list[str]:
     """Fetch own and alliance marker endpoints and combine their mission IDs."""
 
@@ -163,6 +214,19 @@ async def fetch_mission_markers(page, base_url: str) -> list[str]:
         content = await fetch_text(page, base_url, [endpoint])
         ids.extend(extract_mission_ids(content))
     return list(dict.fromkeys(ids))
+
+
+async def fetch_mission_marker_records(page, base_url: str) -> list[dict]:
+    """Fetch marker metadata needed to match ignore rules by mission type."""
+
+    records = []
+    for endpoint in (
+        "/map/mission_markers_own.js.erb",
+        "/map/mission_markers_alliance.js.erb",
+    ):
+        content = await fetch_text(page, base_url, [endpoint])
+        records.extend(extract_mission_marker_records(content))
+    return list({record["id"]: record for record in records}.values())
 
 
 async def refresh_mission_index(page, base_url: str, destination: Path, max_age: int = 86400):

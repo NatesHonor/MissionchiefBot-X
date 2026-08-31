@@ -99,6 +99,23 @@ real MissionChief service URL and a verified set of game vehicle names before it
 enabled.  New Zealand remains explicitly unsupported until an official service is
 identified; the launcher rejects it instead of silently using another country's site.
 
+### Mission ignore list
+
+To keep a mission type out of collection and dispatch, edit the region-specific file
+`regions/<region>/data/mission_ignore_list.json`.  Use mission IDs for one-off active
+missions, exact names for stable mission types, or `contains` for a name fragment:
+
+```json
+{
+  "mission_ids": [],
+  "mission_names": ["Mission name to skip"],
+  "contains": ["airport"]
+}
+```
+
+The list is read before detailed mission pages are scanned.  Mission names are matched
+without accents or punctuation, and an empty or missing file disables filtering.
+
 ---
 
 ## 🐳 Run with Docker
