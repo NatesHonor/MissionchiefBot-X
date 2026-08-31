@@ -1,0 +1,19 @@
+{
+  "firetruck": ["brandbil", "brandbiler", "sprøjte", "autosprøjte", "tankvogn"],
+  "platform truck": ["stigevogn", "stigevogne"],
+  "battalion chief unit": ["indsatsleder brand-køretøj", "indsatsleder brand"],
+  "heavy rescue vehicles": ["redningsvogn", "redningsvogne"],
+  "hazmat vehicles": ["gift- og kemikaliekøretøj", "gift- og kemikaliekøretøjer", "kemikaliekøretøj"],
+  "mobile command vehicles": ["ledelses- og kommunikationsmodul", "ledelses- og kommunikationsmoduler"],
+  "ambulance": ["ambulancer"],
+  "ems chief": ["akutlægebil", "akutlægebiler"],
+  "patrol car": ["politibil", "politibiler"],
+  "police supervisor": ["indsatsleder politi", "indsatsleder politi-køretøj"],
+  "police helicopter": ["politihelikopter", "politihelikoptere"],
+  "k-9 unit": ["hundepatrulje", "hundepatruljer"],
+  "swat armoured vehicles": ["aks-køretøj", "aks køretøjer"],
+  "wrecker": ["vejhjælpskøretøj", "vejhjælpskøretøjer", "autohjælpskøretøj"],
+  "water tanker": ["vandtankvogn", "vandtankvogne"],
+  "light boat": ["båd", "både", "redningsbåd"],
+  "prisoner transport van": ["fangetransportvogn", "transportvogn", "politibil"]
+}

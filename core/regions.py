@@ -227,6 +227,12 @@ _REGION_DEFINITIONS = {
         "vehicle_options_module": "regions.pt.data.vehicle_options",
         "language": "pt",
     },
+    "dk": {
+        "display_name": "Denmark",
+        "base_url": "https://www.alarmcentral-spil.dk/",
+        "vehicle_options_module": "regions.dk.data.vehicle_options",
+        "language": "da",
+    },
 }
 
 _REGION_ALIASES = {
@@ -247,6 +253,9 @@ _REGION_ALIASES = {
     "sv": "swe",
     "portugal": "pt",
     "pt-pt": "pt",
+    "denmark": "dk",
+    "danish": "dk",
+    "dk": "dk",
 }
 
 
