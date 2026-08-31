@@ -104,9 +104,7 @@ async def navigate_and_dispatch(contexts, url, profile=None, state=None, setting
             covered = 2 * used_flatbed
             remaining = max(0, crashed - covered)
             if remaining > 0:
-                wreckers = []
-                for wrecker_type in ("Wrecker", "Police Wrecker", "Fire Wrecker"):
-                    wreckers.extend(await find_vehicle_ids(wrecker_type, profile, state))
+                wreckers = await find_vehicle_ids("wrecker", profile, state)
                 used = await select_vehicles(
                     page,
                     wreckers,

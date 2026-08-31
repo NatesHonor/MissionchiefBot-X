@@ -39,7 +39,8 @@ def get_vehicle_options(vehicle_type):
 
         "swat armoured vehicles": ["SWAT SUV", "SWAT Armoured Vehicle"],
 
-        "light boat": ["Small Coastal Boat" , "Large Coastal Boat"]
+        "light boat": ["Small Coastal Boat" , "Large Coastal Boat"],
+        "wrecker": ["Wrecker", "Police Wrecker", "Fire Wrecker"]
     }
     vehicle_type = vehicle_type.lower()
     return vehicle_options_map.get(vehicle_type, [])
