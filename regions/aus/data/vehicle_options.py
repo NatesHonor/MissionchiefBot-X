@@ -4,7 +4,16 @@ from core.vehicle_mapping import get_vehicle_options_from_map
 
 VEHICLE_OPTIONS = {
     "arffs or firetrucks": ["Type 1 fire engine", "Type 2 fire engine", "Small ARFF Crash Tender", "Medium ARFF Crash Tender", "Large ARFF Crash Tender"],
-    "firetruck": ["Type 1 fire engine", "Type 2 fire engine", "Type 3 fire engine", "Pumper", "Tanker"],
+    "firetruck": [
+        "Type 1 fire engine",
+        "Type 2 fire engine",
+        "Type 3 fire engine",
+        "Pumper",
+        "Tanker",
+        "Platform truck",
+        "Quint",
+        "Rescue Engine",
+    ],
     "firetrucks": ["Type 1 fire engine", "Type 2 fire engine", "Type 3 fire engine", "Pumper", "Tanker"],
     "firetrucks, heavy rescue vehicles, or platform trucks,": ["Type 1 fire engine", "Type 2 fire engine", "Platform truck", "Quint", "Heavy rescue vehicle", "Rescue Engine"],
     "platform truck": ["Platform truck", "Quint", "Aerial appliance"],

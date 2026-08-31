@@ -57,6 +57,33 @@ class VehicleMappingTests(unittest.TestCase):
         )
         self.assertEqual(armoured, ["swat-armoured-1"])
 
+    def test_cross_role_fire_vehicle_mappings_include_quint_and_rescue_engine(self):
+        for region in ("us", "uk", "aus"):
+            with self.subTest(region=region):
+                profile = get_region_profile(region)
+                state = SimpleNamespace(
+                    get_data=lambda: {
+                        "Quint": [f"{region}-quint"],
+                        "Rescue Engine": [f"{region}-rescue-engine"],
+                    },
+                    is_locked=lambda vehicle_id: False,
+                )
+
+                firetruck_ids = asyncio.run(
+                    find_vehicle_ids("firetruck", profile, state, quiet=True)
+                )
+                platform_ids = asyncio.run(
+                    find_vehicle_ids("platform truck", profile, state, quiet=True)
+                )
+                heavy_rescue_ids = asyncio.run(
+                    find_vehicle_ids("heavy rescue vehicle", profile, state, quiet=True)
+                )
+
+                self.assertIn(f"{region}-quint", firetruck_ids)
+                self.assertIn(f"{region}-quint", platform_ids)
+                self.assertIn(f"{region}-rescue-engine", firetruck_ids)
+                self.assertIn(f"{region}-rescue-engine", heavy_rescue_ids)
+
     def test_every_region_passes_the_mapping_audit(self):
         for region in supported_regions():
             with self.subTest(region=region):
