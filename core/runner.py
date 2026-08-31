@@ -29,6 +29,62 @@ async def _sleep_or_stop(seconds: int, stop_event: asyncio.Event) -> None:
         pass
 
 
+async def run_parallel_runtime_loops(loop_factories, stop_event: asyncio.Event) -> None:
+    """Keep mission and background work alive as independent supervised loops.
+
+    A completed or unexpectedly failed loop is restarted without cancelling the
+    other loop. This is important for event-enabled runs where pumpkin/resource
+    collection must not disable transport handling, or vice versa.
+    """
+
+    active = {}
+
+    def start_loop(name, factory):
+        task = asyncio.create_task(factory(), name=f"missionchief-{name}-loop")
+        active[task] = (name, factory)
+
+    for name, factory in loop_factories:
+        start_loop(name, factory)
+
+    stop_task = asyncio.create_task(stop_event.wait(), name="missionchief-stop-watcher")
+    try:
+        while active:
+            done, _ = await asyncio.wait(
+                [*active, stop_task],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            if stop_task in done or stop_event.is_set():
+                break
+
+            for task in done:
+                if task is stop_task:
+                    continue
+                name, factory = active.pop(task)
+                if task.cancelled():
+                    display_error(f"{name.title()} loop was cancelled unexpectedly; restarting it.")
+                else:
+                    error = task.exception()
+                    if error:
+                        display_error(
+                            f"{name.title()} loop stopped unexpectedly: "
+                            f"{type(error).__name__}: {error}"
+                        )
+                    else:
+                        display_error(f"{name.title()} loop exited unexpectedly; restarting it.")
+
+                await _sleep_or_stop(1, stop_event)
+                if not stop_event.is_set():
+                    start_loop(name, factory)
+    finally:
+        stop_task.cancel()
+        await asyncio.gather(stop_task, return_exceptions=True)
+        for task in active:
+            if not task.done():
+                task.cancel()
+        if active:
+            await asyncio.gather(*active, return_exceptions=True)
+
+
 def _cache_has_records(path) -> bool:
     """Treat missing, empty, or corrupt regional caches as needing refresh."""
 
@@ -124,7 +180,6 @@ async def run_bot(settings: Settings | None = None, profile: RegionProfile | Non
     stop_event = asyncio.Event()
     browser_pool = None
     contexts = []
-    loop_tasks = []
 
     from playwright.async_api import async_playwright
 
@@ -165,29 +220,28 @@ async def run_bot(settings: Settings | None = None, profile: RegionProfile | Non
             mission_contexts = (
                 grabbing_contexts if settings.concurrent_missions else grabbing_contexts[:1]
             )
-            loop_tasks = [
-                asyncio.create_task(
-                    run_mission_loop(
-                        grabbing_contexts,
-                        mission_contexts,
-                        profile,
-                        settings,
-                        state,
-                        stop_event,
-                    )
-                ),
-                asyncio.create_task(
-                    run_transport_loop(other_context, profile, settings, stop_event)
-                ),
-            ]
-            await asyncio.gather(*loop_tasks)
+            await run_parallel_runtime_loops(
+                [
+                    (
+                        "mission",
+                        lambda: run_mission_loop(
+                            grabbing_contexts,
+                            mission_contexts,
+                            profile,
+                            settings,
+                            state,
+                            stop_event,
+                        ),
+                    ),
+                    (
+                        "transport",
+                        lambda: run_transport_loop(other_context, profile, settings, stop_event),
+                    ),
+                ],
+                stop_event,
+            )
         finally:
             stop_event.set()
-            for task in loop_tasks:
-                if not task.done():
-                    task.cancel()
-            if loop_tasks:
-                await asyncio.gather(*loop_tasks, return_exceptions=True)
             for context in contexts:
                 try:
                     await context.close()
