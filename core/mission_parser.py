@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import re
-import unicodedata
 
 from utils.pretty_print import display_error
 
@@ -15,6 +14,7 @@ from .mission_requirements import gather_requirements
 from .pages import ensure_page
 from .regions import get_region_profile
 from .vehicle_state import get_vehicle_state
+from .vehicle_mapping import matching_vehicle_alias_group, normalize_vehicle_name
 
 
 def free_up_vehicles(mission_id, profile=None, state=None):
@@ -28,18 +28,13 @@ def load_vehicle_aliases(profile=None):
 
 
 def _normalize(value: str) -> str:
-    value = unicodedata.normalize("NFKD", str(value or ""))
-    value = "".join(character for character in value if not unicodedata.combining(character))
-    return re.sub(r"\s+", " ", re.sub(r"[^\w\s]+", " ", value.casefold())).strip()
+    return normalize_vehicle_name(value)
 
 
 def resolve_vehicle_name(name: str, profile=None) -> str:
     profile = profile or get_region_profile()
-    normalized = _normalize(name)
-    for canonical, synonyms in load_vehicle_aliases(profile).items():
-        if normalized in {_normalize(canonical), *(_normalize(synonym) for synonym in synonyms)}:
-            return canonical
-    return normalized
+    group = matching_vehicle_alias_group(name, load_vehicle_aliases(profile))
+    return group[0] if group else _normalize(name)
 
 
 def resolve_vehicle_entry(raw_name: str, count: int, profile=None):

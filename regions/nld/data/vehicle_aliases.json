@@ -4,7 +4,7 @@
   "heavy rescue vehicles": ["Hulpverleningsvoertuig", "HV"],
   "hazmat vehicles": ["Schuimblusvoertuig", "Gevaarlijke stoffen voertuig", "AGS"],
   "mobile command vehicles": ["Commandowagen", "COH"],
-  "ambulance": ["Ambulance", "Rapid Responder"],
+  "ambulance": ["Rapid Responder"],
   "ems chief": ["MOB-arts", "Officier van Dienst Geneeskundig", "OvDG"],
   "ems mobile command units": ["Commandowagen GHOR", "GNK"],
   "patrol car": ["Politieauto", "Politie voertuig", "Surveillanceauto"],

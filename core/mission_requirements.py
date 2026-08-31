@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import json
 import re
-import unicodedata
 
 from .mission_helpers import normalize_name
 from .localization import contains_localized_term, get_localized_terms
 from .regions import get_region_profile
+from .vehicle_mapping import normalize_vehicle_name
 
 
 def _load_json(path):
@@ -20,9 +20,7 @@ def _load_json(path):
 
 
 def _normalize(value: str) -> str:
-    value = unicodedata.normalize("NFKD", str(value or ""))
-    value = "".join(character for character in value if not unicodedata.combining(character))
-    return re.sub(r"\s+", " ", re.sub(r"[^\w\s]+", " ", value.casefold())).strip()
+    return normalize_vehicle_name(value)
 
 
 def parse_requirement_count(value: str | None) -> int | None:
