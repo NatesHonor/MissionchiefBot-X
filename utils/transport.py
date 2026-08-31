@@ -46,6 +46,29 @@ _PATIENT_MARKERS = (
 )
 
 
+async def _button_label(button) -> str:
+    """Return a useful action label even when the button only has an ARIA title."""
+
+    text = (await button.inner_text()).strip()
+    if text:
+        return text
+    for attribute in ("aria-label", "title", "data-original-title"):
+        value = (await button.get_attribute(attribute) or "").strip()
+        if value:
+            return value
+    return ""
+
+
+def _display_metric(value) -> str:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return "unknown"
+    if number == float("inf"):
+        return "unknown"
+    return str(int(number)) if number.is_integer() else f"{number:g}"
+
+
 def _contains_word_marker(value: str, markers: tuple[str, ...]) -> bool:
     value = _fold(value)
     return any(
@@ -204,11 +227,17 @@ async def _transport_options(page) -> list[dict]:
             cells = await row.query_selector_all("td")
             if len(cells) >= 2:
                 distance = _number(await cells[1].inner_text())
+        action_label = await _button_label(button)
+        if not row_data.get("text", "").strip() and not action_label:
+            # Do not click icon-only or unrelated success buttons.  The old
+            # fallback treated those as destinations and produced blank
+            # transport records.
+            continue
         options.append(
             {
                 "button": button,
                 "label": (row_data.get("text") or "").strip(),
-                "action_label": (await button.inner_text()).strip(),
+                "action_label": action_label,
                 "has_department": any(marker in lower_text for marker in _DEPARTMENT_MARKERS),
                 "own": _contains_word_marker(ownership_text, _OWN_MARKERS),
                 "tax": tax,
@@ -222,7 +251,9 @@ async def _transport_options(page) -> list[dict]:
     # Keep compatibility with deployments that render destination buttons
     # outside a table, while still applying the same sorting rules.
     for button in await page.query_selector_all("a.btn.btn-success, button.btn.btn-success"):
-        text = (await button.inner_text()).strip()
+        text = await _button_label(button)
+        if not text:
+            continue
         options.append(
             {
                 "button": button,
@@ -245,7 +276,10 @@ async def _release_without_transport(page) -> bool:
     if not release:
         return False
     await release.click()
-    await page.wait_for_load_state("networkidle")
+    try:
+        await page.wait_for_load_state("domcontentloaded", timeout=5000)
+    except Exception:
+        pass
     return True
 
 
@@ -284,8 +318,7 @@ async def _fallback_transport_vehicle_ids(page, profile) -> list[str]:
 async def handle_transport_requests(context, url, profile=None):
     profile = profile or get_region_profile()
     page = await ensure_page(context)
-    await page.goto(url)
-    await page.wait_for_load_state("networkidle")
+    await page.goto(url, wait_until="domcontentloaded")
 
     records = await fetch_vehicle_records(page, url)
     vehicle_ids = [
@@ -301,18 +334,21 @@ async def handle_transport_requests(context, url, profile=None):
     for vehicle_id in vehicle_ids:
         vehicle_url = f"{url.rstrip('/')}/vehicles/{vehicle_id}"
         try:
-            await page.goto(vehicle_url)
-            await page.wait_for_load_state("networkidle")
+            await page.goto(vehicle_url, wait_until="domcontentloaded")
             options = await _transport_options(page)
             if options:
                 chosen = choose_transport_option(options, profile)
                 if chosen is None:
                     raise RuntimeError("transport destination list was empty")
                 await chosen["button"].click()
-                await page.wait_for_load_state("networkidle")
+                try:
+                    await page.wait_for_load_state("domcontentloaded", timeout=5000)
+                except Exception:
+                    pass
                 display_info(
                     f"Transported vehicle {vehicle_id} to '{chosen['label']}' "
-                    f"(tax {chosen['tax']}, distance {chosen['distance']})."
+                    f"(tax {_display_metric(chosen['tax'])}, "
+                    f"distance {_display_metric(chosen['distance'])})."
                 )
             elif await _release_without_transport(page):
                 display_info(f"Released vehicle {vehicle_id} because no transport was available")
@@ -324,6 +360,5 @@ async def handle_transport_requests(context, url, profile=None):
                 f"{type(error).__name__}: {error or 'unknown error'}"
             )
 
-    await page.goto(url)
-    await page.wait_for_load_state("networkidle")
+    await page.goto(url, wait_until="domcontentloaded")
     display_info("Finished handling all transport requests and returned to the main map")

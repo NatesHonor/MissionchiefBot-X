@@ -93,10 +93,12 @@ async def login_single(
             await page.locator('input[name="user[password]"], input[type="password"]').first.fill(password)
             await page.click('input[type="submit"]')
             try:
-                await page.wait_for_load_state("networkidle", timeout=10000)
+                # MissionChief keeps background requests open, so networkidle
+                # is not a reliable indication that login finished.
+                await page.wait_for_load_state("domcontentloaded", timeout=10000)
             except Exception as wait_error:
                 display_warning(
-                    f"Thread {thread_id}: Login navigation did not reach network idle ({wait_error}); checking the page state"
+                    f"Thread {thread_id}: Login page did not finish loading ({type(wait_error).__name__}); checking the page state"
                 )
 
             if await page.locator("iframe[src*='captcha']").count() > 0:
@@ -109,6 +111,8 @@ async def login_single(
                 display_error(f"Thread {thread_id}: Invalid credentials")
                 return "Failure", failure_reason, None
 
+            if page.url.startswith("chrome-error://"):
+                raise RuntimeError("MissionChief login navigation failed to load")
             if not is_same_service(url, page.url):
                 raise RuntimeError(f"Unexpected domain after login: {page.url}")
             if is_login_page(page.url) or await page.locator("form#new_user").count() > 0:
