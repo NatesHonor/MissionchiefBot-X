@@ -1,25 +1,15 @@
-from config.config_settings import get_region
+"""Compatibility API for the old region URL setup flow."""
 
-_url = None
+from core.regions import get_region_profile
 
-def setup_region():
-    global _url
-    region = get_region().lower()
+_profile = None
 
-    urls = {
-        "us": "https://www.missionchief.com/",
-        "uk": "https://www.missionchief.co.uk/",
-        "aus": "https://www.missionchief-australia.com/",
-        "ger": "https://www.leitstellenspiel.de/",
-        "nld": "https://www.meldkamerspel.com/",
-    }
 
-    try:
-        _url = urls[region]
-    except KeyError:
-        raise ValueError(f"Unknown region: {region}")
+def setup_region(region=None):
+    global _profile
+    _profile = get_region_profile(region)
+    return _profile.base_url
+
 
 def get_url():
-    if _url is None:
-        raise RuntimeError("URL not set. Call setup_region() first.")
-    return _url
+    return (_profile or get_region_profile()).base_url

@@ -14,6 +14,25 @@ It handles everything from credit gathering to auto-dispatching, employee traini
 - **Transport Requests**: Handles hospital and prison rerouting with adaptive transport logic.  
 - **Support & Auto Updating**: Built-in support hooks and seamless auto-update system.  
 
+## Project layout
+
+The bot has one runtime and one set of mission/dispatch services. Region folders
+only provide compatibility entrypoints and region data, so adding a new region
+does not require copying the login, browser, parser, or dispatch loops.
+
+- `Main.py` starts `core.runner.run_bot()`.
+- `core.settings` loads one validated configuration snapshot and applies Docker
+  environment overrides.
+- `core.regions` owns region URLs and data paths.
+- `core.auth`, `core.browser`, and `core.vehicle_state` own shared resources.
+- `core.buildings`, `core.mission_*`, and `core.dispatching` contain the shared
+  workflows.
+- `regions/uk` and `regions/us` keep thin adapters for existing imports and
+  region-specific vehicle mappings.
+
+US and UK are the currently wired automation adapters. The other region entries
+are URL metadata only until their selectors and rules are implemented.
+
 ---
 
 ## 🐳 Run with Docker

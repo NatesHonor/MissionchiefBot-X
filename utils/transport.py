@@ -1,7 +1,8 @@
 from utils.pretty_print import display_info, display_error
+from core.pages import ensure_page
 
 async def handle_transport_requests(context, url):
-    page = context.pages[0]
+    page = await ensure_page(context)
     await page.goto(url)
     await page.wait_for_load_state("networkidle")
     prisoner_alerts = await page.query_selector_all("div.alert.alert-danger")
