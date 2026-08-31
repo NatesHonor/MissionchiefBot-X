@@ -1,5 +1,6 @@
 """Vehicle alternatives for the Dutch Meldkamerspel deployment."""
 
+from core.vehicle_mapping import get_vehicle_options_from_map
 
 VEHICLE_OPTIONS = {
     "firetruck": ["Tankautospuit", "TS", "Hulpverleningsvoertuig", "HV"],
@@ -27,5 +28,4 @@ VEHICLE_OPTIONS = {
 
 
 def get_vehicle_options(vehicle_type):
-    return VEHICLE_OPTIONS.get(str(vehicle_type).strip().casefold(), [])
-
+    return get_vehicle_options_from_map(VEHICLE_OPTIONS, vehicle_type)
