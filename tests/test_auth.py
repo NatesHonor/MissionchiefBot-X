@@ -1,6 +1,8 @@
+import asyncio
 import unittest
+from unittest.mock import patch
 
-from core.auth import classify_login_failure, is_login_page, is_same_service
+from core.auth import classify_login_failure, is_login_page, is_same_service, login_all
 
 
 class AuthHelperTests(unittest.TestCase):
@@ -26,6 +28,15 @@ class AuthHelperTests(unittest.TestCase):
             "Invalid credentials",
         )
         self.assertIsNone(classify_login_failure("Welcome back"))
+
+    def test_unexpected_browser_task_failure_becomes_a_failure_result(self):
+        async def fail_once(**kwargs):
+            raise RuntimeError("browser closed unexpectedly")
+
+        with patch("core.auth.login_single", fail_once):
+            results = asyncio.run(login_all("user", "password", 1, None, "https://example.com/"))
+
+        self.assertEqual(results, [("Failure", "browser closed unexpectedly", None)])
 
 
 if __name__ == "__main__":
