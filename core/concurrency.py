@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 
+from utils.pretty_print import display_error
+
 
 async def split_mission_ids_among_threads(
     ids,
@@ -33,9 +35,16 @@ async def split_mission_ids_among_threads(
             )
             for index, partition in enumerate(partitions)
             if partition
-        )
+        ),
+        return_exceptions=True,
     )
     merged = {}
-    for result in results:
+    for index, result in enumerate(results, start=1):
+        if isinstance(result, BaseException):
+            display_error(
+                f"Mission collection worker {index} failed: "
+                f"{type(result).__name__}: {result}"
+            )
+            continue
         merged.update(result)
     return merged
