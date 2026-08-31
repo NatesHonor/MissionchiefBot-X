@@ -86,13 +86,21 @@ does not require copying the login, browser, parser, or dispatch loops.
 - `core.auth`, `core.browser`, and `core.vehicle_state` own shared resources.
 - `core.buildings`, `core.mission_*`, and `core.dispatching` contain the shared
   workflows.
-- `regions/uk` and `regions/us` keep thin adapters for existing imports and
-  region-specific vehicle mappings.
+- `regions/<region>` keeps a thin compatibility entrypoint and the region's
+  localized vehicle/requirement data.
 
-US, UK, Australia, Germany, the Netherlands, Sweden, Portugal, and Denmark are wired into the
-same automation runtime.  Each region keeps its own vehicle aliases, requirement
-classification, localized labels, and cache directory, while browser/login/API,
-mission parsing, dispatching, transport, and background loops remain shared.
+US, UK, Australia, Germany, the Netherlands, Sweden, Portugal, Denmark, Poland,
+and France are wired into the same automation runtime. Each region keeps its own
+vehicle aliases, requirement classification, localized labels, and cache
+directory, while browser/login/API, mission parsing, dispatching, transport, and
+background loops remain shared. The launcher resolves a region by its canonical
+key, common name, country code, or configured regional hostname.
+
+Regional support is intentionally data-driven: adding a service requires a real
+official hostname, a localized vehicle/requirement map, a mission-ignore file,
+and a compatibility entrypoint. The mapping audit and full test suite must pass
+before the region is considered supported; the runtime never silently redirects
+an unknown region to another country's service.
 
 The project does not invent a regional server for New Zealand.  A region must have a
 real MissionChief service URL and a verified set of game vehicle names before it can be
