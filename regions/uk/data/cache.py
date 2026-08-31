@@ -1,34 +1,27 @@
-import json, os
-from utils.pretty_print import display_info
+"""Backward-compatible UK vehicle state imports."""
 
-_vehicle_file = os.path.join(os.path.dirname(__file__), "vehicle_data.json")
-VEHICLE_DATA = None
-_LOCKED_VEHICLES = {}
+from core.regions import get_region_profile
+from core.vehicle_state import get_vehicle_state
+
+PROFILE = get_region_profile("uk")
+_state = get_vehicle_state(PROFILE)
+
 
 def get_vehicle_data():
-    global VEHICLE_DATA
-    if VEHICLE_DATA is None:
-        if not os.path.exists(_vehicle_file):
-            return {}
-        with open(_vehicle_file, "r", encoding="utf-8") as f:
-            VEHICLE_DATA = json.load(f)
-    return VEHICLE_DATA
+    return _state.get_data()
+
 
 def lock_vehicle(vehicle_id, mission_id):
-    if vehicle_id in _LOCKED_VEHICLES:
-        return False
-    _LOCKED_VEHICLES[vehicle_id] = mission_id
-    return True
+    return _state.lock(str(vehicle_id), str(mission_id))
+
 
 def is_vehicle_locked(vehicle_id):
-    return vehicle_id in _LOCKED_VEHICLES
+    return _state.is_locked(str(vehicle_id))
+
 
 def free_up_vehicles(mission_id):
-    global _LOCKED_VEHICLES
-    _LOCKED_VEHICLES = {vid: mid for vid, mid in _LOCKED_VEHICLES.items() if mid != mission_id}
-    display_info(f"Freed up vehicles for {mission_id}")
+    return _state.free_for_mission(str(mission_id))
+
 
 def get_locked_vehicles(mission_id=None):
-    if mission_id is None:
-        return dict(_LOCKED_VEHICLES)
-    return {vid: mid for vid, mid in _LOCKED_VEHICLES.items() if mid == mission_id}
+    return _state.locked(None if mission_id is None else str(mission_id))

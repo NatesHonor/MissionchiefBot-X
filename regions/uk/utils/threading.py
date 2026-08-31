@@ -1,13 +1,5 @@
-import asyncio
-from regions.uk.missions.mission_parser import gather_mission_info
+"""Backward-compatible UK mission fan-out imports."""
 
-async def split_mission_ids_among_threads(ids, contexts, n, url):
-    for ctx in contexts:
-        if not ctx.pages:
-            await ctx.new_page()
-    tasks = [
-        gather_mission_info(ids[i::n], contexts[i], i + 1, url)
-        for i in range(min(n, len(contexts)))
-    ]
-    results = await asyncio.gather(*tasks)
-    return {k: v for r in results for k, v in r.items()}
+from core.concurrency import split_mission_ids_among_threads
+
+__all__ = ["split_mission_ids_among_threads"]

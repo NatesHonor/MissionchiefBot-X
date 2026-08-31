@@ -1,5 +1,7 @@
 import asyncio
 import json
+from pathlib import Path
+
 from utils.pretty_print import display_info, display_error
 
 
@@ -25,7 +27,9 @@ async def gather_vehicle_data(contexts, num_threads, url, save_path):
         threads = min(num_threads, len(contexts)) if num_threads else len(contexts)
         vehicle_data = await split_vehicle_ids_among_threads(vehicle_ids, contexts, threads, url)
 
-        with open(save_path, "w", encoding="utf-8") as outfile:
+        save_path = Path(save_path)
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        with save_path.open("w", encoding="utf-8") as outfile:
             json.dump(vehicle_data, outfile, indent=4)
 
         display_info(f"Vehicle config collection complete. Stored vehicle config in {save_path}.")
@@ -59,6 +63,8 @@ async def gather_vehicle_info(vehicle_ids, context, thread_id, url):
 
 
 async def split_vehicle_ids_among_threads(vehicle_ids, contexts, num_threads, url):
+    if not vehicle_ids or not contexts:
+        return {}
     threads = min(num_threads, len(contexts)) if num_threads else len(contexts)
     partitions = [vehicle_ids[i::threads] for i in range(threads)]
 
