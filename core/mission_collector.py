@@ -7,6 +7,7 @@ import json
 from utils.pretty_print import display_error, display_info
 
 from .concurrency import split_mission_ids_among_threads
+from .missionchief_api import fetch_mission_markers, refresh_mission_index
 from .pages import ensure_page
 from .regions import get_region_profile
 from .settings import get_settings
@@ -33,13 +34,21 @@ async def check_and_grab_missions(
         page = await ensure_page(contexts[0])
         await page.goto(url)
         await page.wait_for_load_state("networkidle")
+        await refresh_mission_index(page, url, profile.mission_index_file)
         if settings.auto_special_resources:
             collected = await collect_special_resources(page, url)
             if collected:
                 await page.goto(url)
                 await page.wait_for_load_state("networkidle")
+        ids = await fetch_mission_markers(page, url)
         panels = await page.query_selector_all(".mission_panel_red")
-        if not panels:
+        if not ids:
+            for panel in panels:
+                panel_id = await panel.get_attribute("id")
+                if panel_id:
+                    ids.append(panel_id.split("_")[-1])
+        ids = list(dict.fromkeys(ids))
+        if not ids:
             if profile.mission_file.exists():
                 try:
                     previous = json.loads(profile.mission_file.read_text(encoding="utf-8"))
@@ -50,11 +59,6 @@ async def check_and_grab_missions(
             profile.mission_file.write_text("{}", encoding="utf-8")
             display_info("No missions found, stored an empty mission snapshot.")
             return
-        ids = []
-        for panel in panels:
-            panel_id = await panel.get_attribute("id")
-            if panel_id:
-                ids.append(panel_id.split("_")[-1])
         display_info(f"Found {len(ids)} mission IDs.")
         data = await split_mission_ids_among_threads(
             ids,
