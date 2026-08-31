@@ -1,0 +1,12 @@
+{
+  "skum": "liquid",
+  "vand": "liquid",
+  "vandmængde": "liquid",
+  "aks personale": "personnel",
+  "aks personale (i aks køretøj.)": "personnel",
+  "biler der skal bugseres": "tow_vehicle",
+  "minimum antal biler til bugsering": "tow_vehicle",
+  "maksimalt antal biler, der kan trækkes": "tow_vehicle",
+  "mindst brandmænd": "pass",
+  "mindst politifolk": "pass"
+}

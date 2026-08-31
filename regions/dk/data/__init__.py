@@ -1,0 +1,1 @@
+"""Danish localized region data."""
