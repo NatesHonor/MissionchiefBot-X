@@ -54,6 +54,7 @@ rooms = 2
         self.assertEqual(settings.training_plans[0].school, "Feuerwehrschule Nord")
         self.assertEqual(settings.training_plans[0].course, "Atemschutz")
         self.assertEqual(settings.training_plans[0].rooms, 2)
+        self.assertEqual(settings.dispatch_delay, 0)
 
     def test_untrained_staff_are_prioritized_before_completed_staff(self):
         self.assertLess(_priority("Nicht ausgebildet", "Atemschutz"), _priority("Ausgebildet", "Atemschutz"))

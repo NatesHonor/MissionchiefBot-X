@@ -50,6 +50,7 @@ class Settings:
     dynamic_delay_transport: bool
     mission_delay: int
     other_delay: int
+    dispatch_delay: int
     training_plans: tuple[TrainingPlan, ...] = ()
     recruiting_days: int = 1
 
@@ -304,6 +305,18 @@ def load_settings(path: str | os.PathLike[str] | None = None) -> Settings:
         other_delay=_integer(
             _value(parser, config_file, "delays", "other", "MISSIONCHIEF_OTHER_DELAY"),
             "MISSIONCHIEF_OTHER_DELAY",
+            minimum=0,
+        ),
+        dispatch_delay=_integer(
+            _value(
+                parser,
+                config_file,
+                "delays",
+                "dispatch",
+                "MISSIONCHIEF_DISPATCH_DELAY",
+                default="0",
+            ),
+            "MISSIONCHIEF_DISPATCH_DELAY",
             minimum=0,
         ),
         training_plans=_training_plans(parser, config_file),
