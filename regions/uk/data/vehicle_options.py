@@ -4,7 +4,16 @@ from core.vehicle_mapping import get_vehicle_options_from_map
 
 
 VEHICLE_OPTIONS = {
-    "firetruck": ["Water Ladder", "Light 4X4 Pump (L4P)", "Rescue Pump", "CARP", "WrL CAFS", "RP CAFS"],
+    "firetruck": [
+        "Water Ladder",
+        "Light 4X4 Pump (L4P)",
+        "Rescue Pump",
+        "CARP",
+        "WrL CAFS",
+        "RP CAFS",
+        "Quint",
+        "Rescue Engine",
+    ],
     "firetrucks, heavy rescue vehicles, or platform trucks": [
         "Water Ladder",
         "Platform truck",
