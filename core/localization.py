@@ -28,6 +28,22 @@ _TERMS = {
             "transport wird benötigt",
         ),
     },
+    "sv": {
+        "required": ("kräver", "behövs", "nödvändigt", "erforderligt"),
+        "personnel": ("nödvändig personal", "behövlig personal", "personal"),
+        "average_credits": ("genomsnittliga krediter", "genomsnittlig krediter"),
+        "max_patients": ("max. patienter", "maximalt antal patienter"),
+        "towed_cars": (
+            "maximalt antal fordon att bogsera",
+            "fordon att bogsera",
+            "bogseras",
+        ),
+        "prisoner_transport": (
+            "fångar måste transporteras",
+            "fångar ska transporteras",
+            "transport krävs",
+        ),
+    },
 }
 
 
