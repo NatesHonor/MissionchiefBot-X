@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import re
 
 from utils.pretty_print import display_error
@@ -71,16 +70,6 @@ async def gather_mission_info(ids, context, tid, url, profile=None, state=None, 
     profile = profile or get_region_profile()
     state = state or get_vehicle_state(profile)
     data = {}
-
-    old_ids = set()
-    if profile.mission_file.exists():
-        try:
-            with profile.mission_file.open("r", encoding="utf-8") as stream:
-                old_ids = set(json.load(stream).keys())
-        except (OSError, json.JSONDecodeError, AttributeError):
-            old_ids = set()
-    for removed_id in old_ids - set(ids):
-        state.free_for_mission(removed_id)
 
     page = await ensure_page(context)
     for index, mission_id in enumerate(ids):

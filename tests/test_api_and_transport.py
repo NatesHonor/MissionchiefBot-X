@@ -1,6 +1,8 @@
+import asyncio
 import sys
 import unittest
 from types import SimpleNamespace
+from unittest.mock import patch
 
 sys.modules.setdefault("art", SimpleNamespace())
 
@@ -12,7 +14,11 @@ from core.missionchief_api import (
     vehicle_inventory_from_records,
 )
 from core.mission_collector import limit_mission_ids
+from core.vehicle_state import VehicleState
 from utils.transport import (
+    _button_label,
+    _display_metric,
+    _transport_options,
     choose_transport_option,
     is_patient_transport_option,
     is_transport_request,
@@ -113,6 +119,39 @@ class ApiAndTransportTests(unittest.TestCase):
 
         self.assertTrue(is_patient_transport_option(patient))
         self.assertIs(choose_transport_option([unrelated, patient])["action_label"], "Transport Patient")
+
+    def test_transport_fallback_ignores_blank_buttons_and_reads_titles(self):
+        class Button:
+            def __init__(self, text="", title=""):
+                self.text = text
+                self.title = title
+
+            async def inner_text(self):
+                return self.text
+
+            async def get_attribute(self, name):
+                return self.title if name == "title" else ""
+
+        class Page:
+            async def query_selector_all(self, selector):
+                if selector.startswith("table"):
+                    return []
+                return [Button(), Button(title="Transport Patient")]
+
+        options = asyncio.run(_transport_options(Page()))
+
+        self.assertEqual(len(options), 1)
+        self.assertEqual(options[0]["action_label"], "Transport Patient")
+        self.assertEqual(_display_metric(float("inf")), "unknown")
+
+    def test_vehicle_cleanup_only_reports_released_locks(self):
+        state = VehicleState(data_file=SimpleNamespace())
+        state.lock("vehicle-1", "mission-1")
+        with patch("core.vehicle_state.display_info") as display:
+            state.free_for_mission("mission-1")
+            state.free_for_mission("mission-1")
+
+        display.assert_called_once_with("Freed up 1 vehicle(s) for mission-1")
 
 
 if __name__ == "__main__":
