@@ -7,6 +7,7 @@ class SpecialResourceControlTests(unittest.TestCase):
     def test_recognizes_named_event_resources(self):
         self.assertTrue(is_special_resource_control("button collect_special_resource snowman"))
         self.assertTrue(is_special_resource_control("img /images/events/pumpkin.png"))
+        self.assertTrue(is_special_resource_control("a id=easter-egg-link"))
 
     def test_ignores_mission_links_and_requirement_text(self):
         self.assertFalse(is_special_resource_control("a href=/missions/123"))
