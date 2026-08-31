@@ -43,10 +43,18 @@ async def check_and_grab_missions(
             if collected:
                 await page.goto(url)
                 await page.wait_for_load_state("networkidle")
-        marker_records = await fetch_mission_marker_records(page, url)
+        marker_records = await fetch_mission_marker_records(
+            page,
+            url,
+            settings.include_alliance_missions,
+        )
         ids = [record["id"] for record in marker_records]
         if not ids:
-            ids = await fetch_mission_markers(page, url)
+            ids = await fetch_mission_markers(
+                page,
+                url,
+                settings.include_alliance_missions,
+            )
         panels = await page.query_selector_all(".mission_panel_red")
         if not ids:
             for panel in panels:
