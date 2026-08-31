@@ -9,7 +9,7 @@ from utils.pretty_print import display_error, display_info
 
 from ..regions import get_region_profile
 from ..localization import get_localized_terms
-from ..mission_requirements import parse_requirement_count
+from ..mission_requirements import normalize_cached_requirements, parse_requirement_count
 from ..settings import get_settings
 from ..vehicle_state import get_vehicle_state
 from .navigation import load_mission_page
@@ -78,6 +78,7 @@ async def navigate_and_dispatch(contexts, url, profile=None, state=None, setting
     chunk_size = math.ceil(len(missions) / len(pages))
 
     async def process_mission(page, mission_id, data, prefix):
+        normalize_cached_requirements(data, profile)
         if not await load_mission_page(page, mission_id, data.get("mission_name", "Unknown"), url):
             return
         missing_vehicles_button = await page.query_selector("a.missing_vehicles_load.btn-warning")
