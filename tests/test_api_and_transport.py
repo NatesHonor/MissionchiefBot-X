@@ -12,7 +12,12 @@ from core.missionchief_api import (
     vehicle_inventory_from_records,
 )
 from core.mission_collector import limit_mission_ids
-from utils.transport import is_transport_request, transport_option_key
+from utils.transport import (
+    choose_transport_option,
+    is_patient_transport_option,
+    is_transport_request,
+    transport_option_key,
+)
 
 
 class ApiAndTransportTests(unittest.TestCase):
@@ -85,9 +90,29 @@ class ApiAndTransportTests(unittest.TestCase):
 
     def test_transport_request_accepts_api_flag_variants(self):
         self.assertTrue(is_transport_request({"fms_real": 5}))
+        self.assertTrue(is_transport_request({"transportType": "patient_transport"}))
         self.assertTrue(is_transport_request({"transport_requested": True}))
         self.assertTrue(is_transport_request({"needs_transport": "yes"}))
         self.assertFalse(is_transport_request({"fms_real": 1}))
+
+    def test_patient_transport_prefers_explicit_hospital_action(self):
+        patient = {
+            "action_label": "Transport Patient",
+            "has_department": False,
+            "own": False,
+            "tax": 0,
+            "distance": 20,
+        }
+        unrelated = {
+            "action_label": "Visit hospital",
+            "has_department": True,
+            "own": True,
+            "tax": 0,
+            "distance": 1,
+        }
+
+        self.assertTrue(is_patient_transport_option(patient))
+        self.assertIs(choose_transport_option([unrelated, patient])["action_label"], "Transport Patient")
 
 
 if __name__ == "__main__":

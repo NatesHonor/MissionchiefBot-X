@@ -30,6 +30,20 @@ _DEPARTMENT_MARKERS = (
 _TAX_LABELS = ("tax", "imposto", "skatt", "steuer", "belasting")
 _DISTANCE_LABELS = ("distance", "distancia", "avstand", "entfernung", "afstand")
 _OWN_MARKERS = ("own", "owned", "eigen", "meu", "min", "egen", "propri", "mijn", "eigendom")
+_PATIENT_MARKERS = (
+    "patient",
+    "patients",
+    "patiënt",
+    "patiënten",
+    "patienten",
+    "patienter",
+    "paciente",
+    "pacientes",
+    "paziente",
+    "pazienti",
+    "pacjent",
+    "pacjentów",
+)
 
 
 def _contains_word_marker(value: str, markers: tuple[str, ...]) -> bool:
@@ -81,13 +95,53 @@ def is_transport_request(record: dict) -> bool:
 
     if not isinstance(record, dict):
         return False
-    value = record.get("fms_real")
-    if str(value).strip().casefold() in {"5", "true", "transport", "transport_requested"}:
+    values = [
+        record.get(key)
+        for key in (
+            "fms_real",
+            "fms",
+            "fmsReal",
+            "transport_type",
+            "transportType",
+            "transport_status",
+        )
+    ]
+    if any(
+        str(value).strip().casefold()
+        in {"5", "true", "transport", "transport_requested", "patient_transport"}
+        for value in values
+    ):
         return True
     return any(
         str(record.get(key, "")).strip().casefold() in {"1", "true", "yes", "transport"}
         for key in ("needs_transport", "transport_requested", "transport")
     )
+
+
+def is_patient_transport_option(option: dict, profile=None) -> bool:
+    """Identify hospital actions that explicitly transport a patient."""
+
+    if not isinstance(option, dict):
+        return False
+    label = str(option.get("action_label") or option.get("label") or "")
+    if any(marker in _fold(label) for marker in _PATIENT_MARKERS):
+        return True
+    if profile is not None and contains_localized_term(
+        label, profile.language, "patient_transport"
+    ):
+        return True
+    return False
+
+
+def choose_transport_option(options: list[dict], profile=None) -> dict | None:
+    """Prefer explicit patient actions, then apply the normal destination priority."""
+
+    if not options:
+        return None
+    patient_options = [
+        option for option in options if is_patient_transport_option(option, profile)
+    ]
+    return min(patient_options or options, key=transport_option_key)
 
 
 async def _row_metadata(row) -> dict:
@@ -154,6 +208,7 @@ async def _transport_options(page) -> list[dict]:
             {
                 "button": button,
                 "label": (row_data.get("text") or "").strip(),
+                "action_label": (await button.inner_text()).strip(),
                 "has_department": any(marker in lower_text for marker in _DEPARTMENT_MARKERS),
                 "own": _contains_word_marker(ownership_text, _OWN_MARKERS),
                 "tax": tax,
@@ -172,6 +227,7 @@ async def _transport_options(page) -> list[dict]:
             {
                 "button": button,
                 "label": text,
+                "action_label": text,
                 "has_department": any(marker in _fold(text) for marker in _DEPARTMENT_MARKERS),
                 "own": False,
                 "tax": _labeled_number(text, _TAX_LABELS),
@@ -183,6 +239,7 @@ async def _transport_options(page) -> list[dict]:
 
 async def _release_without_transport(page) -> bool:
     release = await page.query_selector(
+        "#leave_without_transport_no_compensation, "
         "a.btn.btn-xs.btn-danger, button.btn.btn-xs.btn-danger, a.btn-danger"
     )
     if not release:
@@ -207,11 +264,20 @@ async def _fallback_transport_vehicle_ids(page, profile) -> list[str]:
     transport_requests = await page.query_selector_all("ul#radio_messages_important li")
     vehicle_ids = []
     for request in transport_requests:
-        image = await request.query_selector("img")
-        if image:
-            vehicle_id = await image.get_attribute("vehicle_id")
-            if vehicle_id:
-                vehicle_ids.append(str(vehicle_id))
+        vehicle_id = await request.get_attribute("vehicle_id")
+        if not vehicle_id:
+            vehicle_id = await request.get_attribute("data-vehicle-id")
+        if not vehicle_id:
+            image = await request.query_selector("img")
+            if image:
+                vehicle_id = await image.get_attribute("vehicle_id")
+        if not vehicle_id:
+            link = await request.query_selector("a[href*='/vehicles/']")
+            href = await link.get_attribute("href") if link else ""
+            match = re.search(r"/vehicles/(\d+)", href or "")
+            vehicle_id = match.group(1) if match else None
+        if vehicle_id:
+            vehicle_ids.append(str(vehicle_id))
     return list(dict.fromkeys(vehicle_ids))
 
 
@@ -239,7 +305,9 @@ async def handle_transport_requests(context, url, profile=None):
             await page.wait_for_load_state("networkidle")
             options = await _transport_options(page)
             if options:
-                chosen = min(options, key=transport_option_key)
+                chosen = choose_transport_option(options, profile)
+                if chosen is None:
+                    raise RuntimeError("transport destination list was empty")
                 await chosen["button"].click()
                 await page.wait_for_load_state("networkidle")
                 display_info(
