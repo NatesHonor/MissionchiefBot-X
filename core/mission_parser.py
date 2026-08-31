@@ -8,6 +8,7 @@ import re
 from utils.pretty_print import display_error, display_info
 
 from .mission_helpers import get_val, normalize_name
+from .localization import contains_localized_term
 from .mission_prisoners import handle_prisoner_transport
 from .mission_requirements import gather_requirements
 from .pages import ensure_page
@@ -99,7 +100,9 @@ async def gather_mission_info(ids, context, tid, url, profile=None, state=None):
             if not requirements_handled:
                 for alert in await page.query_selector_all("div.alert.alert-danger"):
                     text = (await alert.inner_text()).lower()
-                    if "prisoners must be transported" not in text and "transport is needed!" not in text:
+                    if not contains_localized_term(
+                        text, profile.language, "prisoner_transport"
+                    ):
                         continue
                     if not await handle_prisoner_transport(page):
                         result = await page.evaluate(
@@ -159,9 +162,31 @@ async def gather_mission_info(ids, context, tid, url, profile=None, state=None):
             await page.click("#mission_help")
             await page.wait_for_selector("#iframe-inside-container", timeout=5000)
             requirements = await gather_requirements(page, profile)
-            credits = await get_val(page, 'td:has-text("Average credits") + td', True)
-            patients = await get_val(page, 'td:has-text("Max. Patients") + td')
-            crashed = await get_val(page, 'td:has-text("Maximum amount of cars to tow") + td')
+            credits = await get_val(
+                page,
+                [
+                    'td:has-text("Average credits") + td',
+                    'td:has-text("Durchschnittliche Credits") + td',
+                    'td:has-text("Durchschnittliche Kredite") + td',
+                ],
+                True,
+            )
+            patients = await get_val(
+                page,
+                [
+                    'td:has-text("Max. Patients") + td',
+                    'td:has-text("Max. Patienten") + td',
+                    'td:has-text("Maximale Patienten") + td',
+                ],
+            )
+            crashed = await get_val(
+                page,
+                [
+                    'td:has-text("Maximum amount of cars to tow") + td',
+                    'td:has-text("Maximale Anzahl abzuschleppender Fahrzeuge") + td',
+                    'td:has-text("Abzuschleppende Fahrzeuge") + td',
+                ],
+            )
             if patients:
                 requirements["vehicles"].append({"name": "ambulance", "count": patients})
                 if patients >= 10:

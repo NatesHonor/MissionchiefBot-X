@@ -1,0 +1,11 @@
+{
+  "schaum": "liquid",
+  "wasser": "liquid",
+  "sonderlöschmittel": "liquid",
+  "benötigtes personal": "personnel",
+  "benoetigtes personal": "personnel",
+  "abschleppfahrzeuge": "tow_vehicle",
+  "abzuschleppende fahrzeuge": "tow_vehicle",
+  "mindestens feuerwehrleute": "pass",
+  "mindestens polizisten": "pass"
+}

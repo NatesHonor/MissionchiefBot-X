@@ -18,7 +18,11 @@ async def handle_prisoner_transport(page):
 
 async def extract_distance(button):
     try:
-        match = re.search(r"Distance: ([\d.]+) km", await button.inner_text())
-        return float(match.group(1)) if match else float("inf")
+        match = re.search(
+            r"(?:Distance|Entfernung):\s*([\d.,]+)\s*km",
+            await button.inner_text(),
+            re.IGNORECASE,
+        )
+        return float(match.group(1).replace(",", ".")) if match else float("inf")
     except (AttributeError, TypeError, ValueError):
         return float("inf")

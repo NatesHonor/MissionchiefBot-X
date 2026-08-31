@@ -2,14 +2,17 @@
 
 
 async def get_val(page, selector, split_first=False):
-    element = await page.query_selector(selector)
-    if not element:
-        return 0
-    text = (await element.inner_text()).strip().lower()
-    try:
-        return int(text.split()[0]) if split_first else int(text)
-    except (TypeError, ValueError, IndexError):
-        return 0
+    selectors = [selector] if isinstance(selector, str) else selector
+    for candidate in selectors:
+        element = await page.query_selector(candidate)
+        if not element:
+            continue
+        text = (await element.inner_text()).strip().lower()
+        try:
+            return int(text.split()[0]) if split_first else int(text)
+        except (TypeError, ValueError, IndexError):
+            continue
+    return 0
 
 
 def normalize_name(raw):
