@@ -163,7 +163,7 @@ def load_settings(path: str | os.PathLike[str] | None = None) -> Settings:
         browsers=_integer(
             _value(parser, config_file, "browser_settings", "browsers", "MISSIONCHIEF_BROWSERS"),
             "MISSIONCHIEF_BROWSERS",
-            minimum=1,
+            minimum=2,
         ),
         browser_scaling=_boolean(
             _value(
