@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 
 from utils.pretty_print import display_error, display_info
 
@@ -11,22 +12,86 @@ from .utils import format_distance, normalize_key
 
 
 async def get_all_vehicle_distances(page, ids):
-    script = """
+    script = r"""
     (ids) => {
+        const parseDistance = (value) => {
+            const text = String(value || '').trim().toLowerCase();
+            if (!text) return Infinity;
+            const clock = text.match(/^(?:(\d+)\s*:\s*)?(\d+)\s*:\s*(\d+)$/);
+            if (clock) {
+                return (Number(clock[1] || 0) * 3600) +
+                    (Number(clock[2]) * 60) + Number(clock[3]);
+            }
+            const hours = text.match(/(\d+(?:[.,]\d+)?)\s*(?:h|hr|hour|hours)/);
+            const minutes = text.match(/(\d+(?:[.,]\d+)?)\s*(?:m|min|minute|minutes)/);
+            const seconds = text.match(/(\d+(?:[.,]\d+)?)\s*(?:s|sec|second|seconds)/);
+            if (hours || minutes || seconds) {
+                return (Number((hours?.[1] || '0').replace(',', '.')) * 3600) +
+                    (Number((minutes?.[1] || '0').replace(',', '.')) * 60) +
+                    Number((seconds?.[1] || '0').replace(',', '.'));
+            }
+            const number = text.match(/\d+(?:[.,]\d+)?/);
+            return number ? Number(number[0].replace(',', '.')) : Infinity;
+        };
         const result = {};
         for (const id of ids) {
-            const el = document.querySelector(`#vehicle_sort_${id}`);
-            if (el) {
-                const val = el.getAttribute('sortvalue');
-                result[id] = val ? parseInt(val) : Infinity;
-            } else {
-                result[id] = Infinity;
+            const checkbox = document.querySelector(`input.vehicle_checkbox[value="${id}"]`);
+            const row = checkbox?.closest('tr, li, [data-vehicle-id]');
+            const elements = [
+                document.querySelector(`#vehicle_sort_${id}`),
+                checkbox,
+                row,
+                document.querySelector(`[data-vehicle-id="${id}"]`),
+            ].filter(Boolean);
+            const values = elements.flatMap((element) => [
+                element.getAttribute('sortvalue'),
+                element.getAttribute('data-sortvalue'),
+                element.getAttribute('data-distance'),
+                element.getAttribute('distance'),
+            ]).filter(Boolean);
+            let distance = Infinity;
+            for (const value of values) {
+                distance = parseDistance(value);
+                if (Number.isFinite(distance)) break;
             }
+            if (!Number.isFinite(distance) && row) {
+                const rowText = row.innerText || '';
+                if (/(?:\\d+\\s*(?:h|hr|hour|hours|m|min|minute|minutes|s|sec|second|seconds)|\\d+\\s*:\s*\\d+)/i.test(rowText)) {
+                    distance = parseDistance(rowText);
+                }
+            }
+            result[id] = distance;
         }
         return result;
     }
     """
     return await page.evaluate(script, ids)
+
+
+def parse_distance_value(value) -> float:
+    """Normalize numeric and localized duration values for stable sorting."""
+
+    if isinstance(value, (int, float)):
+        return float(value)
+    text = str(value or "").strip().casefold()
+    if not text:
+        return float("inf")
+    clock = re.fullmatch(r"(?:(\d+)\s*:\s*)?(\d+)\s*:\s*(\d+)", text)
+    if clock:
+        return int(clock.group(1) or 0) * 3600 + int(clock.group(2)) * 60 + int(clock.group(3))
+
+    def amount(pattern):
+        match = re.search(pattern, text)
+        return float(match.group(1).replace(",", ".")) if match else 0.0
+
+    if re.search(r"\d+(?:[.,]\d+)?\s*(?:h|hr|hour|hours|m|min|minute|minutes|s|sec|second|seconds)", text):
+        return (
+            amount(r"(\d+(?:[.,]\d+)?)\s*(?:h|hr|hour|hours)") * 3600
+            + amount(r"(\d+(?:[.,]\d+)?)\s*(?:m|min|minute|minutes)") * 60
+            + amount(r"(\d+(?:[.,]\d+)?)\s*(?:s|sec|second|seconds)")
+        )
+    match = re.search(r"\d+(?:[.,]\d+)?", text)
+    return float(match.group(0).replace(",", ".")) if match else float("inf")
 
 
 async def click_vehicle(page, checkbox, vehicle_id, label, distance, mission_id, state=None, profile=None):
@@ -80,7 +145,10 @@ async def select_vehicles(
     if not valid_ids:
         return 0
     distance_map = await get_all_vehicle_distances(page, valid_ids)
-    vehicles = [(vehicle_id, distance_map.get(vehicle_id, float("inf"))) for vehicle_id in valid_ids]
+    vehicles = [
+        (vehicle_id, parse_distance_value(distance_map.get(vehicle_id, float("inf"))))
+        for vehicle_id in valid_ids
+    ]
     vehicles.sort(key=lambda item: item[1])
     selected = 0
     for vehicle_id, distance in vehicles:
