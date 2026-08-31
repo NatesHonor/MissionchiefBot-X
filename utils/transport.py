@@ -76,6 +76,20 @@ def transport_option_key(option: dict) -> tuple[float, float, float, float]:
     )
 
 
+def is_transport_request(record: dict) -> bool:
+    """Recognize transport flags returned by different MissionChief APIs."""
+
+    if not isinstance(record, dict):
+        return False
+    value = record.get("fms_real")
+    if str(value).strip().casefold() in {"5", "true", "transport", "transport_requested"}:
+        return True
+    return any(
+        str(record.get(key, "")).strip().casefold() in {"1", "true", "yes", "transport"}
+        for key in ("needs_transport", "transport_requested", "transport")
+    )
+
+
 async def _row_metadata(row) -> dict:
     return await row.evaluate(
         """
@@ -211,7 +225,7 @@ async def handle_transport_requests(context, url, profile=None):
     vehicle_ids = [
         str(record["id"])
         for record in records
-        if record.get("id") is not None and str(record.get("fms_real")) == "5"
+        if record.get("id") is not None and is_transport_request(record)
     ]
     if not vehicle_ids:
         vehicle_ids = await _fallback_transport_vehicle_ids(page, profile)
@@ -237,7 +251,10 @@ async def handle_transport_requests(context, url, profile=None):
             else:
                 display_error(f"No transport or release option found for vehicle {vehicle_id}")
         except Exception as error:
-            display_error(f"Transport handling failed for {vehicle_url}: {error}")
+            display_error(
+                f"Transport handling failed for {vehicle_url}: "
+                f"{type(error).__name__}: {error or 'unknown error'}"
+            )
 
     await page.goto(url)
     await page.wait_for_load_state("networkidle")
