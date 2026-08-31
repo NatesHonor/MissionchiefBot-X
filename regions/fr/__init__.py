@@ -1,0 +1,1 @@
+"""France region adapter package."""

@@ -89,6 +89,33 @@ class PortugueseRegionTests(unittest.TestCase):
         self.assertEqual(vehicle_ids, ["501", "502"])
 
 
+class FrenchRegionTests(unittest.TestCase):
+    def test_french_region_and_alias_are_wired_into_shared_runtime(self):
+        profile = get_region_profile("france")
+
+        self.assertEqual(profile.key, "fr")
+        self.assertTrue(profile.runtime_supported)
+        self.assertEqual(profile.language, "fr")
+        self.assertEqual(profile.base_url, "https://www.operateur112.fr/")
+
+    def test_french_vehicle_names_resolve(self):
+        profile = get_region_profile("fr")
+        state = SimpleNamespace(
+            get_data=lambda: {
+                "FPT": ["701"],
+                "Véhicule de Secours et d'Assistance aux Victimes": ["702"],
+                "Véhicule de patrouille": ["703"],
+            },
+            is_locked=lambda vehicle_id: False,
+        )
+
+        vehicle_ids = __import__("asyncio").run(
+            find_vehicle_ids("firetruck", profile, state)
+        )
+
+        self.assertEqual(vehicle_ids, ["701"])
+
+
 class DanishRegionTests(unittest.TestCase):
     def test_danish_region_and_alias_are_wired_into_shared_runtime(self):
         profile = get_region_profile("danish")
@@ -120,6 +147,7 @@ class RegionRegistryTests(unittest.TestCase):
     def test_every_registered_region_has_the_shared_runtime_contract(self):
         expected = {"us", "uk", "aus", "ger", "nld", "swe", "pt", "dk"}
         expected.add("pl")
+        expected.add("fr")
         self.assertEqual(set(supported_regions()), expected)
         for region in expected:
             profile = get_region_profile(region)
@@ -140,6 +168,12 @@ class RegionRegistryTests(unittest.TestCase):
         self.assertEqual(profile.key, "pl")
         self.assertEqual(profile.language, "pl")
         self.assertEqual(profile.base_url, "https://www.operatorratunkowy.pl/")
+
+    def test_french_region_accepts_its_official_hostname(self):
+        profile = get_region_profile("https://www.operateur112.fr/")
+        self.assertEqual(profile.key, "fr")
+        self.assertEqual(profile.language, "fr")
+        self.assertEqual(profile.base_url, "https://www.operateur112.fr/")
 
     def test_region_urls_and_hosts_resolve_to_their_dedicated_profiles(self):
         self.assertEqual(get_region_profile("https://www.missionchief.co.uk/").key, "uk")
