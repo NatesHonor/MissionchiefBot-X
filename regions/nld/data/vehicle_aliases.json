@@ -1,0 +1,19 @@
+{
+  "firetruck": ["fire trucks", "Tankautospuit", "TS", "Hulpverleningsvoertuig", "HV"],
+  "platform truck": ["Hoogwerker", "HW"],
+  "heavy rescue vehicles": ["Hulpverleningsvoertuig", "HV"],
+  "hazmat vehicles": ["Schuimblusvoertuig", "Gevaarlijke stoffen voertuig", "AGS"],
+  "mobile command vehicles": ["Commandowagen", "COH"],
+  "ambulance": ["Ambulance", "Rapid Responder"],
+  "ems chief": ["MOB-arts", "Officier van Dienst Geneeskundig", "OvDG"],
+  "ems mobile command units": ["Commandowagen GHOR", "GNK"],
+  "patrol car": ["Politieauto", "Politie voertuig", "Surveillanceauto"],
+  "sheriff": ["Officier van Dienst Politie", "OvD-P"],
+  "police helicopter": ["Politiehelikopter"],
+  "riot police unit": ["ME-bus", "ME voertuig"],
+  "wrecker": ["Bergingsvoertuig", "Takelwagen", "Weginspectievoertuig"],
+  "flatbed carrier": ["Bergingsvoertuig", "Takelwagen"],
+  "water tanker": ["Waterwagen", "Tankautospuit", "TS"],
+  "light boat": ["Reddingsboot", "Brandweerboot"],
+  "prisoner transport van": ["Arrestantenbus", "Politieauto"]
+}
