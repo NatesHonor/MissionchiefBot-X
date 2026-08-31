@@ -62,5 +62,32 @@ class SwedishRegionTests(unittest.TestCase):
         self.assertEqual(vehicle_ids, ["401", "402"])
 
 
+class PortugueseRegionTests(unittest.TestCase):
+    def test_portuguese_region_and_alias_are_wired_into_shared_runtime(self):
+        profile = get_region_profile("portugal")
+
+        self.assertEqual(profile.key, "pt")
+        self.assertTrue(profile.runtime_supported)
+        self.assertEqual(profile.language, "pt")
+        self.assertEqual(profile.base_url, "https://www.jogo-operador112.com/")
+
+    def test_portuguese_vehicle_names_resolve(self):
+        profile = get_region_profile("pt")
+        state = SimpleNamespace(
+            get_data=lambda: {
+                "VFCI": ["501"],
+                "Veículo de Combate a Incêndios": ["502"],
+                "Carro de Patrulha": ["503"],
+            },
+            is_locked=lambda vehicle_id: False,
+        )
+
+        vehicle_ids = __import__("asyncio").run(
+            find_vehicle_ids("firetruck", profile, state)
+        )
+
+        self.assertEqual(vehicle_ids, ["501", "502"])
+
+
 if __name__ == "__main__":
     unittest.main()

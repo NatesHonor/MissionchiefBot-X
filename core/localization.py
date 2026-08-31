@@ -44,6 +44,22 @@ _TERMS = {
             "transport krävs",
         ),
     },
+    "pt": {
+        "required": ("necessário", "necessária", "necessários", "requer", "obrigatório"),
+        "personnel": ("pessoal necessário", "pessoal necessário", "pessoal"),
+        "average_credits": ("créditos médios", "créditos em média"),
+        "max_patients": ("máximo de pacientes", "max. pacientes"),
+        "towed_cars": (
+            "máximo de veículos a rebocar",
+            "veículos a rebocar",
+            "veículos para rebocar",
+        ),
+        "prisoner_transport": (
+            "os detidos devem ser transportados",
+            "detidos devem ser transportados",
+            "um transporte é necessário",
+        ),
+    },
 }
 
 

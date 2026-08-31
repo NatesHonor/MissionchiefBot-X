@@ -68,9 +68,19 @@ _REGION_DEFINITIONS = {
         "regions.swe.data.vehicle_options",
         "sv",
     ),
+    "pt": (
+        "https://www.jogo-operador112.com/",
+        True,
+        "regions.pt.data.vehicle_options",
+        "pt",
+    ),
 }
 
-_REGION_ALIASES = {"se": "swe", "sweden": "swe"}
+_REGION_ALIASES = {
+    "se": "swe",
+    "sweden": "swe",
+    "portugal": "pt",
+}
 
 
 def supported_regions() -> tuple[str, ...]:

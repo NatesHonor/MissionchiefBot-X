@@ -1,0 +1,16 @@
+{
+  "firetruck": ["VFCI", "VLCI", "VUCI", "caminhão de bombeiro", "Veículo de Combate a Incêndios", "Veículos de Combate a Incêndios"],
+  "platform truck": ["VE", "caminhão plataforma", "Veículo Escada"],
+  "heavy rescue vehicles": ["VSAT", "Veículo de resgate pesado", "Veículo de Socorro e Assistência Tático"],
+  "hazmat vehicles": ["VPME", "veículos para produtos perigosos", "Veículos de Proteção Multiriscos e Ambiente"],
+  "mobile command vehicles": ["VCOT", "VCOC", "Veículo de Comando Tático", "Veículo de Comando e Comunicações"],
+  "mobile air vehicles": ["Heli INEM"],
+  "ambulance": ["ABSC", "Ambulância", "Ambulância de Socorro", "VMER", "SIV"],
+  "ems chief": ["VMER", "SIV"],
+  "ems mobile command unit": ["VCOC", "Veículo de Comando e Comunicações"],
+  "patrol car": ["Carro patrulha", "Carro de patrulha", "Carro de Patrulha"],
+  "police helicopter": ["Heli INEM"],
+  "wrecker": ["Caminhão de reboque"],
+  "water tanker": ["VTTU", "caminhão pipa", "Veículo Tanque"],
+  "light boat": ["VIC"]
+}
