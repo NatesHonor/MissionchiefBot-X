@@ -9,12 +9,22 @@ from utils.pretty_print import display_error, display_info
 from .concurrency import split_mission_ids_among_threads
 from .pages import ensure_page
 from .regions import get_region_profile
+from .settings import get_settings
 from .vehicle_state import get_vehicle_state
+from utils.special_resources import collect_special_resources
 
 
-async def check_and_grab_missions(contexts, num_threads, url, profile=None, state=None):
+async def check_and_grab_missions(
+    contexts,
+    num_threads,
+    url,
+    profile=None,
+    state=None,
+    settings=None,
+):
     profile = profile or get_region_profile()
     state = state or get_vehicle_state(profile)
+    settings = settings or get_settings()
     contexts = contexts if isinstance(contexts, list) else [contexts]
     if not contexts:
         return
@@ -23,6 +33,11 @@ async def check_and_grab_missions(contexts, num_threads, url, profile=None, stat
         page = await ensure_page(contexts[0])
         await page.goto(url)
         await page.wait_for_load_state("networkidle")
+        if settings.auto_special_resources:
+            collected = await collect_special_resources(page, url)
+            if collected:
+                await page.goto(url)
+                await page.wait_for_load_state("networkidle")
         panels = await page.query_selector_all(".mission_panel_red")
         if not panels:
             if profile.mission_file.exists():
