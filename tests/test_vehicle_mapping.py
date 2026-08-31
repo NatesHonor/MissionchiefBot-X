@@ -1,3 +1,4 @@
+import importlib
 import asyncio
 import sys
 import unittest
@@ -60,6 +61,27 @@ class VehicleMappingTests(unittest.TestCase):
         for region in supported_regions():
             with self.subTest(region=region):
                 self.assertEqual(get_region_profile(region).validate_vehicle_mappings(), [])
+
+    def test_every_declared_region_mapping_resolves_to_an_inventory_type(self):
+        for region in supported_regions():
+            profile = get_region_profile(region)
+            module = importlib.import_module(profile.vehicle_options_module)
+            requests = set(profile.vehicle_aliases())
+            requests.update(module.VEHICLE_OPTIONS)
+            for requested in requests:
+                with self.subTest(region=region, requested=requested):
+                    options = profile.vehicle_options(requested)
+                    self.assertTrue(options)
+                    state = SimpleNamespace(
+                        get_data=lambda: {options[0]: [f"{region}-vehicle"]},
+                        is_locked=lambda vehicle_id: False,
+                    )
+                    self.assertEqual(
+                        asyncio.run(
+                            find_vehicle_ids(requested, profile, state, quiet=True)
+                        ),
+                        [f"{region}-vehicle"],
+                    )
 
 
 if __name__ == "__main__":

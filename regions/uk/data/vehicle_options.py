@@ -17,6 +17,7 @@ VEHICLE_OPTIONS = {
     "flood equipment": ["Flood Equipment Trailer"],
     "mobile air vehicles": ["Mobile air"],
     "heavy rescue vehicles": ["Heavy rescue vehicle", "Rescue Engine"],
+    "water tanker": ["Water Tanker", "Tanker", "Water Ladder"],
     "hazmat vehicles": ["HazMat"],
     "mobile command vehicles": ["MCV"],
     "fire investigation units": ["Fire Investigator Unit"],
@@ -58,6 +59,8 @@ VEHICLE_OPTIONS = {
     "swat armoured vehicles": ["SWAT Armoured Vehicle"],
     "light boat": ["Small Coastal Boat", "Large Coastal Boat"],
     "wrecker": ["Wrecker", "Police Wrecker", "Fire Wrecker"],
+    "flatbed carrier": ["Flatbed Carrier", "Wrecker", "Police Wrecker", "Fire Wrecker"],
+    "prisoner transport van": ["Police Prisoner Van", "Patrol car"],
 }
 
 

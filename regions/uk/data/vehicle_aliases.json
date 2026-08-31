@@ -4,6 +4,7 @@
   "Battalion chief unit": ["Battalion", "battalion chief"],
   "mobile air vehicles": ["Mobile air"],
   "heavy rescue vehicles": ["Heavy rescue"],
+  "water tanker": ["Tanker"],
   "hazmat vehicles": ["HazMat"],
   "mobile command vehicles": ["mobile command"],
   "Fire Investigator Unit": ["fire investigation unit"],
@@ -34,5 +35,7 @@
   "SWAT Armoured Vehicle": ["swat armoured"],
   "SWAT SUV": [],
 
-  "light boat": ["Small Coastal Boat" , "Large Coastal Boat"]
+  "light boat": ["Small Coastal Boat" , "Large Coastal Boat"],
+  "flatbed carrier": ["Wrecker", "Police Wrecker", "Fire Wrecker"],
+  "prisoner transport van": ["Police Prisoner Van", "Patrol car"]
 }
