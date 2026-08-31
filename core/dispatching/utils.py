@@ -1,5 +1,6 @@
 import re
-import unicodedata
+
+from ..vehicle_mapping import normalize_vehicle_name
 
 
 def format_distance(seconds):
@@ -17,10 +18,7 @@ def format_distance(seconds):
 
 
 def normalize_key(value):
-    value = unicodedata.normalize("NFKD", str(value))
-    value = "".join(character for character in value if not unicodedata.combining(character))
-    value = re.sub(r"[^\w\s]+", " ", value.casefold(), flags=re.UNICODE)
-    return re.sub(r"\s+", " ", value).strip()
+    return normalize_vehicle_name(value)
 
 
 def canonical_personnel(value):

@@ -1,5 +1,6 @@
 """Vehicle alternatives used by the Portuguese MissionChief deployment."""
 
+from core.vehicle_mapping import get_vehicle_options_from_map
 
 VEHICLE_OPTIONS = {
     "firetruck": ["VFCI", "VLCI", "VUCI", "Veículo de Combate a Incêndios"],
@@ -38,4 +39,4 @@ VEHICLE_OPTIONS = {
 
 
 def get_vehicle_options(vehicle_type):
-    return VEHICLE_OPTIONS.get(str(vehicle_type).strip().casefold(), [])
+    return get_vehicle_options_from_map(VEHICLE_OPTIONS, vehicle_type)

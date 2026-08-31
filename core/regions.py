@@ -10,10 +10,18 @@ from __future__ import annotations
 
 import importlib
 import json
-import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+from .vehicle_mapping import (
+    dedupe_vehicle_terms,
+    matching_vehicle_alias_group,
+    validate_alias_groups,
+    validate_vehicle_aliases,
+    normalize_vehicle_name,
+)
+from utils.personnel_options import get_personnel_options
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -103,27 +111,77 @@ class RegionProfile:
         )
         return [filename for filename in required if not (self.data_dir / filename).is_file()]
 
+    def validate_vehicle_mappings(self) -> list[str]:
+        """Validate every regional alias, personnel, and requirement map."""
+
+        errors = [
+            f"vehicle_aliases.json: {message}"
+            for message in validate_vehicle_aliases(self.vehicle_aliases())
+        ]
+        personnel_aliases = self.personnel_aliases()
+        errors.extend(
+            f"personnel_aliases.json: {message}"
+            for message in validate_alias_groups(personnel_aliases, "personnel")
+        )
+        for canonical in personnel_aliases:
+            if not get_personnel_options(canonical):
+                errors.append(
+                    f"personnel_aliases.json: no personnel options resolve for {canonical!r}"
+                )
+
+        requirement_mapping = self.requirement_mapping()
+        allowed_kinds = {"liquid", "personnel", "tow_vehicle", "pass", "info"}
+        normalized_requirement_keys: set[str] = set()
+        for key, kind in requirement_mapping.items():
+            normalized_key = normalize_vehicle_name(key)
+            if not normalized_key:
+                errors.append("requirement_mapping.json: empty requirement label")
+            elif normalized_key in normalized_requirement_keys:
+                errors.append(f"requirement_mapping.json: duplicate label {key!r}")
+            normalized_requirement_keys.add(normalized_key)
+            if kind not in allowed_kinds:
+                errors.append(
+                    f"requirement_mapping.json: unsupported kind {kind!r} for {key!r}"
+                )
+
+        module = importlib.import_module(self.vehicle_options_module)
+        option_map = getattr(module, "VEHICLE_OPTIONS", {})
+        if option_map and not isinstance(option_map, dict):
+            errors.append("vehicle options must be a mapping")
+            return errors
+
+        requests = set(self.vehicle_aliases())
+        requests.update(
+            synonym
+            for synonyms in self.vehicle_aliases().values()
+            if isinstance(synonyms, list)
+            for synonym in synonyms
+        )
+        requests.update(option_map)
+        for requested in requests:
+            if not self.vehicle_options(requested):
+                errors.append(f"no options resolve for {requested!r}")
+        return errors
+
     def vehicle_options(self, vehicle_type: str) -> list[str]:
         module = importlib.import_module(self.vehicle_options_module)
         options = list(module.get_vehicle_options(vehicle_type) or [])
         if options:
-            return list(dict.fromkeys(options))
+            return dedupe_vehicle_terms(options)
 
-        # Aliases are data, not code.  This fallback lets a regional page use
-        # a localized requirement label even when the shared canonical name is
-        # requested by the dispatcher.
-        def normalize(value):
-            value = unicodedata.normalize("NFKD", str(value or ""))
-            value = "".join(character for character in value if not unicodedata.combining(character))
-            return " ".join(value.casefold().replace("-", " ").split())
-
-        requested = normalize(vehicle_type)
         aliases = self.vehicle_aliases()
-        for canonical, synonyms in aliases.items():
-            values = [canonical, *(synonyms if isinstance(synonyms, list) else [])]
-            if requested in {normalize(value) for value in values}:
-                return list(dict.fromkeys(values[1:] or [canonical]))
-        return []
+        group = matching_vehicle_alias_group(vehicle_type, aliases)
+        if not group:
+            return []
+
+        # The option map describes cross-category substitutions (for example,
+        # Rescue Engine satisfies a heavy-rescue requirement).  Try every
+        # equivalent label in the alias group before falling back to its raw
+        # regional names.
+        mapped_options: list[str] = []
+        for label in group:
+            mapped_options.extend(module.get_vehicle_options(label) or [])
+        return dedupe_vehicle_terms((*mapped_options, *group))
 
 
 _REGION_DEFINITIONS = {

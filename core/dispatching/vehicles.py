@@ -4,6 +4,7 @@ from utils.pretty_print import display_error, display_info
 
 from ..regions import get_region_profile
 from ..vehicle_state import get_vehicle_state
+from ..vehicle_mapping import is_decorated_vehicle_name, vehicle_name_variants
 from .utils import format_distance, normalize_key
 
 
@@ -88,27 +89,26 @@ async def find_vehicle_ids(name: str, profile=None, state=None, exact=False, qui
     profile = profile or get_region_profile()
     state = state or get_vehicle_state(profile)
     vehicle_data = state.get_data()
-    normalized = normalize_key(name)
     ids = []
     names = [name]
     if not exact:
         names.extend(profile.vehicle_options(name))
-    alias_data = profile.vehicle_aliases() if hasattr(profile, "vehicle_aliases") else {}
-    if not exact:
-        for canonical, synonyms in alias_data.items():
-            alias_values = [canonical, *(synonyms if isinstance(synonyms, list) else [])]
-            if normalized in {normalize_key(value) for value in alias_values}:
-                names.extend(alias_values)
-    normalized_names = {normalize_key(item) for item in names if item}
+    normalized_names = {
+        variant
+        for item in names
+        if item
+        for variant in vehicle_name_variants(item)
+    }
     for vehicle_type, vehicle_ids in vehicle_data.items():
         normalized_type = normalize_key(vehicle_type)
-        matches_name = normalized_type in normalized_names
-        matches_variant = any(
-            len(candidate) >= 4
-            and (candidate in normalized_type or normalized_type in candidate)
-            for candidate in normalized_names
+        matches_name = bool(normalized_names & vehicle_name_variants(vehicle_type))
+        # Inventory captions sometimes append a model/crew qualifier in
+        # parentheses.  Permit that explicit decoration, but do not fall
+        # back to arbitrary substring matches between unrelated vehicle types.
+        decorated_match = (not exact) and is_decorated_vehicle_name(
+            normalized_names, vehicle_type
         )
-        if matches_name or matches_variant:
+        if matches_name or decorated_match:
             ids.extend(str(vehicle_id) for vehicle_id in vehicle_ids)
     unique_ids = list(dict.fromkeys(ids))
     if not unique_ids and not quiet:
