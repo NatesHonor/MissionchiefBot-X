@@ -9,6 +9,7 @@ from utils.pretty_print import display_error, display_info
 
 from ..regions import get_region_profile
 from ..localization import get_localized_terms
+from ..mission_requirements import parse_requirement_count
 from ..settings import get_settings
 from ..vehicle_state import get_vehicle_state
 from .navigation import load_mission_page
@@ -86,9 +87,10 @@ async def navigate_and_dispatch(contexts, url, profile=None, state=None, setting
         missing = []
         await handle_personnel(page, data, missing, mission_id, profile, state, settings)
         for requirement in data.get("vehicles", []):
-            needed = requirement.get("count", 0)
-            if needed <= 0:
+            needed = parse_requirement_count(requirement.get("count", 0))
+            if needed is None or needed <= 0:
                 continue
+            requirement["count"] = needed
             used_total = 0
             for option in requirement.get("options", []):
                 if used_total >= needed:

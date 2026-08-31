@@ -6,7 +6,7 @@ import json
 import re
 import unicodedata
 
-from utils.pretty_print import display_error, display_info
+from utils.pretty_print import display_error
 
 from .mission_helpers import get_val, normalize_name
 from .localization import contains_localized_term, get_localized_terms
@@ -72,7 +72,7 @@ def _caption_matches(caption, profile, vehicle_types):
     return any(_normalize(name) in caption_key for name in names if _normalize(name))
 
 
-async def gather_mission_info(ids, context, tid, url, profile=None, state=None):
+async def gather_mission_info(ids, context, tid, url, profile=None, state=None, progress=None):
     profile = profile or get_region_profile()
     state = state or get_vehicle_state(profile)
     data = {}
@@ -90,7 +90,6 @@ async def gather_mission_info(ids, context, tid, url, profile=None, state=None):
     page = await ensure_page(context)
     for index, mission_id in enumerate(ids):
         try:
-            display_info(f"Thread {tid}: Grabbing missions {index + 1}/{len(ids)}")
             await page.goto(f"{url.rstrip('/')}/missions/{mission_id}")
             await page.wait_for_selector("#missionH1", timeout=5000)
             name_element = await page.query_selector("#missionH1")
@@ -230,4 +229,7 @@ async def gather_mission_info(ids, context, tid, url, profile=None, state=None):
             }
         except Exception as error:
             display_error(f"Error processing mission ID {mission_id}: {error}")
+        finally:
+            if progress:
+                progress.advance(f"thread {tid}")
     return data

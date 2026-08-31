@@ -12,6 +12,7 @@ async def split_mission_ids_among_threads(
     url,
     profile=None,
     state=None,
+    progress=None,
 ):
     if not ids or not contexts or not num_threads:
         return {}
@@ -21,7 +22,15 @@ async def split_mission_ids_among_threads(
 
     results = await asyncio.gather(
         *(
-            gather_mission_info(partition, contexts[index], index + 1, url, profile, state)
+            gather_mission_info(
+                partition,
+                contexts[index],
+                index + 1,
+                url,
+                profile,
+                state,
+                progress,
+            )
             for index, partition in enumerate(partitions)
             if partition
         )
