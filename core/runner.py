@@ -214,6 +214,7 @@ async def run_bot(settings: Settings | None = None, profile: RegionProfile | Non
             display_info(
                 f"Concurrent missions are currently {'enabled' if settings.concurrent_missions else 'disabled'}."
             )
+            display_info(f"Dispatch pacing: {settings.dispatch_delay}s between missions.")
 
             other_context = contexts[0]
             grabbing_contexts = contexts[1:]

@@ -24,6 +24,15 @@ from .personnel import handle_personnel
 from .vehicles import find_vehicle_ids, select_vehicles
 
 
+def dispatch_delay_seconds(settings) -> int:
+    """Return the configured pause between missions without trusting config types."""
+
+    try:
+        return max(0, int(getattr(settings, "dispatch_delay", 0)))
+    except (TypeError, ValueError):
+        return 0
+
+
 def _requirement_key(options, profile=None):
     profile = profile or get_region_profile()
     return tuple(sorted(
@@ -277,8 +286,11 @@ async def navigate_and_dispatch(contexts, url, profile=None, state=None, setting
 
     async def process_chunk(page, chunk, thread_id):
         prefix = f"[Mission Thread {thread_id}]"
-        for mission_id, data in chunk:
+        pause = dispatch_delay_seconds(settings)
+        for index, (mission_id, data) in enumerate(chunk):
             await process_mission(page, mission_id, data, prefix)
+            if pause and index < len(chunk) - 1:
+                await asyncio.sleep(pause)
 
     tasks = []
     for index, page in enumerate(pages):

@@ -102,6 +102,12 @@ and a compatibility entrypoint. The mapping audit and full test suite must pass
 before the region is considered supported; the runtime never silently redirects
 an unknown region to another country's service.
 
+To give units time to clear missions and return to their normal areas, set
+`dispatch` in the `[delays]` section of `config.ini` (seconds). This pause is
+applied between missions on each dispatch worker; `missions` still controls the
+pause before the next mission-gathering cycle, and `other` controls background
+work such as transport handling.
+
 The project does not invent a regional server for New Zealand.  A region must have a
 real MissionChief service URL and a verified set of game vehicle names before it can be
 enabled.  New Zealand remains explicitly unsupported until an official service is
