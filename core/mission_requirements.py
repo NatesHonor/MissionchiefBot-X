@@ -8,7 +8,7 @@ import re
 from .mission_helpers import normalize_name
 from .localization import contains_localized_term, get_localized_terms
 from .regions import get_region_profile
-from .vehicle_mapping import normalize_vehicle_name
+from .vehicle_mapping import normalize_vehicle_name, vehicle_name_variants
 
 
 def _load_json(path):
@@ -44,9 +44,40 @@ def resolve_personnel(name: str, profile=None) -> str:
     normalized = _normalize(name)
     aliases = profile.personnel_aliases()
     for canonical, synonyms in aliases.items():
-        if normalized in {_normalize(canonical), *(_normalize(synonym) for synonym in synonyms)}:
+        alias_keys = set()
+        for value in (canonical, *(synonyms if isinstance(synonyms, list) else [])):
+            alias_keys.update(vehicle_name_variants(value))
+        if normalized in alias_keys or vehicle_name_variants(name) & alias_keys:
             return canonical
     return name
+
+
+def normalize_cached_requirements(data: dict, profile=None) -> dict:
+    """Repair pre-migration caches that stored personnel as vehicle options."""
+
+    profile = profile or get_region_profile()
+    vehicles = []
+    personnel = list(data.get("personnel", []))
+    for requirement in data.get("vehicles", []):
+        options = requirement.get("options", [])
+        if isinstance(options, str):
+            options = [options]
+        resolved_people = [resolve_personnel(option, profile) for option in options]
+        if "swat personnel" in {
+            normalize_vehicle_name(person)
+            for person in resolved_people
+        }:
+            personnel.append(
+                {
+                    "name": "swat personnel",
+                    "count": requirement.get("count", 0),
+                }
+            )
+        else:
+            vehicles.append(requirement)
+    data["vehicles"] = vehicles
+    data["personnel"] = personnel
+    return data
 
 
 async def gather_requirements(page, profile=None):
