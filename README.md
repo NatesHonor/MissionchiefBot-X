@@ -99,6 +99,15 @@ real MissionChief service URL and a verified set of game vehicle names before it
 enabled.  New Zealand remains explicitly unsupported until an official service is
 identified; the launcher rejects it instead of silently using another country's site.
 
+### Run locally on Windows
+
+The supported local entrypoint is `Main.py`, launched from the repository root. After
+running setup, use `run.cmd` from Command Prompt or `./run.ps1` from PowerShell. Both
+wrappers resolve the project directory and always use `.venv\Scripts\python.exe`, so
+launching from another working directory does not change where configuration and regional
+data are read from. A missing environment reports a setup error instead of silently using
+another Python installation.
+
 ### Mission ignore list
 
 To keep a mission type out of collection and dispatch, edit the region-specific file
