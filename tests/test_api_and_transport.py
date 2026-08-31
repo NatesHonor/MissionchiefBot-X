@@ -6,6 +6,7 @@ sys.modules.setdefault("art", SimpleNamespace())
 
 from core.missionchief_api import (
     extract_mission_ids,
+    extract_mission_marker_records,
     records_from_payload,
     vehicle_inventory_from_records,
 )
@@ -32,6 +33,17 @@ class ApiAndTransportTests(unittest.TestCase):
         markers = 'const mList = [{id: 42, mtid: 9}, {"mission_id": "43"}, {id: 42}]'
 
         self.assertEqual(extract_mission_ids(markers), ["42", "43"])
+
+    def test_marker_records_keep_mission_type_ids_for_ignore_matching(self):
+        markers = 'const mList = [{id: 42, mtid: 9}, {"mission_id": "43", "missionTypeId": 10}]'
+
+        self.assertEqual(
+            extract_mission_marker_records(markers),
+            [
+                {"id": "42", "type_id": "9", "name": None},
+                {"id": "43", "type_id": "10", "name": None},
+            ],
+        )
 
     def test_transport_priority_is_department_ownership_tax_then_distance(self):
         best = {
