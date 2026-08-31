@@ -128,3 +128,31 @@ async def login_single(
                 await context.close()
             if browser:
                 await browser_pool.release(browser)
+
+
+async def login_all(username, password, browser_count, browser_pool, url):
+    """Run browser logins without letting one task abort the whole batch."""
+
+    results = await asyncio.gather(
+        *(
+            login_single(
+                username=username,
+                password=password,
+                thread_id=index + 1,
+                delay=index * 1.5,
+                browser_pool=browser_pool,
+                url=url,
+            )
+            for index in range(browser_count)
+        ),
+        return_exceptions=True,
+    )
+    normalized = []
+    for index, result in enumerate(results, start=1):
+        if isinstance(result, BaseException):
+            message = f"Browser login task {index} failed: {result}"
+            display_error(message)
+            normalized.append(("Failure", str(result), None))
+        else:
+            normalized.append(result)
+    return normalized

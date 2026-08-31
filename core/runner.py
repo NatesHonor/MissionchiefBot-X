@@ -12,7 +12,7 @@ from utils.training import run_training_once
 from utils.recruiting import run_recruiting_once
 from utils.vehicle_data import gather_vehicle_data
 
-from .auth import login_single
+from .auth import login_all
 from .browser import BrowserPool
 from .buildings import gather_building_data
 from .dispatching import navigate_and_dispatch
@@ -132,18 +132,12 @@ async def run_bot(settings: Settings | None = None, profile: RegionProfile | Non
         try:
             browser_pool = BrowserPool(playwright, settings.browsers, settings.headless)
             await browser_pool.start()
-            login_results = await asyncio.gather(
-                *(
-                    login_single(
-                        username=settings.username,
-                        password=settings.password,
-                        thread_id=index + 1,
-                        delay=index * 1.5,
-                        browser_pool=browser_pool,
-                        url=profile.base_url,
-                    )
-                    for index in range(settings.browsers)
-                )
+            login_results = await login_all(
+                username=settings.username,
+                password=settings.password,
+                browser_count=settings.browsers,
+                browser_pool=browser_pool,
+                url=profile.base_url,
             )
             for status, info, context in login_results:
                 if status == "Success" and context:
