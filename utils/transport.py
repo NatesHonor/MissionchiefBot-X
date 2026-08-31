@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from core.localization import contains_localized_term
 from core.missionchief_api import fetch_vehicle_records
@@ -21,17 +22,27 @@ _DEPARTMENT_MARKERS = (
     "especialidade",
     "avdelning",
     "specialitet",
+    "afdeling",
+    "specialisatie",
+    "specialiteit",
+    "dienst",
 )
-_TAX_LABELS = ("tax", "imposto", "skatt", "steuer")
-_DISTANCE_LABELS = ("distance", "distância", "avstånd", "entfernung")
-_OWN_MARKERS = ("own", "owned", "eigen", "meu", "min", "egen", "propri")
+_TAX_LABELS = ("tax", "imposto", "skatt", "steuer", "belasting")
+_DISTANCE_LABELS = ("distance", "distancia", "avstand", "entfernung", "afstand")
+_OWN_MARKERS = ("own", "owned", "eigen", "meu", "min", "egen", "propri", "mijn", "eigendom")
 
 
 def _contains_word_marker(value: str, markers: tuple[str, ...]) -> bool:
+    value = _fold(value)
     return any(
         re.search(rf"(?<![a-z]){re.escape(marker)}(?![a-z])", value)
         for marker in markers
     )
+
+
+def _fold(value: str) -> str:
+    value = unicodedata.normalize("NFKD", str(value or ""))
+    return "".join(character for character in value if not unicodedata.combining(character)).casefold()
 
 
 def _number(value: str | None) -> float:
@@ -106,7 +117,7 @@ async def _transport_options(page) -> list[dict]:
             str(value or "")
             for value in (row_data.get("text"), table_data.get("id"), table_data.get("className"))
         )
-        lower_text = text.casefold()
+        lower_text = _fold(text)
         ownership_text = " ".join(
             str(value or "")
             for value in (
@@ -147,7 +158,7 @@ async def _transport_options(page) -> list[dict]:
             {
                 "button": button,
                 "label": text,
-                "has_department": any(marker in text.casefold() for marker in _DEPARTMENT_MARKERS),
+                "has_department": any(marker in _fold(text) for marker in _DEPARTMENT_MARKERS),
                 "own": False,
                 "tax": _labeled_number(text, _TAX_LABELS),
                 "distance": _labeled_number(text, _DISTANCE_LABELS),
