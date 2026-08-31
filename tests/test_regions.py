@@ -89,9 +89,36 @@ class PortugueseRegionTests(unittest.TestCase):
         self.assertEqual(vehicle_ids, ["501", "502"])
 
 
+class DanishRegionTests(unittest.TestCase):
+    def test_danish_region_and_alias_are_wired_into_shared_runtime(self):
+        profile = get_region_profile("danish")
+
+        self.assertEqual(profile.key, "dk")
+        self.assertTrue(profile.runtime_supported)
+        self.assertEqual(profile.language, "da")
+        self.assertEqual(profile.base_url, "https://www.alarmcentral-spil.dk/")
+
+    def test_danish_vehicle_names_resolve(self):
+        profile = get_region_profile("dk")
+        state = SimpleNamespace(
+            get_data=lambda: {
+                "Brandbil": ["601"],
+                "Stigevogn": ["602"],
+                "Politibil": ["603"],
+            },
+            is_locked=lambda vehicle_id: False,
+        )
+
+        vehicle_ids = __import__("asyncio").run(
+            find_vehicle_ids("firetruck", profile, state)
+        )
+
+        self.assertEqual(vehicle_ids, ["601"])
+
+
 class RegionRegistryTests(unittest.TestCase):
     def test_every_registered_region_has_the_shared_runtime_contract(self):
-        expected = {"us", "uk", "aus", "ger", "nld", "swe", "pt"}
+        expected = {"us", "uk", "aus", "ger", "nld", "swe", "pt", "dk"}
         self.assertEqual(set(supported_regions()), expected)
         for region in expected:
             profile = get_region_profile(region)
