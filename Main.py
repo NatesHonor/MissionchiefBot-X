@@ -1,20 +1,35 @@
 import asyncio
 import os
 import sys
+import webbrowser
 from pathlib import Path
 
 from core.runner import run_bot
+from core.settings import Settings, load_settings
 from core.webui import BotWebUI
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 
 
-async def run_application() -> None:
-    """Keep the local control panel alive while the bot can be restarted."""
+async def run_application(settings: Settings) -> None:
+    """Serve the control page and wait for the user to start BotX."""
 
-    webui = BotWebUI()
-    webui.start()
+    webui = BotWebUI(
+        host=settings.webui_host,
+        port=settings.webui_port,
+    )
+    if not webui.start():
+        raise RuntimeError(f"The WebUI could not start on {settings.webui_host}:{settings.webui_port}.")
+    webbrowser.open(webui.url)
+    webui.set_settings(settings)
+    webui.update(
+        status="ready",
+        message="WebUI ready. Press Start bot when you want to begin.",
+        running=False,
+        region=settings.region,
+        version=settings.version,
+    )
     loop = asyncio.get_running_loop()
     current_task: asyncio.Task | None = None
     current_stop_event: asyncio.Event | None = None
@@ -51,7 +66,6 @@ async def run_application() -> None:
             loop.call_soon_threadsafe(current_stop_event.set)
 
     webui.set_control_callbacks(start=request_start, stop=request_stop)
-    start_bot()
     try:
         await asyncio.Event().wait()
     finally:
@@ -66,7 +80,11 @@ def main() -> int:
 
     os.chdir(PROJECT_ROOT)
     try:
-        asyncio.run(run_application())
+        settings = load_settings()
+        if settings.webui_enabled:
+            asyncio.run(run_application(settings))
+        else:
+            asyncio.run(run_bot(settings=settings))
     except KeyboardInterrupt:
         print("MissionChief Bot stopped.")
     except Exception as error:

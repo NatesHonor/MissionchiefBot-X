@@ -54,6 +54,9 @@ class Settings:
     training_plans: tuple[TrainingPlan, ...] = ()
     recruiting_days: int = 1
     version: str = "dev"
+    webui_enabled: bool = False
+    webui_host: str = "127.0.0.1"
+    webui_port: int = 8765
 
 
 def _config_path(path: str | os.PathLike[str] | None = None) -> Path:
@@ -334,6 +337,37 @@ def load_settings(path: str | os.PathLike[str] | None = None) -> Settings:
             "MISSIONCHIEF_VERSION",
             default="dev",
         ).strip(),
+        webui_enabled=_boolean(
+            _value(
+                parser,
+                config_file,
+                "webui",
+                "enabled",
+                "MISSIONCHIEF_WEBUI_ENABLED",
+                default="false",
+            ),
+            "MISSIONCHIEF_WEBUI_ENABLED",
+        ),
+        webui_host=_value(
+            parser,
+            config_file,
+            "webui",
+            "host",
+            "MISSIONCHIEF_WEBUI_HOST",
+            default="127.0.0.1",
+        ).strip(),
+        webui_port=_integer(
+            _value(
+                parser,
+                config_file,
+                "webui",
+                "port",
+                "MISSIONCHIEF_WEBUI_PORT",
+                default="8765",
+            ),
+            "MISSIONCHIEF_WEBUI_PORT",
+            minimum=1,
+        ),
     )
 
 

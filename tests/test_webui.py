@@ -1,11 +1,13 @@
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
 from urllib.request import Request, urlopen
 
-from core.webui import BotWebUI, save_settings
+from core.settings import load_settings
+from core.webui import BotWebUI, read_log_tail, save_settings
 
 
 class WebUITests(unittest.TestCase):
@@ -51,7 +53,11 @@ class WebUITests(unittest.TestCase):
             self.assertEqual(payload["version"], "3.1.0")
             self.assertNotIn("hidden-password", json.dumps(payload))
             with urlopen(f"{ui.url}/", timeout=2) as response:
-                self.assertIn(b"MissionchiefBot-X", response.read())
+                page = response.read()
+            self.assertIn(b"MissionchiefBot-X", page)
+            self.assertIn(b"Start bot", page)
+            self.assertNotIn(b"Unavailable", page)
+            self.assertNotIn(b'class="mark"', page)
         finally:
             ui.stop()
 
@@ -85,6 +91,41 @@ class WebUITests(unittest.TestCase):
             self.assertIn("missions = 15", contents)
             with self.assertRaises(ValueError):
                 save_settings({"password": "must-not-be-editable"}, path)
+
+    def test_webui_configuration_is_loaded(self):
+        example = Path(__file__).parents[1] / "config.ini.example"
+        contents = example.read_text(encoding="utf-8").replace("username =", "username = test-user")
+        contents = contents.replace("password =", "password = test-password")
+        contents = contents.replace("enabled = false", "enabled = true")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "config.ini"
+            path.write_text(contents, encoding="utf-8")
+            settings = load_settings(path)
+        self.assertTrue(settings.webui_enabled)
+        self.assertEqual(settings.webui_host, "127.0.0.1")
+        self.assertEqual(settings.webui_port, 8765)
+
+    def test_log_tail_excludes_webui_access_lines(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "missionchiefbot.log"
+            path.write_text(
+                "2026 INFO Starting mission logic.\n"
+                "2026 INFO WebUI 127.0.0.1 - GET /api/status\n"
+                "2026 INFO Dispatched mission 123\n",
+                encoding="utf-8",
+            )
+            previous = os.environ.get("MISSIONCHIEF_LOG_FILE")
+            os.environ["MISSIONCHIEF_LOG_FILE"] = str(path)
+            try:
+                self.assertEqual(
+                    read_log_tail(),
+                    ["2026 INFO Starting mission logic.", "2026 INFO Dispatched mission 123"],
+                )
+            finally:
+                if previous is None:
+                    os.environ.pop("MISSIONCHIEF_LOG_FILE", None)
+                else:
+                    os.environ["MISSIONCHIEF_LOG_FILE"] = previous
 
 
 if __name__ == "__main__":
