@@ -1,7 +1,56 @@
 # 🚨 Mission Helper
 
-Mission Helper is an automation bot for [MissionChief](https://www.missionchief.com) designed to streamline gameplay and maximize efficiency.  
+Mission Helper is an unofficial third-party automation application for [MissionChief](https://www.missionchief.com) designed to streamline gameplay and maximize efficiency.
 It handles everything from credit gathering to auto-dispatching, employee training, transport requests, and more — all while keeping resource usage low and performance high.
+
+---
+
+## ⚠️ Important legal, terms, and safety notice
+
+**Read this before installing, running, or distributing Mission Helper.**
+
+Mission Helper / MissionchiefBotX is independent, unofficial software. It is not created,
+owned, operated, approved, sponsored, endorsed, maintained, or supported by MissionChief,
+SHPlay GmbH, Xyrality GmbH, any MissionChief regional operator, or any of their affiliates,
+partners, licensors, competitors, or other third parties. MissionChief, SHPlay, Xyrality,
+and related names, logos, and services belong to their respective owners. No relationship,
+partnership, sponsorship, or endorsement should be inferred from this project.
+
+The [official MissionChief terms and conditions](https://www.missionchief.com/agb) currently
+state that tools, scripts, bots, and other programs suitable for automatically performing
+activities in a game are prohibited, and that games must be used personally. Therefore,
+**using this application may violate MissionChief's terms, game rules, or other policies.**
+The existence of this repository, its API integrations, or a working release does not mean
+that MissionChief has authorized it. The same warning applies to every supported regional
+MissionChief service; check the rules for the specific service and region you use.
+
+Use this software only if you have independently confirmed that your intended use is
+permitted, preferably through current written authorization from the applicable operator.
+If you cannot confirm that, do not run it. Rules and policies can change, so review the
+official [terms and conditions](https://www.missionchief.com/agb), [privacy policy](https://www.missionchief.com/datenschutz),
+and [imprint/operator information](https://www.missionchief.com/impressum) before each
+major update or change in use. These links are provided for convenience and the official
+operator's current documents control if anything here conflicts with them.
+
+You are solely responsible for your account, credentials, devices, network activity, and
+compliance with all applicable laws, terms, game rules, and third-party policies. Do not
+use this project to evade restrictions, create or operate prohibited multiple accounts,
+exploit bugs, bypass rate limits or access controls, overload a service, interfere with
+other players, or continue after the operator asks you to stop. Keep credentials out of
+issues, screenshots, logs, commits, and shared configuration files, and stop using the
+application immediately if you suspect an account, security, or terms-of-service problem.
+
+This project is provided for informational and experimental purposes **as-is**, without
+any promise that it is permitted, safe, accurate, available, or compatible with any
+MissionChief service. To the maximum extent permitted by applicable law, the maintainers
+are not responsible for account suspension or termination, lost progress, lost virtual
+items or currency, service changes, downtime, data loss, security incidents, or any other
+loss resulting from use or inability to use this project. Nothing in this notice is legal
+advice, creates a contract with MissionChief or its operator, or guarantees protection
+from enforcement. Obtain advice from a qualified lawyer for your situation.
+
+**Last reviewed:** 2026-08-30. Official policies may change after this date; always verify
+the current policy directly with the applicable operator.
 
 ---
 
@@ -30,9 +79,9 @@ does not require copying the login, browser, parser, or dispatch loops.
 - `regions/uk` and `regions/us` keep thin adapters for existing imports and
   region-specific vehicle mappings.
 
-US, UK, and Germany are wired into the shared automation runtime. The remaining
-region entries are URL metadata only until their localized vehicle rules and
-selectors are implemented.
+US, UK, Germany, Sweden, and Portugal are wired into the shared automation runtime.
+Australia and the Netherlands remain URL metadata entries until their localized vehicle
+rules and selectors are implemented.
 
 ---
 
