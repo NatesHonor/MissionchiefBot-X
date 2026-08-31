@@ -4,6 +4,13 @@
 version = 3.0.2
 region = UK
 
+[webui]
+; When enabled, Main.py opens the local control page and waits for Start bot.
+; When disabled, Main.py starts the bot directly as before.
+enabled = false
+host = 127.0.0.1
+port = 8765
+
 [credentials]
 username =
 password =
