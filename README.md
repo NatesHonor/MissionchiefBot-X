@@ -30,8 +30,9 @@ does not require copying the login, browser, parser, or dispatch loops.
 - `regions/uk` and `regions/us` keep thin adapters for existing imports and
   region-specific vehicle mappings.
 
-US and UK are the currently wired automation adapters. The other region entries
-are URL metadata only until their selectors and rules are implemented.
+US, UK, and Germany are wired into the shared automation runtime. The remaining
+region entries are URL metadata only until their localized vehicle rules and
+selectors are implemented.
 
 ---
 

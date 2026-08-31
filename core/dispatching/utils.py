@@ -1,4 +1,5 @@
 import re
+import unicodedata
 
 
 def format_distance(seconds):
@@ -16,7 +17,10 @@ def format_distance(seconds):
 
 
 def normalize_key(value):
-    return re.sub(r"\s+", " ", value.strip().casefold())
+    value = unicodedata.normalize("NFKD", str(value))
+    value = "".join(character for character in value if not unicodedata.combining(character))
+    value = re.sub(r"[^\w\s]+", " ", value.casefold(), flags=re.UNICODE)
+    return re.sub(r"\s+", " ", value).strip()
 
 
 def canonical_personnel(value):

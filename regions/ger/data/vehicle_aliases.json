@@ -1,0 +1,27 @@
+{
+  "firetruck": [
+    "Löschfahrzeug",
+    "Löschfahrzeuge",
+    "Löschfahrzeug (LF)",
+    "Hilfeleistungslöschfahrzeug",
+    "HLF"
+  ],
+  "platform truck": ["Drehleiter", "Drehleitern", "DLK"],
+  "battalion chief unit": ["Einsatzleitwagen", "ELW 1", "ELW 2"],
+  "heavy rescue vehicles": ["Rüstwagen", "Rüstwagen (RW)", "RW"],
+  "hazmat vehicles": [
+    "Gerätewagen Gefahrgut",
+    "GW-G",
+    "GW-Gefahrgut",
+    "Gerätewagen Messtechnik",
+    "GW-Messtechnik",
+    "Gerätewagen Öl",
+    "GW-Öl"
+  ],
+  "mobile command vehicles": ["Einsatzleitwagen", "ELW 1", "ELW 2"],
+  "ambulance": ["Rettungswagen", "Rettungswagen (RTW)", "RTW", "Krankentransportwagen", "KTW"],
+  "ems chief": ["Notarzteinsatzfahrzeug", "NEF"],
+  "patrol car": ["Streifenwagen"],
+  "police helicopter": ["Polizeihubschrauber"],
+  "wrecker": ["Abschleppwagen", "Abschleppfahrzeug"]
+}

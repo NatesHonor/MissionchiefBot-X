@@ -17,6 +17,7 @@ class RegionProfile:
     runtime_supported: bool
     data_dir: Path
     vehicle_options_module: str
+    language: str = "en"
 
     @property
     def login_url(self) -> str:
@@ -56,11 +57,11 @@ class RegionProfile:
 
 
 _REGION_DEFINITIONS = {
-    "us": ("https://www.missionchief.com/", True, "utils.vehicle_options"),
-    "uk": ("https://www.missionchief.co.uk/", True, "regions.uk.data.vehicle_options"),
-    "aus": ("https://www.missionchief-australia.com/", False, "utils.vehicle_options"),
-    "ger": ("https://www.leitstellenspiel.de/", False, "utils.vehicle_options"),
-    "nld": ("https://www.meldkamerspel.com/", False, "utils.vehicle_options"),
+    "us": ("https://www.missionchief.com/", True, "utils.vehicle_options", "en"),
+    "uk": ("https://www.missionchief.co.uk/", True, "regions.uk.data.vehicle_options", "en"),
+    "aus": ("https://www.missionchief-australia.com/", False, "utils.vehicle_options", "en"),
+    "ger": ("https://www.leitstellenspiel.de/", True, "regions.ger.data.vehicle_options", "de"),
+    "nld": ("https://www.meldkamerspel.com/", False, "utils.vehicle_options", "nl"),
 }
 
 
@@ -75,7 +76,7 @@ def get_region_profile(region: str | None = None) -> RegionProfile:
         region = get_settings().region
     key = region.strip().lower()
     try:
-        base_url, runtime_supported, options_module = _REGION_DEFINITIONS[key]
+        base_url, runtime_supported, options_module, language = _REGION_DEFINITIONS[key]
     except KeyError as error:
         choices = ", ".join(supported_regions())
         raise ValueError(f"Unsupported MissionChief region {region!r}. Choose one of: {choices}.") from error
@@ -85,4 +86,5 @@ def get_region_profile(region: str | None = None) -> RegionProfile:
         runtime_supported=runtime_supported,
         data_dir=PROJECT_ROOT / "regions" / key / "data",
         vehicle_options_module=options_module,
+        language=language,
     )

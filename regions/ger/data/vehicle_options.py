@@ -1,0 +1,26 @@
+"""Vehicle alternatives used by the German MissionChief deployment."""
+
+
+VEHICLE_OPTIONS = {
+    "firetruck": ["Löschfahrzeug", "Hilfeleistungslöschfahrzeug", "HLF"],
+    "firetrucks": ["Löschfahrzeug", "Hilfeleistungslöschfahrzeug", "HLF"],
+    "löschfahrzeug": ["Löschfahrzeug", "Hilfeleistungslöschfahrzeug", "HLF"],
+    "platform truck": ["Drehleiter", "DLK"],
+    "drehleiter": ["Drehleiter", "DLK"],
+    "heavy rescue vehicles": ["Rüstwagen", "RW"],
+    "rüstwagen": ["Rüstwagen", "RW"],
+    "hazmat vehicles": ["Gerätewagen Gefahrgut", "GW-G", "GW-Gefahrgut"],
+    "mobile command vehicles": ["Einsatzleitwagen", "ELW 1", "ELW 2"],
+    "mobile air vehicles": ["Hubrettungsfahrzeug", "Drehleiter"],
+    "ambulance": ["Rettungswagen", "RTW", "Krankentransportwagen", "KTW"],
+    "ems chief": ["Notarzteinsatzfahrzeug", "NEF"],
+    "patrol car": ["Streifenwagen"],
+    "police car": ["Streifenwagen"],
+    "police helicopter": ["Polizeihubschrauber"],
+    "wrecker": ["Abschleppwagen", "Abschleppfahrzeug"],
+    "flatbed carrier": ["Abschleppwagen", "Abschleppfahrzeug"],
+}
+
+
+def get_vehicle_options(vehicle_type):
+    return VEHICLE_OPTIONS.get(str(vehicle_type).strip().casefold(), [])
