@@ -28,6 +28,10 @@ class RegionProfile:
         return self.data_dir / "mission_data.json"
 
     @property
+    def mission_index_file(self) -> Path:
+        return self.data_dir / "mission_index.json"
+
+    @property
     def vehicle_file(self) -> Path:
         return self.data_dir / "vehicle_data.json"
 

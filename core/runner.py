@@ -32,7 +32,7 @@ async def run_transport_loop(context, profile: RegionProfile, settings: Settings
     display_info("Starting transportation logic.")
     while not stop_event.is_set():
         try:
-            await handle_transport_requests(context, profile.base_url)
+            await handle_transport_requests(context, profile.base_url, profile)
             if settings.auto_training:
                 await run_training_once(context, profile.base_url, settings.training_plans)
             if settings.auto_recruiting:
