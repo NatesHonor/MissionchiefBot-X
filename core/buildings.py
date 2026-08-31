@@ -60,10 +60,17 @@ async def gather_building_data(contexts, thread_count, url, save_path=None, prof
         *(
             gather_building_data_single(context, index + 1, url)
             for index, context in enumerate(contexts[:thread_count])
-        )
+        ),
+        return_exceptions=True,
     )
     merged = {}
-    for result in results:
+    for index, result in enumerate(results, start=1):
+        if isinstance(result, BaseException):
+            display_error(
+                f"Building collection worker {index} failed: "
+                f"{type(result).__name__}: {result}"
+            )
+            continue
         for name, ids in result.items():
             values = merged.setdefault(name, [])
             values.extend(item for item in ids if item not in values)
