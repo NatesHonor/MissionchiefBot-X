@@ -25,6 +25,22 @@ def _normalize(value: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[^\w\s]+", " ", value.casefold())).strip()
 
 
+def parse_requirement_count(value: str | None) -> int | None:
+    """Return a numeric requirement count, ignoring informational values.
+
+    MissionChief sometimes uses values such as ``yes`` in the count column for
+    optional notes (for example, "traffic cars only required when available").
+    Those rows are not dispatch requirements and must not reach arithmetic in
+    the dispatcher.
+    """
+
+    match = re.search(r"(?<!\d)(\d[\d\s.,]*)(?!\d)", str(value or ""))
+    if not match:
+        return None
+    digits = re.sub(r"[^0-9]", "", match.group(1))
+    return int(digits) if digits else None
+
+
 def resolve_personnel(name: str, profile=None) -> str:
     profile = profile or get_region_profile()
     normalized = _normalize(name)
@@ -67,16 +83,16 @@ async def gather_requirements(page, profile=None):
             name = normalize_name(raw_name or "", profile.language)
             if "probability" in _normalize(name):
                 continue
-            count_text = (await count_element.text_content()).strip().lower()
-            try:
-                count = int(count_text)
-            except (TypeError, ValueError):
-                count = count_text
             kind = requirement_map.get(_normalize(name), "vehicles")
+            if kind in {"pass", "info", "tow_vehicle"}:
+                continue
+            count = parse_requirement_count(await count_element.text_content())
+            if count is None or count <= 0:
+                continue
             entry = {"name": name, "count": count}
             if kind == "liquid":
                 requirements["liquid"].append(entry)
-            elif kind not in {"pass", "info", "tow_vehicle"}:
+            else:
                 requirements["vehicles"].append({"name": name, "count": count})
 
     table = await page.query_selector(

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 from utils.pretty_print import display_error, display_info
+from utils.progress import ProgressBar
 
 from .concurrency import split_mission_ids_among_threads
 from .missionchief_api import fetch_mission_markers, refresh_mission_index
@@ -60,14 +61,22 @@ async def check_and_grab_missions(
             display_info("No missions found, stored an empty mission snapshot.")
             return
         display_info(f"Found {len(ids)} mission IDs.")
-        data = await split_mission_ids_among_threads(
-            ids,
-            contexts,
-            min(max(num_threads, 1), len(contexts), len(ids)),
-            url,
-            profile,
-            state,
-        )
+        progress = ProgressBar("Grabbing mission details", len(ids))
+        progress.start()
+        collection_succeeded = False
+        try:
+            data = await split_mission_ids_among_threads(
+                ids,
+                contexts,
+                min(max(num_threads, 1), len(contexts), len(ids)),
+                url,
+                profile,
+                state,
+                progress,
+            )
+            collection_succeeded = True
+        finally:
+            progress.finish("complete" if collection_succeeded else "stopped")
         with profile.mission_file.open("w", encoding="utf-8") as stream:
             json.dump(data, stream, indent=4)
         display_info(f"Mission config collection complete. Stored mission config in {profile.mission_file}.")

@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 
 from ..regions import get_region_profile
+from ..mission_requirements import parse_requirement_count
 from ..settings import get_settings
 from utils.personnel_options import get_personnel_options
 
@@ -16,7 +17,9 @@ async def handle_personnel(page, data, missing, mission_id, profile=None, state=
     skip_roles = {"technical rescuer", "usar", "sharpshooter"}
     for person in data.get("personnel", []):
         original = person["name"]
-        needed = person["count"]
+        needed = parse_requirement_count(person.get("count", 0))
+        if needed is None or needed <= 0:
+            continue
         if normalize_key(original) in skip_roles:
             continue
         stripped = re.sub(r"\([^)]*\)", "", original)
