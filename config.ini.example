@@ -20,6 +20,8 @@ dispatch_incomplete_missions = false
 dispatch_vehicles_by_distance = false
 dynamic_missions = false
 include_alliance_missions = true
+; Maximum active missions collected in one pass; set to 0 for unlimited.
+max_missions = 500
 
 [other]
 auto_training = false

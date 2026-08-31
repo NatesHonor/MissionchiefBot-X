@@ -18,6 +18,19 @@ from .vehicle_state import get_vehicle_state
 from utils.special_resources import collect_special_resources
 
 
+def limit_mission_ids(mission_ids, maximum: int) -> tuple[list[str], int]:
+    """Bound one collection pass while preserving input order.
+
+    A zero maximum means unlimited.  Returning the omitted count lets the
+    caller make the tradeoff visible instead of looking stalled.
+    """
+
+    ids = list(mission_ids)
+    if maximum <= 0 or len(ids) <= maximum:
+        return ids, 0
+    return ids[:maximum], len(ids) - maximum
+
+
 async def check_and_grab_missions(
     contexts,
     num_threads,
@@ -78,8 +91,15 @@ async def check_and_grab_missions(
         )
         if ignored:
             display_info(f"Ignored {len(ignored)} configured mission(s) before detail scanning.")
+        active_ids = set(ids)
+        ids, omitted = limit_mission_ids(ids, getattr(settings, "max_missions", 500))
+        if omitted:
+            display_info(
+                f"Mission collection capped at {len(ids)} active missions; "
+                f"{omitted} additional alliance mission(s) will be picked up next pass."
+            )
         for mission_id in cached_missions:
-            if mission_id not in ids:
+            if mission_id not in active_ids:
                 state.free_for_mission(mission_id)
         if not ids:
             profile.mission_file.write_text("{}", encoding="utf-8")
