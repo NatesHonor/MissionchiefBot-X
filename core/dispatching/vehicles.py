@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 from utils.pretty_print import display_error, display_info
 
 from ..regions import get_region_profile
@@ -55,13 +57,26 @@ async def select_vehicles(
     state = state or get_vehicle_state(profile or get_region_profile())
     if needed <= 0:
         return 0
-    checkboxes = await page.query_selector_all("input.vehicle_checkbox")
-    checkbox_map = {await checkbox.get_attribute("value"): checkbox for checkbox in checkboxes}
-    valid_ids = [
-        vehicle_id
-        for vehicle_id in ids
-        if vehicle_id in checkbox_map and not state.is_locked(vehicle_id)
-    ]
+    checkbox_map = {}
+    valid_ids = []
+    for attempt in range(3):
+        checkboxes = await page.query_selector_all("input.vehicle_checkbox")
+        checkbox_map = {
+            await checkbox.get_attribute("value"): checkbox for checkbox in checkboxes
+        }
+        valid_ids = [
+            vehicle_id
+            for vehicle_id in ids
+            if vehicle_id in checkbox_map and not state.is_locked(vehicle_id)
+        ]
+        if valid_ids:
+            break
+        if attempt < 2:
+            try:
+                await page.wait_for_selector("input.vehicle_checkbox", timeout=1500)
+            except Exception:
+                pass
+            await asyncio.sleep(0.25 * (attempt + 1))
     if not valid_ids:
         return 0
     distance_map = await get_all_vehicle_distances(page, valid_ids)
