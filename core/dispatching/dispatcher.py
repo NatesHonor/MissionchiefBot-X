@@ -9,12 +9,122 @@ from utils.pretty_print import display_error, display_info
 
 from ..regions import get_region_profile
 from ..localization import get_localized_terms
-from ..mission_requirements import normalize_cached_requirements, parse_requirement_count
+from ..mission_requirements import (
+    gather_requirements,
+    normalize_cached_requirements,
+    parse_requirement_count,
+    resolve_personnel,
+)
+from ..mission_parser import resolve_vehicle_entry, resolve_vehicle_name
+from ..vehicle_mapping import normalize_vehicle_name
 from ..settings import get_settings
 from ..vehicle_state import get_vehicle_state
 from .navigation import load_mission_page
 from .personnel import handle_personnel
 from .vehicles import find_vehicle_ids, select_vehicles
+
+
+def _requirement_key(options, profile=None):
+    profile = profile or get_region_profile()
+    return tuple(sorted(
+        normalize_vehicle_name(resolve_vehicle_name(option, profile))
+        for option in options
+        if option
+    ))
+
+
+def _merge_vehicle_requirements(existing, current, profile=None):
+    """Merge live expansion requirements into the cached mission snapshot."""
+
+    profile = profile or get_region_profile()
+    by_key = {
+        _requirement_key(requirement.get("options", []), profile): requirement
+        for requirement in existing
+    }
+    for requirement in current:
+        if requirement.get("name"):
+            incoming = resolve_vehicle_entry(
+                requirement["name"],
+                parse_requirement_count(requirement.get("count", 0)) or 0,
+                profile,
+            )
+        else:
+            incoming = {
+                "options": requirement.get("options", []),
+                "count": parse_requirement_count(requirement.get("count", 0)) or 0,
+            }
+        if not incoming["options"] or incoming["count"] <= 0:
+            continue
+        key = _requirement_key(incoming["options"], profile)
+        saved = by_key.get(key)
+        if saved is None:
+            saved = {"options": list(incoming["options"]), "count": 0}
+            existing.append(saved)
+            by_key[key] = saved
+        saved["count"] = max(
+            parse_requirement_count(saved.get("count", 0)) or 0,
+            incoming["count"],
+        )
+
+
+def _merge_personnel_requirements(existing, current, profile=None):
+    profile = profile or get_region_profile()
+    by_name = {
+        normalize_vehicle_name(resolve_personnel(item.get("name", ""), profile)): item
+        for item in existing
+    }
+    for item in current:
+        name = resolve_personnel(item.get("name", ""), profile)
+        count = parse_requirement_count(item.get("count", 0)) or 0
+        if not name or count <= 0:
+            continue
+        key = normalize_vehicle_name(name)
+        saved = by_name.get(key)
+        if saved is None:
+            saved = {"name": name, "count": 0}
+            existing.append(saved)
+            by_name[key] = saved
+        saved["count"] = max(parse_requirement_count(saved.get("count", 0)) or 0, count)
+
+
+async def _load_mission_expansions(page) -> bool:
+    """Load every currently exposed expansion before dispatch planning."""
+
+    selector = (
+        "a.missing_vehicles_load.btn-warning, a.missing_vehicles_load, "
+        "button.missing_vehicles_load"
+    )
+    clicked = set()
+    expanded = False
+    for _ in range(8):
+        button = await page.query_selector(selector)
+        if not button:
+            break
+        identity = await button.evaluate(
+            """element => element.id || element.getAttribute('href') ||
+            element.textContent || element.outerHTML"""
+        )
+        if identity in clicked:
+            break
+        clicked.add(identity)
+        await button.click()
+        await page.wait_for_load_state("networkidle")
+        expanded = True
+    return expanded
+
+
+async def _merge_live_mission_requirements(page, data, profile):
+    """Add requirements revealed by an expansion without dropping cached data."""
+
+    help_button = await page.query_selector("#mission_help")
+    if not help_button:
+        return
+    await help_button.click()
+    await page.wait_for_selector("#iframe-inside-container", timeout=5000)
+    current = await gather_requirements(page, profile)
+    _merge_vehicle_requirements(data.setdefault("vehicles", []), current.get("vehicles", []), profile)
+    _merge_vehicle_requirements(data.setdefault("liquid", []), current.get("liquid", []), profile)
+    _merge_personnel_requirements(data.setdefault("personnel", []), current.get("personnel", []), profile)
 
 
 async def read_water_status(page, profile=None):
@@ -81,10 +191,13 @@ async def navigate_and_dispatch(contexts, url, profile=None, state=None, setting
         normalize_cached_requirements(data, profile)
         if not await load_mission_page(page, mission_id, data.get("mission_name", "Unknown"), url):
             return
-        missing_vehicles_button = await page.query_selector("a.missing_vehicles_load.btn-warning")
-        if missing_vehicles_button:
-            await missing_vehicles_button.click()
-            await page.wait_for_load_state("networkidle")
+        if await _load_mission_expansions(page):
+            try:
+                await _merge_live_mission_requirements(page, data, profile)
+            except Exception as error:
+                display_error(
+                    f"{prefix} Could not refresh expanded requirements for {mission_id}: {error}"
+                )
         missing = []
         await handle_personnel(page, data, missing, mission_id, profile, state, settings)
         for requirement in data.get("vehicles", []):
