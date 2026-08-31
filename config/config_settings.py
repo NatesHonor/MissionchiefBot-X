@@ -55,6 +55,14 @@ def get_auto_training():
     return get_settings().auto_training
 
 
+def get_auto_recruiting():
+    return get_settings().auto_recruiting
+
+
+def get_recruiting_days():
+    return get_settings().recruiting_days
+
+
 def get_auto_tasks():
     return get_settings().auto_tasks
 
