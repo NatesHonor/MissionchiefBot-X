@@ -22,6 +22,7 @@ dynamic_missions = false
 
 [other]
 auto_training = false
+auto_recruiting = false
 auto_tasks = false
 
 [delays]
@@ -36,3 +37,6 @@ other = 60
 school = Fire School
 training = all
 rooms = 1
+
+[recruiting]
+days = 1

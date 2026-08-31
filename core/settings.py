@@ -40,6 +40,7 @@ class Settings:
     dynamic_missions: bool
     concurrent_missions: bool
     auto_training: bool
+    auto_recruiting: bool
     auto_tasks: bool
     dynamic_delays: bool
     dynamic_delay_missions: bool
@@ -47,6 +48,7 @@ class Settings:
     mission_delay: int
     other_delay: int
     training_plans: tuple[TrainingPlan, ...] = ()
+    recruiting_days: int = 1
 
 
 def _config_path(path: str | os.PathLike[str] | None = None) -> Path:
@@ -217,6 +219,17 @@ def load_settings(path: str | os.PathLike[str] | None = None) -> Settings:
             _value(parser, config_file, "other", "auto_training", "MISSIONCHIEF_AUTO_TRAINING"),
             "MISSIONCHIEF_AUTO_TRAINING",
         ),
+        auto_recruiting=_boolean(
+            _value(
+                parser,
+                config_file,
+                "other",
+                "auto_recruiting",
+                "MISSIONCHIEF_AUTO_RECRUITING",
+                default="false",
+            ),
+            "MISSIONCHIEF_AUTO_RECRUITING",
+        ),
         auto_tasks=_boolean(
             _value(parser, config_file, "other", "auto_tasks", "MISSIONCHIEF_AUTO_TASKS"),
             "MISSIONCHIEF_AUTO_TASKS",
@@ -257,6 +270,11 @@ def load_settings(path: str | os.PathLike[str] | None = None) -> Settings:
             minimum=0,
         ),
         training_plans=_training_plans(parser, config_file),
+        recruiting_days=_integer(
+            parser.get("recruiting", "days", fallback="1"),
+            "[recruiting] days",
+            minimum=1,
+        ),
     )
 
 
