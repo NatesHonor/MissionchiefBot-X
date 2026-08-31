@@ -84,18 +84,21 @@ async def select_vehicles(
     return selected
 
 
-async def find_vehicle_ids(name: str, profile=None, state=None):
+async def find_vehicle_ids(name: str, profile=None, state=None, exact=False, quiet=False):
     profile = profile or get_region_profile()
     state = state or get_vehicle_state(profile)
     vehicle_data = state.get_data()
     normalized = normalize_key(name)
     ids = []
-    names = [name, *profile.vehicle_options(name)]
+    names = [name]
+    if not exact:
+        names.extend(profile.vehicle_options(name))
     alias_data = profile.vehicle_aliases() if hasattr(profile, "vehicle_aliases") else {}
-    for canonical, synonyms in alias_data.items():
-        alias_values = [canonical, *(synonyms if isinstance(synonyms, list) else [])]
-        if normalized in {normalize_key(value) for value in alias_values}:
-            names.extend(alias_values)
+    if not exact:
+        for canonical, synonyms in alias_data.items():
+            alias_values = [canonical, *(synonyms if isinstance(synonyms, list) else [])]
+            if normalized in {normalize_key(value) for value in alias_values}:
+                names.extend(alias_values)
     normalized_names = {normalize_key(item) for item in names if item}
     for vehicle_type, vehicle_ids in vehicle_data.items():
         normalized_type = normalize_key(vehicle_type)
@@ -108,6 +111,6 @@ async def find_vehicle_ids(name: str, profile=None, state=None):
         if matches_name or matches_variant:
             ids.extend(str(vehicle_id) for vehicle_id in vehicle_ids)
     unique_ids = list(dict.fromkeys(ids))
-    if not unique_ids:
+    if not unique_ids and not quiet:
         display_error(f"No vehicles found for '{name}'")
     return unique_ids
