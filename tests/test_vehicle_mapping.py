@@ -118,6 +118,22 @@ class VehicleMappingTests(unittest.TestCase):
             ["smoke-1"],
         )
 
+    def test_aircraft_requirement_variants_dispatch_regional_air_vehicles(self):
+        profile = get_region_profile("us")
+        state = SimpleNamespace(
+            get_data=lambda: {"Mobile air": ["air-1"]},
+            is_locked=lambda vehicle_id: False,
+        )
+
+        self.assertEqual(
+            asyncio.run(find_vehicle_ids("plane", profile, state, quiet=True)),
+            ["air-1"],
+        )
+        self.assertEqual(
+            asyncio.run(find_vehicle_ids("aircraft", profile, state, quiet=True)),
+            ["air-1"],
+        )
+
     def test_every_region_passes_the_mapping_audit(self):
         for region in supported_regions():
             with self.subTest(region=region):
