@@ -18,6 +18,15 @@ DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config.ini"
 
 
 @dataclass(frozen=True)
+class TrainingPlan:
+    """One configured school course and its maximum simultaneous rooms."""
+
+    school: str
+    course: str
+    rooms: int = 1
+
+
+@dataclass(frozen=True)
 class Settings:
     username: str
     password: str
@@ -37,6 +46,7 @@ class Settings:
     dynamic_delay_transport: bool
     mission_delay: int
     other_delay: int
+    training_plans: tuple[TrainingPlan, ...] = ()
 
 
 def _config_path(path: str | os.PathLike[str] | None = None) -> Path:
@@ -103,6 +113,25 @@ def _integer(value: str, environment_name: str, minimum: int | None = None) -> i
             f"It must be at least {minimum}."
         )
     return parsed
+
+
+def _training_plans(parser: configparser.ConfigParser, path: Path) -> tuple[TrainingPlan, ...]:
+    plans = []
+    for section in parser.sections():
+        if not section.casefold().startswith("trainings."):
+            continue
+        fallback_school = section.split(".", 1)[1].replace("_", " ").strip().title()
+        school = parser.get(section, "school", fallback=fallback_school).strip()
+        course = parser.get(section, "training", fallback="").strip()
+        if not school or not course:
+            continue
+        rooms = _integer(
+            parser.get(section, "rooms", fallback="1"),
+            f"[{section}] rooms in {path}",
+            minimum=1,
+        )
+        plans.append(TrainingPlan(school=school, course=course, rooms=rooms))
+    return tuple(plans)
 
 
 def load_settings(path: str | os.PathLike[str] | None = None) -> Settings:
@@ -227,6 +256,7 @@ def load_settings(path: str | os.PathLike[str] | None = None) -> Settings:
             "MISSIONCHIEF_OTHER_DELAY",
             minimum=0,
         ),
+        training_plans=_training_plans(parser, config_file),
     )
 
 

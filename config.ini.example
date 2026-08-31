@@ -33,4 +33,6 @@ other = 60
 
 [trainings]
 [trainings.fire_school]
+school = Fire School
 training = all
+rooms = 1
