@@ -129,62 +129,54 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - uses: actions/github-script@v7
-        with:
-          script: |
-            const checks = [
-              { name: 'compatibility', ok: ${{ needs.compat.result == 'success' }} },
-              { name: 'lint (ruff)', ok: ${{ needs.lint.result == 'success' }} },
-              { name: 'type-check (mypy)', ok: ${{ needs.typecheck.result == 'success' }} },
-              { name: 'security (bandit)', ok: ${{ needs.security.result == 'success' }} },
-              { name: 'test (pytest)', ok: ${{ needs.test.result == 'success' }} },
-            ];
-            const passed = checks.filter(c => c.ok);
-            const failed = checks.filter(c => !c.ok);
-            let body = `## CI Results\n\n`;
-            body += `**${passed.length}/5** checks passed · **${failed.length}/5** failed\n\n`;
-            for (const c of checks) {
-              const icon = c.ok ? '✅' : '❌';
-              body += `- ${icon} \`${c.name}\`\n`;
-            }
-            if (failed.length > 0) {
-              body += `\n### Fixing failures\n`;
-              for (const f of failed) {
-                let hint = '';
-                switch (f.name) {
-                  case 'lint (ruff)':
-                    hint = 'Run `ruff check . && ruff format .` locally and commit fixes.';
-                    break;
-                  case 'type-check (mypy)':
-                    hint = 'Add type annotations or fix type errors shown in the workflow logs.';
-                    break;
-                  case 'security (bandit)':
-                    hint = 'Fix security issues reported by bandit. See workflow logs for details.';
-                    break;
-                  case 'test (pytest)':
-                    hint = 'Fix failing tests. Run `pytest tests/ -v` locally to reproduce.';
-                    break;
-                  default:
-                    hint = 'See workflow logs for details.';
-                }
-                body += `\n**\`${f.name}\`**: ${hint}\n`;
+      - name: Build comment body
+        id: build-comment
+        run: |
+          #!/usr/bin/env python3
+          import json
+          
+          checks = [
+              ('compatibility', '${{ needs.compat.result }}' == 'success'),
+              ('lint (ruff)', '${{ needs.lint.result }}' == 'success'),
+              ('type-check (mypy)', '${{ needs.typecheck.result }}' == 'success'),
+              ('security (bandit)', '${{ needs.security.result }}' == 'success'),
+              ('test (pytest)', '${{ needs.test.result }}' == 'success'),
+          ]
+          
+          passed = [c for c, ok in checks if ok]
+          failed = [c for c, ok in checks if not ok]
+          
+          body = "## CI Results\n\n"
+          body += f"**{len(passed)}/5** checks passed · **{len(failed)}/5** failed\n\n"
+          for name, ok in checks:
+              icon = '✅' if ok else '❌'
+              body += f"- {icon} `{name}`\n"
+          
+          if failed:
+              body += "\n### Fixing failures\n"
+              hints = {
+                  'lint (ruff)': 'Run `ruff check . && ruff format .` locally and commit fixes.',
+                  'type-check (mypy)': 'Add type annotations or fix type errors shown in the workflow logs.',
+                  'security (bandit)': 'Fix security issues reported by bandit. See workflow logs for details.',
+                  'test (pytest)': 'Fix failing tests. Run `pytest tests/ -v` locally to reproduce.',
               }
-            }
-            core.setOutput('body', body);
-
-      - name: Post PR comment
+              for name in failed:
+                  hint = hints.get(name, 'See workflow logs for details.')
+                  body += f"\n**`{name}`**: {hint}\n"
+          
+          print(f'body<<EOF\n{body}\nEOF') >> "$GITHUB_OUTPUT"
+      
+      - name: Post or update PR comment
         uses: actions/github-script@v7
         with:
           script: |
-            const body = JSON.parse(process.env.CHECK_RESULT).body;
+            const body = `${{ steps.build-comment.outputs.body }}`;
             const { data: comments } = await github.rest.issues.listComments({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
             });
-            const existing = comments.find(c =>
-              c.body?.includes('## CI Results')
-            );
+            const existing = comments.find(c => c.body?.includes('## CI Results'));
             if (existing) {
               await github.rest.issues.updateComment({
                 issue_number: context.issue.number,
@@ -201,5 +193,3 @@ jobs:
                 body,
               });
             }
-        env:
-          CHECK_RESULT: ${{ steps.pr-comment-step.outputs.body }}
