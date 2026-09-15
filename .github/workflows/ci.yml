@@ -81,17 +81,7 @@ jobs:
 
       - name: Run mypy on core modules
         run: |
-          mypy core/ utils/ config/ regions/ Main.py \
-            --disable-error-code=no-any-return \
-            --disable-error-code=arg-type \
-            --disable-error-code=var-annotated \
-            --disable-error-code=assignment \
-            --disable-error-code=attr-defined \
-            --disable-error-code=str-bytes-safe \
-            --disable-error-code=unreachable \
-            --disable-error-code=call-overload \
-            --disable-error-code=index \
-            --no-error-summary
+          mypy core/ utils/ config/ regions/ Main.py             --disable-error-code=no-any-return             --disable-error-code=arg-type             --disable-error-code=var-annotated             --disable-error-code=assignment             --disable-error-code=attr-defined             --disable-error-code=str-bytes-safe             --disable-error-code=unreachable             --disable-error-code=call-overload             --disable-error-code=index             --no-error-summary
 
   # ── Security scan ───────────────────────────────────────────────────
   security:
@@ -110,13 +100,8 @@ jobs:
       - name: Install bandit
         run: pip install bandit
 
-<<<<<<< Updated upstream
-      - name: Run bandit
-        run: bandit -r . -ll
-=======
-      - name: Run bandit (low+ severity, medium+ confidence)
+      - name: Run bandit (medium+ severity, medium+ confidence)
         run: bandit -r core utils config regions Main.py -c .bandit --severity-level medium --confidence-level medium
->>>>>>> Stashed changes
 
   # ── Tests ───────────────────────────────────────────────────────────
   test:
@@ -138,14 +123,6 @@ jobs:
       - name: Run tests
         run: PYTHONPATH=. pytest tests/ -v
 
-<<<<<<< Updated upstream
-      - name: Check for potential security issues (pip-audit)
-        run: pip install pip-audit && pip-audit --require-hashes requirements.txt || true
-
-  # ── Dependency check ────────────────────────────────────────────────
-  deps:
-    name: dependency-check
-=======
   # ── Dependency vulnerability audit ─────────────────────────────────
   deps-audit:
     name: dependency-audit
@@ -169,7 +146,6 @@ jobs:
   # ── Dependency freshness check ──────────────────────────────────────
   deps-freshness:
     name: dependency-freshness
->>>>>>> Stashed changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -185,25 +161,14 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Check for outdated dependencies
-<<<<<<< Updated upstream
-        run: pip list --outdated --format=freeze | grep -v "^(astroid|attrs|certifi|charset-normalizer|colorama|coverage|distlib|dirty-equalities|dnspython|exceptiongroup|execnet|filelock|h11|httpcore|httpx|idna|iniconfig|isort|jaraco.context|lazy-object-proxy|markdown-it-py|mdurl|mccabe|more-itertools|mypy|mypy-extensions|outcome|packaging|pathspec|pip|platformdirs|playwright|pluggy|psutil|psycopg2-binary|pyflakes|pygments|pylint|pypiwin32|pytest|pytest-asyncio|pytest-timeout|python-dateutil|pywin32|requests|ruff|selenium|six|sortedcontainers|tomli|tomlkit|trio|trio-websocket|types-requests|typing-extensions|urllib3|virtualenv|websocket-client|websockets|wrapt|yarl)$" || echo "No outdated dependencies to report (filtered known safe packages)"
-=======
         run: |
-          pip list --outdated --format=freeze | \
-          grep -v "^(astroid|attrs|certifi|charset-normalizer|colorama|coverage|distlib|dirty-equalities|dnspython|exceptiongroup|execnet|filelock|h11|httpcore|httpx|idna|iniconfig|isort|jaraco.context|lazy-object-proxy|markdown-it-py|mdurl|mccabe|more-itertools|mypy|mypy-extensions|outcome|packaging|pathspec|pip|platformdirs|playwright|pluggy|psutil|psycopg2-binary|pyflakes|pygments|pylint|pypiwin32|pytest|pytest-asyncio|pytest-timeout|python-dateutil|pywin32|requests|ruff|selenium|six|sortedcontainers|tomli|tomlkit|trio|trio-websocket|types-requests|typing-extensions|urllib3|virtualenv|websocket-client|websockets|wrapt|yarl)$" || \
-          echo "No outdated dependencies to report (filtered known safe packages)"
->>>>>>> Stashed changes
+          pip list --outdated --format=freeze |           grep -v "^(astroid|attrs|certifi|charset-normalizer|colorama|coverage|distlib|dirty-equalities|dnspython|exceptiongroup|execnet|filelock|h11|httpcore|httpx|idna|iniconfig|isort|jaraco.context|lazy-object-proxy|markdown-it-py|mdurl|mccabe|more-itertools|mypy|mypy-extensions|outcome|packaging|pathspec|pip|platformdirs|playwright|pluggy|psutil|psycopg2-binary|pyflakes|pygments|pylint|pypiwin32|pytest|pytest-asyncio|pytest-timeout|python-dateutil|pywin32|requests|ruff|selenium|six|sortedcontainers|tomli|tomlkit|trio|trio-websocket|types-requests|typing-extensions|urllib3|virtualenv|websocket-client|websockets|wrapt|yarl)$" ||           echo "No outdated dependencies to report (filtered known safe packages)"
 
   # ── Summary comment on PR ───────────────────────────────────────────
   pr-comment:
     name: pr-comment
-<<<<<<< Updated upstream
-    if: github.event_name == 'pull_request'
-    needs: [compat, lint, typecheck, security, test, deps]
-=======
     if: always() && github.event_name == 'pull_request'
     needs: [compat, lint, typecheck, security, test, deps-audit, deps-freshness]
->>>>>>> Stashed changes
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -212,17 +177,8 @@ jobs:
         id: build-comment
         run: |
           #!/usr/bin/env python3
-<<<<<<< Updated upstream
-          checks = [
-              ('compatibility', '${{ needs.compat.result }}' == 'success'),
-              ('lint (ruff)', '${{ needs.lint.result }}' == 'success'),
-              ('type-check (mypy)', '${{ needs.typecheck.result }}' == 'success'),
-              ('security (bandit)', '${{ needs.security.result }}' == 'success'),
-              ('test (pytest)', '${{ needs.test.result }}' == 'success'),
-              ('dependency-check', '${{ needs.deps.result }}' == 'success'),
-=======
           import json, os
-          
+
           # Parse results from needs
           checks = [
               ('compatibility', '${{ needs.compat.result }}'),
@@ -232,33 +188,25 @@ jobs:
               ('test (pytest)', '${{ needs.test.result }}'),
               ('dependency-audit', '${{ needs.deps-audit.result }}'),
               ('dependency-freshness', '${{ needs.deps-freshness.result }}'),
->>>>>>> Stashed changes
           ]
-          
+
           icon_map = {'success': '✅', 'failure': '❌', 'cancelled': '⚠️', 'skipped': '⏭️'}
           body = "## CI Results\n\n"
-<<<<<<< Updated upstream
-          body += f"**{len(passed)}/6** checks passed · **{len(failed)}/6** failed\n\n"
-          for name, ok in checks:
-              icon = '✅' if ok else '❌'
-              body += f"- {icon} `{name}`\n"
-=======
->>>>>>> Stashed changes
-          
+
           passed = sum(1 for _, r in checks if r == 'success')
           total = len(checks)
           body += f"**{passed}/{total}** checks passed"
           if any(r != 'success' for _, r in checks):
               body += " · **{} failed**".format(sum(1 for _, r in checks if r == 'failure'))
           body += "\n\n"
-          
+
           for name, result in checks:
-              icon = icon_map.get(result, '❓')
+              icon = icon_map.get(result, '?')
               body += f"- {icon} `{name}` ({result})\n"
-          
+
           run_url = f"https://github.com/{os.getenv('GITHUB_REPOSITORY', '')}/actions/runs/{os.getenv('GITHUB_RUN_ID', '')}"
           body += f"\n[View workflow run]({run_url})\n"
-          
+
           failed = [name for name, r in checks if r == 'failure']
           if failed:
               body += "\n### Next steps\n"
@@ -266,24 +214,19 @@ jobs:
                   'lint (ruff)': 'Run `ruff check . && ruff format .` locally and commit fixes.',
                   'type-check (mypy)': 'Add type annotations or fix type errors shown in the workflow logs.',
                   'security (bandit)': 'Fix security issues reported by bandit. See workflow logs for details.',
-<<<<<<< Updated upstream
-                  'test (pytest)': 'Fix failing tests. Run `pytest tests/ -v` locally to reproduce.',
-                  'dependency-check': 'Review the outdated dependencies report in the workflow logs.',
-=======
                   'test (pytest)': 'Fix failing tests. Run `PYTHONPATH=. pytest tests/ -v` locally to reproduce.',
                   'dependency-audit': 'Review vulnerable dependencies found by pip-audit.',
                   'dependency-freshness': 'Consider updating outdated dependencies if safe.',
                   'compatibility': 'Ensure Python 3.11 and all imports resolve correctly.',
->>>>>>> Stashed changes
               }
               for name in failed:
                   hint = hints.get(name, 'See workflow logs for details.')
                   body += f"\n**`{name}`**: {hint}\n"
-          
+
           body += "\n---\n*This comment was generated by an AI agent (OpenHands) on behalf of the repository maintainer.*"
-          
+
           print(f'body<<EOF\n{body}\nEOF') >> "$GITHUB_OUTPUT"
-      
+
       - name: Post or update PR comment
         uses: actions/github-script@v7
         with:

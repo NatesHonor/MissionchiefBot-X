@@ -19,18 +19,12 @@ jobs:
   trigger-ci:
     if: |
       github.event_name == 'workflow_dispatch' ||
-<<<<<<< Updated upstream
-      (github.event_name == 'issue_comment' && 
-       contains(github.event.comment.body, '/recheck') &&
-       (github.event.issue.pull_request))
-=======
       (github.event_name == 'issue_comment' &&
        contains(github.event.comment.body, '/recheck') &&
        github.event.issue.pull_request &&
        (github.event.comment.author_association == 'OWNER' ||
         github.event.comment.author_association == 'COLLABORATOR' ||
         github.event.comment.author_association == 'MEMBER'))
->>>>>>> Stashed changes
     runs-on: ubuntu-latest
     steps:
       - name: Get PR info
@@ -45,36 +39,6 @@ jobs:
           else
             PR_NUMBER="${{ github.event.issue.number }}"
           fi
-<<<<<<< Updated upstream
-          
-          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
-          echo "branch=$(gh pr view $PR_NUMBER --repo ${GITHUB_REPOSITORY} --json headRefName --jq '.headRefName')" >> "$GITHUB_OUTPUT"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Trigger CI workflow
-        run: |
-          PR_NUMBER="${{ steps.pr-info.outputs.pr_number }}"
-          BRANCH="${{ steps.pr-info.outputs.branch }}"
-          
-          echo "Triggering CI for PR #$PR_NUMBER on branch $BRANCH"
-          
-          # Get the workflow ID
-          WORKFLOW_ID=$(gh workflow list --repo ${GITHUB_REPOSITORY} --json id,name --jq '.[] | select(.name == "CI") | .id')
-          
-          if [ -z "$WORKFLOW_ID" ]; then
-            echo "CI workflow not found"
-            exit 1
-          fi
-          
-          # Dispatch the workflow with the PR branch
-          gh workflow run $WORKFLOW_ID --repo ${GITHUB_REPOSITORY} \
-            --ref $BRANCH \
-            --field pr_number=$PR_NUMBER 2>&1 || {
-              echo "Failed to dispatch workflow"
-              exit 1
-            }
-=======
 
           echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
           BRANCH=$(gh pr view "$PR_NUMBER" --repo "${GITHUB_REPOSITORY}" --json headRefName --jq '.headRefName')
@@ -100,15 +64,9 @@ jobs:
 
           echo "Rerunning CI run $RUN_ID for branch $BRANCH"
           gh run rerun "$RUN_ID" --failed
->>>>>>> Stashed changes
 
       - name: Post comment (on PR comment trigger)
         if: github.event_name == 'issue_comment'
         run: |
-<<<<<<< Updated upstream
-          gh issue comment ${{ github.event.issue.number }} --repo ${GITHUB_REPOSITORY} \
-            --body "✅ Triggered CI re-check for PR #${{ steps.pr-info.outputs.pr_number }} on branch ${{ steps.pr-info.outputs.branch }}"
-=======
           gh issue comment "${{ github.event.issue.number }}" --repo "${GITHUB_REPOSITORY}" \
             --body "✅ Re-triggered CI checks for PR #${{ steps.pr-info.outputs.pr_number }} on branch ${{ steps.pr-info.outputs.branch }}. The results will be posted here when the run finishes."
->>>>>>> Stashed changes
