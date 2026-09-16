@@ -77,18 +77,6 @@ async def split_vehicle_ids_among_threads(vehicle_ids, contexts, num_threads, ur
     if not vehicle_ids or not contexts:
         return {}
     threads = min(num_threads, len(contexts)) if num_threads else len(contexts)
-<<<<<<< Updated upstream
-    partitions = [vehicle_ids[i::threads] for i in range(threads)]
-
-    for ctx in contexts[:threads]:
-        if not ctx.pages:
-            await ctx.new_page()
-
-    tasks = [
-        gather_vehicle_info(partitions[i], contexts[i], i + 1, url)
-        for i in range(threads)
-    ]
-=======
     partitions = [vehicle_ids[i::threads] for i in range(threads)]
 
     for ctx in contexts[:threads]:
@@ -96,7 +84,6 @@ async def split_vehicle_ids_among_threads(vehicle_ids, contexts, num_threads, ur
             await ctx.new_page()
 
     tasks = [gather_vehicle_info(partitions[i], contexts[i], i + 1, url) for i in range(threads)]
->>>>>>> Stashed changes
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     merged = {}
