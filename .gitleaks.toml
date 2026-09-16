@@ -1,5 +1,5 @@
 # Gitleaks configuration for MissionchiefBot-X
-# Extends the default rules; adds allowlists for known placeholder/example files
+# Extends the default rules; adds an allowlist for known placeholder/example files
 # so the secret-scan job does not flag test fixtures or example configs.
 
 title = "MissionchiefBot-X gitleaks config"
@@ -7,7 +7,16 @@ title = "MissionchiefBot-X gitleaks config"
 [extend]
 useDefault = true
 
-[[allowlist]]
+[[rules]]
+id = "credential-assignment"
+description = "Credential key assigned a non-placeholder value in a config/INI/ENV file"
+regex = '''(?i)(?:password|passwd|pwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret)\s*[=:]\s*["']?[^\s"']{4,}'''
+path = '''(?i)(?:^|/)(?:config|.*[.]ini|.*[.]env|.*[.]cfg|.*[.]toml|.*[.]yaml|.*[.]yml|.*[.]json|.*[.]properties)(?:[.]example|$)?'''
+secretGroup = 1
+entropy = 1
+keywords = ["password", "passwd", "pwd", "secret", "api_key", "api-key", "access_token", "access-token", "auth_token", "auth-token", "client_secret", "client-secret"]
+
+[allowlist]
 description = "Placeholder credentials in example/template files"
 paths = [
   "config[.]ini[.]example",
