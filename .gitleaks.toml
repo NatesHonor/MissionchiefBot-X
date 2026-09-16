@@ -1,0 +1,35 @@
+# Gitleaks configuration for MissionchiefBot-X
+# Extends the default rules; adds allowlists for known placeholder/example files
+# so the secret-scan job does not flag test fixtures or example configs.
+
+title = "MissionchiefBot-X gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlist]]
+description = "Placeholder credentials in example/template files"
+paths = [
+  "config[.]ini[.]example",
+  "[.]env[.]example",
+  "compose[.]yaml",
+  "tests/.*",
+]
+regexes = [
+  "your-password",
+  "your-email@example[.]com",
+  "your_email",
+  "your_username",
+  "your_password",
+  "password = pass",
+  "password = password",
+  "password = example",
+  "username = email",
+  "username = user",
+  "username = example",
+  "test-secret",
+  "test-password",
+  "hidden-password",
+  "hidden-user",
+  "test-user",
+]
