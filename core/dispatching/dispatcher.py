@@ -35,21 +35,14 @@ def dispatch_delay_seconds(settings) -> int:
 
 def _requirement_key(options, profile=None):
     profile = profile or get_region_profile()
-    return tuple(sorted(
-        normalize_vehicle_name(resolve_vehicle_name(option, profile))
-        for option in options
-        if option
-    ))
+    return tuple(sorted(normalize_vehicle_name(resolve_vehicle_name(option, profile)) for option in options if option))
 
 
 def _merge_vehicle_requirements(existing, current, profile=None):
     """Merge live expansion requirements into the cached mission snapshot."""
 
     profile = profile or get_region_profile()
-    by_key = {
-        _requirement_key(requirement.get("options", []), profile): requirement
-        for requirement in existing
-    }
+    by_key = {_requirement_key(requirement.get("options", []), profile): requirement for requirement in existing}
     for requirement in current:
         if requirement.get("name"):
             incoming = resolve_vehicle_entry(
@@ -78,10 +71,7 @@ def _merge_vehicle_requirements(existing, current, profile=None):
 
 def _merge_personnel_requirements(existing, current, profile=None):
     profile = profile or get_region_profile()
-    by_name = {
-        normalize_vehicle_name(resolve_personnel(item.get("name", ""), profile)): item
-        for item in existing
-    }
+    by_name = {normalize_vehicle_name(resolve_personnel(item.get("name", ""), profile)): item for item in existing}
     for item in current:
         name = resolve_personnel(item.get("name", ""), profile)
         count = parse_requirement_count(item.get("count", 0)) or 0
@@ -99,10 +89,7 @@ def _merge_personnel_requirements(existing, current, profile=None):
 async def _load_mission_expansions(page) -> bool:
     """Load every currently exposed expansion before dispatch planning."""
 
-    selector = (
-        "a.missing_vehicles_load.btn-warning, a.missing_vehicles_load, "
-        "button.missing_vehicles_load"
-    )
+    selector = "a.missing_vehicles_load.btn-warning, a.missing_vehicles_load, button.missing_vehicles_load"
     clicked = set()
     expanded = False
     for _ in range(8):
@@ -204,9 +191,7 @@ async def navigate_and_dispatch(contexts, url, profile=None, state=None, setting
             try:
                 await _merge_live_mission_requirements(page, data, profile)
             except Exception as error:
-                display_error(
-                    f"{prefix} Could not refresh expanded requirements for {mission_id}: {error}"
-                )
+                display_error(f"{prefix} Could not refresh expanded requirements for {mission_id}: {error}")
         missing = []
         await handle_personnel(page, data, missing, mission_id, profile, state, settings)
         for requirement in data.get("vehicles", []):
@@ -235,9 +220,7 @@ async def navigate_and_dispatch(contexts, url, profile=None, state=None, setting
         crashed = data.get("crashed_cars", 0)
         if crashed > 0:
             flatbeds = await find_vehicle_ids("Flatbed Carrier", profile, state)
-            used_flatbed = await select_vehicles(
-                page, flatbeds, crashed, "Flatbed Carrier", mission_id, profile, state
-            )
+            used_flatbed = await select_vehicles(page, flatbeds, crashed, "Flatbed Carrier", mission_id, profile, state)
             covered = 2 * used_flatbed
             remaining = max(0, crashed - covered)
             if remaining > 0:
@@ -265,11 +248,7 @@ async def navigate_and_dispatch(contexts, url, profile=None, state=None, setting
             )
             return
 
-        selector = (
-            "a[class*='alert_next_alliance']"
-            if settings.dispatch_type.lower() == "alliance"
-            else "#alert_btn"
-        )
+        selector = "a[class*='alert_next_alliance']" if settings.dispatch_type.lower() == "alliance" else "#alert_btn"
         try:
             button = await page.wait_for_selector(selector, timeout=10000)
         except Exception:

@@ -191,7 +191,13 @@ def extract_mission_marker_records(value) -> list[dict]:
                 ),
                 None,
             )
-            records.append({"id": str(mission_id), "type_id": str(type_id) if type_id is not None else None, "name": item.get("name") or item.get("mission_name")})
+            records.append(
+                {
+                    "id": str(mission_id),
+                    "type_id": str(type_id) if type_id is not None else None,
+                    "name": item.get("name") or item.get("mission_name"),
+                }
+            )
         return list({record["id"]: record for record in records}.values())
 
     text = str(value or "")

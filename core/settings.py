@@ -87,8 +87,7 @@ def _value(
         if default is not None:
             return default
         raise RuntimeError(
-            f"Missing configuration value [{section}] {option}. "
-            f"Set {environment_name} or add it to {path}."
+            f"Missing configuration value [{section}] {option}. Set {environment_name} or add it to {path}."
         ) from error
 
 
@@ -105,23 +104,16 @@ def _boolean(value: str, environment_name: str) -> bool:
         return True
     if normalized in {"0", "no", "false", "off"}:
         return False
-    raise ValueError(
-        f"Invalid boolean value for {environment_name}: {value!r}. Use true/false."
-    )
+    raise ValueError(f"Invalid boolean value for {environment_name}: {value!r}. Use true/false.")
 
 
 def _integer(value: str, environment_name: str, minimum: int | None = None) -> int:
     try:
         parsed = int(value.strip())
     except ValueError as error:
-        raise ValueError(
-            f"Invalid integer value for {environment_name}: {value!r}."
-        ) from error
+        raise ValueError(f"Invalid integer value for {environment_name}: {value!r}.") from error
     if minimum is not None and parsed < minimum:
-        raise ValueError(
-            f"Invalid value for {environment_name}: {parsed}. "
-            f"It must be at least {minimum}."
-        )
+        raise ValueError(f"Invalid value for {environment_name}: {parsed}. It must be at least {minimum}.")
     return parsed
 
 
@@ -159,9 +151,7 @@ def load_settings(path: str | os.PathLike[str] | None = None) -> Settings:
             _value(parser, config_file, "credentials", "password", "MISSIONCHIEF_PASSWORD"),
             "MISSIONCHIEF_PASSWORD",
         ),
-        region=_value(parser, config_file, "bot", "region", "MISSIONCHIEF_REGION")
-        .strip()
-        .lower(),
+        region=_value(parser, config_file, "bot", "region", "MISSIONCHIEF_REGION").strip().lower(),
         headless=_boolean(
             _value(parser, config_file, "browser_settings", "headless", "MISSIONCHIEF_HEADLESS"),
             "MISSIONCHIEF_HEADLESS",

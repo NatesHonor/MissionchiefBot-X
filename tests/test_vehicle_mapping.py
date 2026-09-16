@@ -25,20 +25,15 @@ class VehicleMappingTests(unittest.TestCase):
         )
 
     def test_mission_labels_resolve_after_parser_plural_normalization(self):
-        battalion = asyncio.run(
-            find_vehicle_ids("battalion chief vehicle", self.profile, self.state, quiet=True)
-        )
-        heavy_rescue = asyncio.run(
-            find_vehicle_ids("heavy rescue vehicle", self.profile, self.state, quiet=True)
-        )
+        battalion = asyncio.run(find_vehicle_ids("battalion chief vehicle", self.profile, self.state, quiet=True))
+        heavy_rescue = asyncio.run(find_vehicle_ids("heavy rescue vehicle", self.profile, self.state, quiet=True))
 
         self.assertEqual(battalion, ["bc-1"])
         self.assertEqual(heavy_rescue, ["rescue-1"])
 
     def test_vehicle_unit_variants_are_limited_to_equivalent_labels(self):
         self.assertEqual(
-            vehicle_name_variants("battalion chief vehicle")
-            & vehicle_name_variants("Battalion chief unit"),
+            vehicle_name_variants("battalion chief vehicle") & vehicle_name_variants("Battalion chief unit"),
             {
                 "battalion chief vehicle",
                 "battalion chief vehicles",
@@ -69,15 +64,9 @@ class VehicleMappingTests(unittest.TestCase):
                     is_locked=lambda vehicle_id: False,
                 )
 
-                firetruck_ids = asyncio.run(
-                    find_vehicle_ids("firetruck", profile, state, quiet=True)
-                )
-                platform_ids = asyncio.run(
-                    find_vehicle_ids("platform truck", profile, state, quiet=True)
-                )
-                heavy_rescue_ids = asyncio.run(
-                    find_vehicle_ids("heavy rescue vehicle", profile, state, quiet=True)
-                )
+                firetruck_ids = asyncio.run(find_vehicle_ids("firetruck", profile, state, quiet=True))
+                platform_ids = asyncio.run(find_vehicle_ids("platform truck", profile, state, quiet=True))
+                heavy_rescue_ids = asyncio.run(find_vehicle_ids("heavy rescue vehicle", profile, state, quiet=True))
 
                 self.assertIn(f"{region}-quint", firetruck_ids)
                 self.assertIn(f"{region}-quint", platform_ids)
@@ -154,9 +143,7 @@ class VehicleMappingTests(unittest.TestCase):
                         is_locked=lambda vehicle_id: False,
                     )
                     self.assertEqual(
-                        asyncio.run(
-                            find_vehicle_ids(requested, profile, state, quiet=True)
-                        ),
+                        asyncio.run(find_vehicle_ids(requested, profile, state, quiet=True)),
                         [f"{region}-vehicle"],
                     )
 

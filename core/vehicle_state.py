@@ -45,11 +45,7 @@ class VehicleState:
             self._locked.pop(vehicle_id, None)
 
     def free_for_mission(self, mission_id: str) -> None:
-        released = [
-            vehicle_id
-            for vehicle_id, locked_mission in self._locked.items()
-            if locked_mission == mission_id
-        ]
+        released = [vehicle_id for vehicle_id, locked_mission in self._locked.items() if locked_mission == mission_id]
         if not released:
             return
         self._locked = {

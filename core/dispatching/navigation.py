@@ -16,8 +16,7 @@ async def load_mission_page(page, mission_id, name, url):
         except Exception as error:
             short_error = str(error).splitlines()[0].strip() or type(error).__name__
             display_error(
-                f"Load attempt {attempt + 1} failed for mission {mission_id}: "
-                f"{type(error).__name__}: {short_error}"
+                f"Load attempt {attempt + 1} failed for mission {mission_id}: {type(error).__name__}: {short_error}"
             )
             if attempt == 2:
                 display_error(f"Failed loading mission {mission_id}, skipping.")

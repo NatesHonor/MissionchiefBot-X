@@ -195,11 +195,7 @@ def get_localized_terms(language: str, category: str) -> tuple[str, ...]:
     """Return localized labels with English fallbacks for mixed-language pages."""
 
     language_terms = _TERMS.get(str(language or "en").casefold(), {})
-    return tuple(
-        dict.fromkeys(
-            (*language_terms.get(category, ()), *_TERMS["en"].get(category, ()))
-        )
-    )
+    return tuple(dict.fromkeys((*language_terms.get(category, ()), *_TERMS["en"].get(category, ()))))
 
 
 def _fold(value: str) -> str:
