@@ -18,8 +18,6 @@ select = [
     "PTH",   # flake8-use-pathlib
 ]
 ignore = [
-    "ANN101",  # missing type annotation for self
-    "ANN102",  # missing type annotation for cls
     "E501",    # line too long (ruff format handles this)
 ]
 
