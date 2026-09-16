@@ -64,13 +64,7 @@ class MissionRequirementCountTests(unittest.TestCase):
         self.assertEqual(parse_requirement_count("1"), 1)
 
     def test_swat_vehicle_personnel_requirement_becomes_personnel(self):
-<<<<<<< Updated upstream
-        result = asyncio.run(
-            gather_requirements(FakeMissionPage(), get_region_profile("us"))
-        )
-=======
         result = asyncio.run(gather_requirements(FakeMissionPage(), get_region_profile("us")))
->>>>>>> Stashed changes
 
         self.assertEqual(result["vehicles"], [])
         self.assertEqual(
