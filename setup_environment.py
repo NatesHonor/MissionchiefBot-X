@@ -57,10 +57,7 @@ def verify_playwright(python: Path) -> None:
         check=False,
     )
     if result.returncode:
-        raise RuntimeError(
-            "Playwright could not determine the Chromium installation path. "
-            f"{result.stderr.strip()}"
-        )
+        raise RuntimeError(f"Playwright could not determine the Chromium installation path. {result.stderr.strip()}")
 
     match = re.search(r"^\s*Install location:\s*(.+?)\s*$", result.stdout, re.MULTILINE)
     if not match:

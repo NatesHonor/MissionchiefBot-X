@@ -12,19 +12,11 @@ class MissionIgnoreTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory)
             (path / "mission_ignore_list.json").write_text(
-                json.dumps(
-                    {
-                        "mission_ids": ["100"],
-                        "mission_names": ["Bin fire"],
-                        "contains": ["airport"]
-                    }
-                ),
+                json.dumps({"mission_ids": ["100"], "mission_names": ["Bin fire"], "contains": ["airport"]}),
                 encoding="utf-8",
             )
             profile = SimpleNamespace(
-                load_json=lambda filename, default: json.loads(
-                    (path / filename).read_text(encoding="utf-8")
-                )
+                load_json=lambda filename, default: json.loads((path / filename).read_text(encoding="utf-8"))
             )
             rules = load_mission_ignore_rules(profile)
             remaining, ignored = filter_ignored_mission_ids(
@@ -44,9 +36,7 @@ class MissionIgnoreTests(unittest.TestCase):
         self.assertEqual([item[0] for item in ignored], ["100", "101", "102"])
 
     def test_simple_array_accepts_ids_and_exact_names(self):
-        profile = SimpleNamespace(
-            load_json=lambda filename, default: ["200", "Train station fire"]
-        )
+        profile = SimpleNamespace(load_json=lambda filename, default: ["200", "Train station fire"])
         rules = load_mission_ignore_rules(profile)
         remaining, ignored = filter_ignored_mission_ids(
             ["200", "201"],

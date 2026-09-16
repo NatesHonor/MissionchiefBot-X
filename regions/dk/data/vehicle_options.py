@@ -21,7 +21,7 @@ VEHICLE_OPTIONS = {
     "flatbed carrier": ["Vejhjælpskøretøj", "Autohjælpskøretøj"],
     "water tanker": ["Vandtankvogn", "Vandtankvogne"],
     "light boat": ["Båd", "Både", "Redningsbåd"],
-    "prisoner transport van": ["Fangetransportvogn", "Transportvogn", "Politibil"]
+    "prisoner transport van": ["Fangetransportvogn", "Transportvogn", "Politibil"],
 }
 
 

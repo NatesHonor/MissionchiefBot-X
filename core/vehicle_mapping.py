@@ -116,13 +116,9 @@ def vehicle_name_variants(value: object) -> set[str]:
             continue
         variant_last = variant_words[-1]
         if variant_last in _PLURAL_TO_SINGULAR:
-            variants.add(
-                " ".join((*variant_words[:-1], _PLURAL_TO_SINGULAR[variant_last]))
-            )
+            variants.add(" ".join((*variant_words[:-1], _PLURAL_TO_SINGULAR[variant_last])))
         elif variant_last in _SINGULAR_TO_PLURAL:
-            variants.add(
-                " ".join((*variant_words[:-1], _SINGULAR_TO_PLURAL[variant_last]))
-            )
+            variants.add(" ".join((*variant_words[:-1], _SINGULAR_TO_PLURAL[variant_last])))
 
     return variants
 
@@ -182,9 +178,7 @@ def is_decorated_vehicle_name(requested: Iterable[object], actual: object) -> bo
     """Match an inventory type with an explicit qualifier in parentheses."""
 
     actual_text = unicodedata.normalize("NFKD", str(actual or ""))
-    actual_text = "".join(
-        character for character in actual_text if not unicodedata.combining(character)
-    )
+    actual_text = "".join(character for character in actual_text if not unicodedata.combining(character))
     actual_text = re.sub(r"[^\w\s()/-]+", " ", actual_text.casefold())
     actual_text = re.sub(r"\s+", " ", actual_text).strip()
     for value in requested:

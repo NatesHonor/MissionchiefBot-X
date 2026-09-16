@@ -1,5 +1,15 @@
-[bandit]
-targets = core/, utils/, config/, tests/
-exclude_dirs = .venv, __pycache__
-skips = B101,B603,B607
-level = 1
+targets:
+  - core
+  - utils
+  - config
+  - regions
+  - Main.py
+exclude_dirs:
+  - .venv
+  - __pycache__
+  - .idea
+skips:
+  - B101
+  - B603
+  - B607
+level: 1

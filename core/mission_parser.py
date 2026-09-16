@@ -40,10 +40,7 @@ def resolve_vehicle_entry(raw_name: str, count: int, profile=None):
     profile = profile or get_region_profile()
     normalized = str(raw_name or "").casefold().replace(",", " or ")
     parts = [part.strip() for part in normalized.split(" or ") if part.strip()]
-    options = [
-        resolve_vehicle_name(normalize_name(part, profile.language), profile)
-        for part in parts
-    ]
+    options = [resolve_vehicle_name(normalize_name(part, profile.language), profile) for part in parts]
     return {"options": options, "count": count}
 
 
@@ -110,9 +107,7 @@ async def gather_mission_info(ids, context, tid, url, profile=None, state=None, 
             if not requirements_handled:
                 for alert in await page.query_selector_all("div.alert.alert-danger"):
                     text = (await alert.inner_text()).lower()
-                    if not contains_localized_term(
-                        text, profile.language, "prisoner_transport"
-                    ):
+                    if not contains_localized_term(text, profile.language, "prisoner_transport"):
                         continue
                     if not await handle_prisoner_transport(page, profile):
                         result = await page.evaluate(
@@ -188,16 +183,13 @@ async def gather_mission_info(ids, context, tid, url, profile=None, state=None, 
                 if patients >= 10:
                     requirements["vehicles"].append({"name": "ems chief", "count": 1})
                 if patients >= 20:
-                    requirements["vehicles"].append(
-                        {"name": "ems mobile command unit", "count": 1}
-                    )
+                    requirements["vehicles"].append({"name": "ems mobile command unit", "count": 1})
 
             vehicles, liquid = [], []
             for vehicle in (*requirements["vehicles"], *requirements["liquid"]):
                 entry = resolve_vehicle_entry(vehicle["name"], vehicle["count"], profile)
                 if any(
-                    _normalize(option) in {"water", "foam", "schaum", "espuma", "schuim"}
-                    for option in entry["options"]
+                    _normalize(option) in {"water", "foam", "schaum", "espuma", "schuim"} for option in entry["options"]
                 ):
                     liquid.append(entry)
                 else:

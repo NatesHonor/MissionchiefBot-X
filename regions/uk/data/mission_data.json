@@ -1,0 +1,62 @@
+{
+    "259596711": {
+        "mission_name": "TRAFFIC STOP (RPU) (NO MOT)",
+        "credits": 700,
+        "vehicles": [
+            {
+                "options": [
+                    "patrol car"
+                ],
+                "count": 1
+            },
+            {
+                "options": [
+                    "patrol car"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "259596814": {
+        "mission_name": "LITTLE FIELD FIRE",
+        "credits": 1000,
+        "vehicles": [
+            {
+                "options": [
+                    "firetruck"
+                ],
+                "count": 2
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "259596781": {
+        "mission_name": "TRAFFIC STOP (RPU) (DANGEROUS DRIVING)",
+        "credits": 700,
+        "vehicles": [
+            {
+                "options": [
+                    "patrol car"
+                ],
+                "count": 1
+            },
+            {
+                "options": [
+                    "patrol car"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    }
+}

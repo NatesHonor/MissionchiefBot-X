@@ -49,15 +49,12 @@ async def recruit_at_facility(page, facility_url: str, days: int) -> dict[str, i
             "input[name*='personnel'], input[id*='personnel'], input[name*='staff'], input[id*='staff']"
         )
         if not inputs or not any(
-            marker in form_text
-            for marker in ("personnel", "staff", "desired", "automatically", "recruit")
+            marker in form_text for marker in ("personnel", "staff", "desired", "automatically", "recruit")
         ):
             continue
         target_input = inputs[0]
         current = _integer_from(
-            await target_input.evaluate(
-                "element => element.closest('tr, .form-group, .panel')?.innerText || ''"
-            )
+            await target_input.evaluate("element => element.closest('tr, .form-group, .panel')?.innerText || ''")
         )
         desired = _integer_from(await target_input.get_attribute("value"))
         target = desired_recruitment_target(current, desired, days)
@@ -65,17 +62,14 @@ async def recruit_at_facility(page, facility_url: str, days: int) -> dict[str, i
             return {"facility": facility_url, "updated": 0, "target": desired}
 
         await target_input.fill(str(target))
-        buttons = await form.query_selector_all(
-            "button, input[type='submit'], a.btn"
-        )
+        buttons = await form.query_selector_all("button, input[type='submit'], a.btn")
         for button in buttons:
             label = _normalize(
                 f"{await button.inner_text()} {await button.get_attribute('value') or ''} "
                 f"{await button.get_attribute('name') or ''}"
             )
             if not any(
-                marker in label
-                for marker in ("automatically", "auto recruit", "automatisch", "automatica", "recruit")
+                marker in label for marker in ("automatically", "auto recruit", "automatisch", "automatica", "recruit")
             ):
                 continue
             await button.click()

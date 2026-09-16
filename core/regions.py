@@ -119,20 +119,14 @@ class RegionProfile:
     def validate_vehicle_mappings(self) -> list[str]:
         """Validate every regional alias, personnel, and requirement map."""
 
-        errors = [
-            f"vehicle_aliases.json: {message}"
-            for message in validate_vehicle_aliases(self.vehicle_aliases())
-        ]
+        errors = [f"vehicle_aliases.json: {message}" for message in validate_vehicle_aliases(self.vehicle_aliases())]
         personnel_aliases = self.personnel_aliases()
         errors.extend(
-            f"personnel_aliases.json: {message}"
-            for message in validate_alias_groups(personnel_aliases, "personnel")
+            f"personnel_aliases.json: {message}" for message in validate_alias_groups(personnel_aliases, "personnel")
         )
         for canonical in personnel_aliases:
             if not get_personnel_options(canonical):
-                errors.append(
-                    f"personnel_aliases.json: no personnel options resolve for {canonical!r}"
-                )
+                errors.append(f"personnel_aliases.json: no personnel options resolve for {canonical!r}")
 
         requirement_mapping = self.requirement_mapping()
         allowed_kinds = {"liquid", "personnel", "tow_vehicle", "pass", "info"}
@@ -145,9 +139,7 @@ class RegionProfile:
                 errors.append(f"requirement_mapping.json: duplicate label {key!r}")
             normalized_requirement_keys.add(normalized_key)
             if kind not in allowed_kinds:
-                errors.append(
-                    f"requirement_mapping.json: unsupported kind {kind!r} for {key!r}"
-                )
+                errors.append(f"requirement_mapping.json: unsupported kind {kind!r} for {key!r}")
 
         module = importlib.import_module(self.vehicle_options_module)
         option_map = getattr(module, "VEHICLE_OPTIONS", {})

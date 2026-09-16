@@ -14,8 +14,18 @@ VEHICLE_OPTIONS = {
     "platform truck": ["EPA", "BEA", "Échelle pivotante automatique", "Bras Élevateur Aérien"],
     "battalion chief unit": ["VLCG", "VLCM", "Véhicule léger chef de groupe", "Véhicule Chef de Manoeuvre"],
     "heavy rescue vehicles": ["VSR", "FPTSR", "Véhicule de secours routier", "Véhicule Toute Utilité"],
-    "hazmat vehicles": ["VIRT", "VIM", "Véhicule d'Intervention Risques Technologiques", "Véhicule d'Intervention Mousse"],
-    "mobile command vehicles": ["VPC", "VCT", "Véhicule Poste de Commandement", "Véhicule de Commandement Transmissions"],
+    "hazmat vehicles": [
+        "VIRT",
+        "VIM",
+        "Véhicule d'Intervention Risques Technologiques",
+        "Véhicule d'Intervention Mousse",
+    ],
+    "mobile command vehicles": [
+        "VPC",
+        "VCT",
+        "Véhicule Poste de Commandement",
+        "Véhicule de Commandement Transmissions",
+    ],
     "mobile air vehicles": ["HELISMUR", "CHOUCAS", "DRAGON", "PELICAN", "DASH MILAN", "HBE"],
     "ambulance": ["VSAV", "ASSU", "VLM", "AR", "AMBU TYPE A", "Véhicule de Secours et d'Assistance aux Victimes"],
     "ems chief": ["VL SSSM", "VLM", "Véhicule de Liaison Médicalisé"],
@@ -33,7 +43,7 @@ VEHICLE_OPTIONS = {
     "light boat": ["BLS", "Bateau Léger de Sauvetage"],
     "large rescue boat": ["CTT", "VCSM", "Canot Tous Temps", "Vedette Côtière de Surveillance Maritime"],
     "prisoner transport van": ["VTP (CRS)", "Véhicule de Transports de Prisonniers"],
-    "police bus": ["VTP (CRS)", "Véhicule de Transports de Prisonniers"]
+    "police bus": ["VTP (CRS)", "Véhicule de Transports de Prisonniers"],
 }
 
 

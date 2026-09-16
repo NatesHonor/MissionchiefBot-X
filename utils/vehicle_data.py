@@ -24,9 +24,7 @@ async def gather_vehicle_data(contexts, num_threads, url, save_path):
             save_path.parent.mkdir(parents=True, exist_ok=True)
             with save_path.open("w", encoding="utf-8") as outfile:
                 json.dump(api_vehicle_data, outfile, indent=4, ensure_ascii=False)
-            display_info(
-                f"Vehicle API collection complete. Stored {len(api_records)} vehicles in {save_path}."
-            )
+            display_info(f"Vehicle API collection complete. Stored {len(api_records)} vehicles in {save_path}.")
             return
         await page.goto(url + "leitstellenansicht", wait_until="domcontentloaded")
         await page.wait_for_selector(".list-group")
@@ -85,19 +83,13 @@ async def split_vehicle_ids_among_threads(vehicle_ids, contexts, num_threads, ur
         if not ctx.pages:
             await ctx.new_page()
 
-    tasks = [
-        gather_vehicle_info(partitions[i], contexts[i], i + 1, url)
-        for i in range(threads)
-    ]
+    tasks = [gather_vehicle_info(partitions[i], contexts[i], i + 1, url) for i in range(threads)]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     merged = {}
     for index, result in enumerate(results, start=1):
         if isinstance(result, BaseException):
-            display_error(
-                f"Vehicle collection worker {index} failed: "
-                f"{type(result).__name__}: {result}"
-            )
+            display_error(f"Vehicle collection worker {index} failed: {type(result).__name__}: {result}")
             continue
         for vehicle_type, ids in result.items():
             if vehicle_type not in merged:
