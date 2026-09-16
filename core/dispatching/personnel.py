@@ -50,9 +50,7 @@ def plan_personnel_vehicles(needed, candidates):
         states = next_states
 
     feasible = [
-        (covered, vehicle_count, counts)
-        for covered, (vehicle_count, counts) in states.items()
-        if covered >= needed
+        (covered, vehicle_count, counts) for covered, (vehicle_count, counts) in states.items() if covered >= needed
     ]
     if not feasible:
         return []
@@ -61,11 +59,7 @@ def plan_personnel_vehicles(needed, candidates):
         feasible,
         key=lambda item: (item[1], item[0] - needed, item[2]),
     )
-    return [
-        (usable_candidates[index][0], quantity)
-        for index, quantity in enumerate(counts)
-        if quantity
-    ]
+    return [(usable_candidates[index][0], quantity) for index, quantity in enumerate(counts) if quantity]
 
 
 async def handle_personnel(page, data, missing, mission_id, profile=None, state=None, settings=None):
@@ -101,10 +95,7 @@ async def handle_personnel(page, data, missing, mission_id, profile=None, state=
 
         plan = plan_personnel_vehicles(
             needed,
-            [
-                (vehicle_type, per_vehicle, len(ids))
-                for vehicle_type, (per_vehicle, ids) in candidate_data.items()
-            ],
+            [(vehicle_type, per_vehicle, len(ids)) for vehicle_type, (per_vehicle, ids) in candidate_data.items()],
         )
         selected = 0
         for vehicle_type, needed_vehicles in plan:
@@ -121,8 +112,7 @@ async def handle_personnel(page, data, missing, mission_id, profile=None, state=
             selected += used * per_vehicle
             for requirement in data.get("vehicles", []):
                 if any(
-                    normalize_key(option) == normalize_key(vehicle_type)
-                    for option in requirement.get("options", [])
+                    normalize_key(option) == normalize_key(vehicle_type) for option in requirement.get("options", [])
                 ):
                     remaining = parse_requirement_count(requirement.get("count", 0))
                     if remaining is not None:

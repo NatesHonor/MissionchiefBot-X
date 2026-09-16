@@ -12,6 +12,7 @@ class MissionCollectorResourceTests(unittest.IsolatedAsyncioTestCase):
 
         original = collector.collect_special_resources
         try:
+
             async def fake_collect(page, base_url):
                 self.assertEqual(page, "page")
                 self.assertEqual(base_url, "https://example.test/")

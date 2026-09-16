@@ -10,6 +10,7 @@ class ErrorResilienceTests(unittest.IsolatedAsyncioTestCase):
 
         original = parser.gather_mission_info
         try:
+
             async def fake_gather(ids, context, thread_id, url, profile, state, progress):
                 if thread_id == 1:
                     raise RuntimeError("worker failed")
