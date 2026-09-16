@@ -63,10 +63,7 @@ def normalize_cached_requirements(data: dict, profile=None) -> dict:
         if isinstance(options, str):
             options = [options]
         resolved_people = [resolve_personnel(option, profile) for option in options]
-        if "swat personnel" in {
-            normalize_vehicle_name(person)
-            for person in resolved_people
-        }:
+        if "swat personnel" in {normalize_vehicle_name(person) for person in resolved_people}:
             personnel.append(
                 {
                     "name": "swat personnel",
@@ -82,27 +79,19 @@ def normalize_cached_requirements(data: dict, profile=None) -> dict:
 
 async def gather_requirements(page, profile=None):
     profile = profile or get_region_profile()
-    requirement_map = {
-        _normalize(key): value for key, value in profile.requirement_mapping().items()
-    }
+    requirement_map = {_normalize(key): value for key, value in profile.requirement_mapping().items()}
     requirements = {"vehicles": [], "personnel": [], "liquid": []}
 
-    table = await page.query_selector(
-        'div.col-md-4 > table:has(th:has-text("Vehicle and Personnel Requirements"))'
-    )
+    table = await page.query_selector('div.col-md-4 > table:has(th:has-text("Vehicle and Personnel Requirements"))')
     if not table:
         tables = await page.query_selector_all("div.col-md-4 > table")
         for candidate in tables:
-            if contains_localized_term(
-                await candidate.inner_text(), profile.language, "required"
-            ):
+            if contains_localized_term(await candidate.inner_text(), profile.language, "required"):
                 table = candidate
                 break
     if table:
         for row in await table.query_selector_all("tr:has(td)"):
-            if not contains_localized_term(
-                await row.inner_text(), profile.language, "required"
-            ):
+            if not contains_localized_term(await row.inner_text(), profile.language, "required"):
                 continue
             name_element = await row.query_selector("td:first-child")
             count_element = await row.query_selector("td:nth-child(2)")
@@ -120,24 +109,18 @@ async def gather_requirements(page, profile=None):
                 continue
             entry = {"name": name, "count": count}
             if kind == "personnel":
-                requirements["personnel"].append(
-                    {"name": resolve_personnel(name, profile), "count": count}
-                )
+                requirements["personnel"].append({"name": resolve_personnel(name, profile), "count": count})
             elif kind == "liquid":
                 requirements["liquid"].append(entry)
             else:
                 requirements["vehicles"].append({"name": name, "count": count})
 
-    table = await page.query_selector(
-        'div.col-md-4 > table:has(th:has-text("Other information"))'
-    )
+    table = await page.query_selector('div.col-md-4 > table:has(th:has-text("Other information"))')
     if not table:
         tables = await page.query_selector_all("div.col-md-4 > table")
         for candidate in tables:
             candidate_text = await candidate.inner_text()
-            if contains_localized_term(
-                candidate_text, profile.language, "other_information"
-            ) or (
+            if contains_localized_term(candidate_text, profile.language, "other_information") or (
                 contains_localized_term(candidate_text, profile.language, "personnel")
                 and not contains_localized_term(candidate_text, profile.language, "required")
             ):
@@ -158,9 +141,7 @@ async def gather_requirements(page, profile=None):
             for entry in re.split(r"[,\n]+", text.replace("\xa0", " ")):
                 match = re.match(r"(\d+)\s*x?\s*(.+)", entry.strip())
                 if match:
-                    count, raw_name = int(match.group(1)), normalize_name(
-                        match.group(2), profile.language
-                    )
+                    count, raw_name = int(match.group(1)), normalize_name(match.group(2), profile.language)
                     requirements["personnel"].append(
                         {
                             "name": resolve_personnel(raw_name, profile),
@@ -180,10 +161,7 @@ async def gather_requirements(page, profile=None):
         requirements["vehicles"] = [
             vehicle
             for vehicle in requirements["vehicles"]
-            if not (
-                _normalize(vehicle["name"]).startswith("swat armoured vehicle")
-                and vehicle["count"] == 0
-            )
+            if not (_normalize(vehicle["name"]).startswith("swat armoured vehicle") and vehicle["count"] == 0)
         ]
 
     return requirements

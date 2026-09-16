@@ -12,22 +12,25 @@ from core.webui import BotWebUI, read_config, read_log_tail, save_config, save_s
 
 class WebUITests(unittest.TestCase):
     def _settings(self):
-        values = {name: False for name in (
-            "headless",
-            "browser_scaling",
-            "dispatch_by_distance",
-            "dispatch_incomplete",
-            "dynamic_missions",
-            "include_alliance_missions",
-            "concurrent_missions",
-            "auto_training",
-            "auto_recruiting",
-            "auto_special_resources",
-            "auto_tasks",
-            "dynamic_delays",
-            "dynamic_delay_missions",
-            "dynamic_delay_transport",
-        )}
+        values = {
+            name: False
+            for name in (
+                "headless",
+                "browser_scaling",
+                "dispatch_by_distance",
+                "dispatch_incomplete",
+                "dynamic_missions",
+                "include_alliance_missions",
+                "concurrent_missions",
+                "auto_training",
+                "auto_recruiting",
+                "auto_special_resources",
+                "auto_tasks",
+                "dynamic_delays",
+                "dynamic_delay_missions",
+                "dynamic_delay_transport",
+            )
+        }
         values.update(
             region="us",
             browsers=2,

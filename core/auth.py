@@ -40,10 +40,7 @@ def is_same_service(url: str, candidate: str) -> bool:
     actual = urlparse(candidate)
     if expected.scheme not in {"http", "https"} or actual.scheme not in {"http", "https"}:
         return False
-    return (
-        _normalized_host(expected.hostname) == _normalized_host(actual.hostname)
-        and expected.port == actual.port
-    )
+    return _normalized_host(expected.hostname) == _normalized_host(actual.hostname) and expected.port == actual.port
 
 
 def is_login_page(url: str) -> bool:

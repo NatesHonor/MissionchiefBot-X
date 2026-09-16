@@ -28,9 +28,7 @@ def _logger() -> logging.Logger:
             backupCount=3,
             encoding="utf-8",
         )
-        handler.setFormatter(
-            logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-        )
+        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
         logger.addHandler(handler)
     except (OSError, ValueError):
         # Console output must remain available even when the log destination is
@@ -38,18 +36,22 @@ def _logger() -> logging.Logger:
         logger.addHandler(logging.NullHandler())
     return logger
 
+
 def display_message(message):
     ascii_art = art.text2art(message)
     print(ascii_art)
     _logger().info(str(message))
 
+
 def display_error(message):
     print(f"\033[91m{message}\033[0m")
     _logger().error(str(message))
 
+
 def display_warning(message):
     print(f"\033[93m{message}\033[0m")
     _logger().warning(str(message))
+
 
 def display_info(message):
     print(f"{message}")

@@ -40,9 +40,7 @@ async def gather_building_data_single(context, thread_id, url):
             raw_key = source.rsplit("/", 1)[-1].replace(".png", "")
             if raw_key.startswith("building_"):
                 raw_key = raw_key[len("building_") :]
-            translated = GoogleTranslator(source="auto", target="en").translate(
-                raw_key.replace("_", " ")
-            )
+            translated = GoogleTranslator(source="auto", target="en").translate(raw_key.replace("_", " "))
             name = translated.strip().title().replace(" ", "_")
             building_data.setdefault(name, []).append(building_id)
         return building_data
@@ -66,10 +64,7 @@ async def gather_building_data(contexts, thread_count, url, save_path=None, prof
     merged = {}
     for index, result in enumerate(results, start=1):
         if isinstance(result, BaseException):
-            display_error(
-                f"Building collection worker {index} failed: "
-                f"{type(result).__name__}: {result}"
-            )
+            display_error(f"Building collection worker {index} failed: {type(result).__name__}: {result}")
             continue
         for name, ids in result.items():
             values = merged.setdefault(name, [])

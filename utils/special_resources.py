@@ -34,10 +34,7 @@ def is_special_resource_control(metadata: str) -> bool:
         return False
     if "special resource" in normalized:
         return True
-    has_event_action = any(
-        marker in normalized
-        for marker in ("collect", "claim", "event resource", "event item")
-    )
+    has_event_action = any(marker in normalized for marker in ("collect", "claim", "event resource", "event item"))
     if has_event_action and "resource" in normalized:
         return True
     return any(token in normalized.split() for token in RESOURCE_TOKENS if " " not in token)

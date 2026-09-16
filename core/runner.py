@@ -66,10 +66,7 @@ async def run_parallel_runtime_loops(loop_factories, stop_event: asyncio.Event) 
                 else:
                     error = task.exception()
                     if error:
-                        display_error(
-                            f"{name.title()} loop stopped unexpectedly: "
-                            f"{type(error).__name__}: {error}"
-                        )
+                        display_error(f"{name.title()} loop stopped unexpectedly: {type(error).__name__}: {error}")
                     else:
                         display_error(f"{name.title()} loop exited unexpectedly; restarting it.")
 
@@ -201,9 +198,7 @@ async def run_bot(
                 message=f"The {profile.key.upper()} region is not supported by the runtime.",
                 running=False,
             )
-        raise RuntimeError(
-            f"The {profile.key.upper()} region has metadata but no automation adapter yet."
-        )
+        raise RuntimeError(f"The {profile.key.upper()} region has metadata but no automation adapter yet.")
     profile.ensure_data_dir()
     state = get_vehicle_state(profile)
     state.clear_locks()
@@ -254,9 +249,7 @@ async def run_bot(
 
             other_context = contexts[0]
             grabbing_contexts = contexts[1:]
-            mission_contexts = (
-                grabbing_contexts if settings.concurrent_missions else grabbing_contexts[:1]
-            )
+            mission_contexts = grabbing_contexts if settings.concurrent_missions else grabbing_contexts[:1]
             await run_parallel_runtime_loops(
                 [
                     (

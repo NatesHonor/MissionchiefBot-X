@@ -71,10 +71,7 @@ def _display_metric(value) -> str:
 
 def _contains_word_marker(value: str, markers: tuple[str, ...]) -> bool:
     value = _fold(value)
-    return any(
-        re.search(rf"(?<![a-z]){re.escape(marker)}(?![a-z])", value)
-        for marker in markers
-    )
+    return any(re.search(rf"(?<![a-z]){re.escape(marker)}(?![a-z])", value) for marker in markers)
 
 
 def _fold(value: str) -> str:
@@ -130,8 +127,7 @@ def is_transport_request(record: dict) -> bool:
         )
     ]
     if any(
-        str(value).strip().casefold()
-        in {"5", "true", "transport", "transport_requested", "patient_transport"}
+        str(value).strip().casefold() in {"5", "true", "transport", "transport_requested", "patient_transport"}
         for value in values
     ):
         return True
@@ -149,9 +145,7 @@ def is_patient_transport_option(option: dict, profile=None) -> bool:
     label = str(option.get("action_label") or option.get("label") or "")
     if any(marker in _fold(label) for marker in _PATIENT_MARKERS):
         return True
-    if profile is not None and contains_localized_term(
-        label, profile.language, "patient_transport"
-    ):
+    if profile is not None and contains_localized_term(label, profile.language, "patient_transport"):
         return True
     return False
 
@@ -161,9 +155,7 @@ def choose_transport_option(options: list[dict], profile=None) -> dict | None:
 
     if not options:
         return None
-    patient_options = [
-        option for option in options if is_patient_transport_option(option, profile)
-    ]
+    patient_options = [option for option in options if is_patient_transport_option(option, profile)]
     return min(patient_options or options, key=transport_option_key)
 
 
@@ -205,8 +197,7 @@ async def _transport_options(page) -> list[dict]:
         row_data = metadata.get("row", {})
         table_data = metadata.get("table", {})
         text = " ".join(
-            str(value or "")
-            for value in (row_data.get("text"), table_data.get("id"), table_data.get("className"))
+            str(value or "") for value in (row_data.get("text"), table_data.get("id"), table_data.get("className"))
         )
         lower_text = _fold(text)
         ownership_text = " ".join(
@@ -270,8 +261,7 @@ async def _transport_options(page) -> list[dict]:
 
 async def _release_without_transport(page) -> bool:
     release = await page.query_selector(
-        "#leave_without_transport_no_compensation, "
-        "a.btn.btn-xs.btn-danger, button.btn.btn-xs.btn-danger, a.btn-danger"
+        "#leave_without_transport_no_compensation, a.btn.btn-xs.btn-danger, button.btn.btn-xs.btn-danger, a.btn-danger"
     )
     if not release:
         return False
@@ -322,9 +312,7 @@ async def handle_transport_requests(context, url, profile=None):
 
     records = await fetch_vehicle_records(page, url)
     vehicle_ids = [
-        str(record["id"])
-        for record in records
-        if record.get("id") is not None and is_transport_request(record)
+        str(record["id"]) for record in records if record.get("id") is not None and is_transport_request(record)
     ]
     if not vehicle_ids:
         vehicle_ids = await _fallback_transport_vehicle_ids(page, profile)
@@ -356,8 +344,7 @@ async def handle_transport_requests(context, url, profile=None):
                 display_error(f"No transport or release option found for vehicle {vehicle_id}")
         except Exception as error:
             display_error(
-                f"Transport handling failed for {vehicle_url}: "
-                f"{type(error).__name__}: {error or 'unknown error'}"
+                f"Transport handling failed for {vehicle_url}: {type(error).__name__}: {error or 'unknown error'}"
             )
 
     await page.goto(url, wait_until="domcontentloaded")

@@ -45,10 +45,7 @@ async def _find_school_page(page, base_url: str, school_name: str) -> bool:
 async def _select_course(page, course_name: str) -> bool:
     requested = _normalize(course_name)
     for select in await page.query_selector_all("select"):
-        name = _normalize(
-            f"{await select.get_attribute('name') or ''} "
-            f"{await select.get_attribute('id') or ''}"
-        )
+        name = _normalize(f"{await select.get_attribute('name') or ''} {await select.get_attribute('id') or ''}")
         options = await select.query_selector_all("option")
         for option in options:
             label = await option.inner_text()
@@ -96,9 +93,7 @@ async def train_school(page, base_url: str, plan: TrainingPlan) -> dict[str, int
     forms = await page.query_selector_all("form")
     training_form = None
     for form in forms:
-        marker = _normalize(
-            f"{await form.get_attribute('action') or ''} {await form.inner_text()}"
-        )
+        marker = _normalize(f"{await form.get_attribute('action') or ''} {await form.inner_text()}")
         if _contains(marker, "training", "schooling", "course", "ausbildung"):
             training_form = form
             break
@@ -139,9 +134,7 @@ async def train_school(page, base_url: str, plan: TrainingPlan) -> dict[str, int
         if submit:
             await submit.click()
             await page.wait_for_load_state("networkidle")
-            display_info(
-                f"Scheduled {selected} employees for {plan.course} at {plan.school}."
-            )
+            display_info(f"Scheduled {selected} employees for {plan.course} at {plan.school}.")
         else:
             display_error(f"Training submit button not found at {plan.school}")
             selected = 0

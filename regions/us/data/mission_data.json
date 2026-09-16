@@ -1,0 +1,631 @@
+{
+    "502521139": {
+        "mission_name": "DEMONSTRATION AGAINST THE CONSTRUCTION OF A HIGHWAY PROJECT",
+        "credits": 10500,
+        "vehicles": [
+            {
+                "options": [
+                    "patrol car"
+                ],
+                "count": 4
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "502520795": {
+        "mission_name": "HOSTAGE TAKEN",
+        "credits": 2200,
+        "vehicles": [
+            {
+                "options": [
+                    "patrol car"
+                ],
+                "count": 4
+            },
+            {
+                "options": [
+                    "swat personnel in swat vehicles"
+                ],
+                "count": 12
+            },
+            {
+                "options": [
+                    "ambulance"
+                ],
+                "count": 2
+            }
+        ],
+        "personnel": [
+            {
+                "name": "sharpshooter",
+                "count": 2
+            }
+        ],
+        "liquid": [],
+        "patients": 2,
+        "crashed_cars": 0
+    },
+    "502520030": {
+        "mission_name": "LARGE ANIMAL RESCUE",
+        "credits": 2000,
+        "vehicles": [
+            {
+                "options": [
+                    "firetrucks"
+                ],
+                "count": 1
+            },
+            {
+                "options": [
+                    "platform truck"
+                ],
+                "count": 1
+            },
+            {
+                "options": [
+                    "heavy rescue vehicles"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "502521986": {
+        "mission_name": "OFFICE EMBEDDED IN CORRUPTION",
+        "credits": 1900,
+        "vehicles": [
+            {
+                "options": [
+                    "fbi unit"
+                ],
+                "count": 3
+            },
+            {
+                "options": [
+                    "fbi investigation wagon"
+                ],
+                "count": 1
+            },
+            {
+                "options": [
+                    "fbi mobile command center"
+                ],
+                "count": 1
+            },
+            {
+                "options": [
+                    "patrol car"
+                ],
+                "count": 3
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "502521052": {
+        "mission_name": "COLLISION WITH JACKKNIFED SEMI-TRAILER (SMALL)",
+        "credits": 1000,
+        "vehicles": [
+            {
+                "options": [
+                    "patrol car"
+                ],
+                "count": 2
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "502520618": {
+        "mission_name": "ROAD ACCIDENT (CAUSED BY \"DRIVING UNDER THE INFLUENCE OF NARCOTICS\")",
+        "credits": 1000,
+        "vehicles": [
+            {
+                "options": [
+                    "firetrucks"
+                ],
+                "count": 1
+            },
+            {
+                "options": [
+                    "ambulance"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 1,
+        "crashed_cars": 0
+    },
+    "502520968": {
+        "mission_name": "OUT OF CONTROL ARGUMENT",
+        "credits": 900,
+        "vehicles": [
+            {
+                "options": [
+                    "patrol car"
+                ],
+                "count": 2
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "502544810": {
+        "mission_name": "TREE STUMP ON FIRE",
+        "credits": 700,
+        "vehicles": [
+            {
+                "options": [
+                    "firetrucks"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "502520677": {
+        "mission_name": "CALLER HANGUP",
+        "credits": 600,
+        "vehicles": [
+            {
+                "options": [
+                    "patrol car"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "502521631": {
+        "mission_name": "PLANT SMUGGLING",
+        "credits": 500,
+        "vehicles": [
+            {
+                "options": [
+                    "Warden's Truck"
+                ],
+                "count": 2
+            },
+            {
+                "options": [
+                    "k-9 unit"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "502520434": {
+        "mission_name": "PROPERTY DAMAGED",
+        "credits": 200,
+        "vehicles": [
+            {
+                "options": [
+                    "patrol car"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "502521720": {
+        "mission_name": "THEFT OF PROPERTY FROM VEHICLES",
+        "credits": 150,
+        "vehicles": [
+            {
+                "options": [
+                    "patrol car"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "502521557": {
+        "mission_name": "OBSTRUCTION OF TRAFFIC",
+        "credits": 80,
+        "vehicles": [
+            {
+                "options": [
+                    "patrol car"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "502522124": {
+        "mission_name": "ALCOHOLIC INTOXICATION",
+        "credits": 0,
+        "vehicles": [
+            {
+                "options": [
+                    "ambulance"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 1,
+        "crashed_cars": 0
+    },
+    "502521388": {
+        "mission_name": "GLASS SHARDS IN THE EYE",
+        "credits": 0,
+        "vehicles": [
+            {
+                "options": [
+                    "ambulance"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 1,
+        "crashed_cars": 0
+    },
+    "502521299": {
+        "mission_name": "ILLEGAL FIRE ARMS FACTORY (MAJOR)",
+        "credits": 7500,
+        "vehicles": [
+            {
+                "options": [
+                    "patrol car"
+                ],
+                "count": 8
+            },
+            {
+                "options": [
+                    "fbi unit"
+                ],
+                "count": 8
+            },
+            {
+                "options": [
+                    "atf unit"
+                ],
+                "count": 5
+            },
+            {
+                "options": [
+                    "atf lab"
+                ],
+                "count": 2
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "502522205": {
+        "mission_name": "ATTEMPTED HOMICIDE",
+        "credits": 2100,
+        "vehicles": [
+            {
+                "options": [
+                    "patrol car"
+                ],
+                "count": 6
+            },
+            {
+                "options": [
+                    "k-9 unit"
+                ],
+                "count": 1
+            },
+            {
+                "options": [
+                    "ambulance"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 1,
+        "crashed_cars": 0
+    },
+    "502519587": {
+        "mission_name": "SPORTS HALL FIRE (FIRE ALARM SYSTEM)",
+        "credits": 2000,
+        "vehicles": [
+            {
+                "options": [
+                    "firetrucks"
+                ],
+                "count": 5
+            },
+            {
+                "options": [
+                    "Battalion chief unit"
+                ],
+                "count": 1
+            },
+            {
+                "options": [
+                    "platform truck"
+                ],
+                "count": 1
+            },
+            {
+                "options": [
+                    "mobile air vehicles"
+                ],
+                "count": 1
+            },
+            {
+                "options": [
+                    "ambulance"
+                ],
+                "count": 4
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 4,
+        "crashed_cars": 0
+    },
+    "502519807": {
+        "mission_name": "HIGH-RISK WARRANT",
+        "credits": 1400,
+        "vehicles": [
+            {
+                "options": [
+                    "swat personnel in swat vehicles"
+                ],
+                "count": 18
+            },
+            {
+                "options": [
+                    "patrol car",
+                    "SWAT SUV"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "502520883": {
+        "mission_name": "ROAD CLEANUP",
+        "credits": 1000,
+        "vehicles": [
+            {
+                "options": [
+                    "firetrucks"
+                ],
+                "count": 1
+            },
+            {
+                "options": [
+                    "heavy rescue vehicles"
+                ],
+                "count": 1
+            },
+            {
+                "options": [
+                    "patrol car"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "502519359": {
+        "mission_name": "MUSEUM ROBBERY",
+        "credits": 1000,
+        "vehicles": [
+            {
+                "options": [
+                    "patrol car"
+                ],
+                "count": 4
+            },
+            {
+                "options": [
+                    "k-9 unit"
+                ],
+                "count": 1
+            },
+            {
+                "options": [
+                    "swat personnel in swat vehicles"
+                ],
+                "count": 6
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "502520512": {
+        "mission_name": "DRIVING UNDER THE INFLUENCE OF NARCOTICS",
+        "credits": 900,
+        "vehicles": [
+            {
+                "options": [
+                    "patrol car"
+                ],
+                "count": 1
+            },
+            {
+                "options": [
+                    "ambulance"
+                ],
+                "count": 2
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 2,
+        "crashed_cars": 0
+    },
+    "502521469": {
+        "mission_name": "VEHICLE REPOSESSION",
+        "credits": 700,
+        "vehicles": [],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 1
+    },
+    "502522375": {
+        "mission_name": "ABDOMINAL PAIN",
+        "credits": 500,
+        "vehicles": [
+            {
+                "options": [
+                    "ambulance"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 1,
+        "crashed_cars": 0
+    },
+    "502520738": {
+        "mission_name": "BURNING LEAVES",
+        "credits": 210,
+        "vehicles": [
+            {
+                "options": [
+                    "firetrucks"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "502521236": {
+        "mission_name": "CONTAINER FIRE",
+        "credits": 170,
+        "vehicles": [
+            {
+                "options": [
+                    "firetrucks"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "502520236": {
+        "mission_name": "BREAKDOWN OF VEHICLE",
+        "credits": 100,
+        "vehicles": [
+            {
+                "options": [
+                    "patrol car"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 0,
+        "crashed_cars": 0
+    },
+    "502544717": {
+        "mission_name": "DIABETIC PROBLEMS",
+        "credits": 0,
+        "vehicles": [
+            {
+                "options": [
+                    "ambulance"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 1,
+        "crashed_cars": 0
+    },
+    "502521811": {
+        "mission_name": "POST-SURGICAL COMPLICATIONS",
+        "credits": 0,
+        "vehicles": [
+            {
+                "options": [
+                    "ambulance"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 1,
+        "crashed_cars": 0
+    },
+    "502520304": {
+        "mission_name": "FIRING OF IMPLANTED DEFIBRILLATOR",
+        "credits": 0,
+        "vehicles": [
+            {
+                "options": [
+                    "ambulance"
+                ],
+                "count": 1
+            },
+            {
+                "options": [
+                    "ambulance"
+                ],
+                "count": 1
+            }
+        ],
+        "personnel": [],
+        "liquid": [],
+        "patients": 1,
+        "crashed_cars": 0
+    }
+}
