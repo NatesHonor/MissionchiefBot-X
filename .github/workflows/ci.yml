@@ -164,11 +164,27 @@ jobs:
         run: |
           pip list --outdated --format=freeze |           grep -v "^(astroid|attrs|certifi|charset-normalizer|colorama|coverage|distlib|dirty-equalities|dnspython|exceptiongroup|execnet|filelock|h11|httpcore|httpx|idna|iniconfig|isort|jaraco.context|lazy-object-proxy|markdown-it-py|mdurl|mccabe|more-itertools|mypy|mypy-extensions|outcome|packaging|pathspec|pip|platformdirs|playwright|pluggy|psutil|psycopg2-binary|pyflakes|pygments|pylint|pypiwin32|pytest|pytest-asyncio|pytest-timeout|python-dateutil|pywin32|requests|ruff|selenium|six|sortedcontainers|tomli|tomlkit|trio|trio-websocket|types-requests|typing-extensions|urllib3|virtualenv|websocket-client|websockets|wrapt|yarl)$" ||           echo "No outdated dependencies to report (filtered known safe packages)"
 
+  # ── Secret scan (gitleaks) ──────────────────────────────────────────
+  secret-scan:
+    name: secret-scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+
   # ── Summary comment on PR ───────────────────────────────────────────
   pr-comment:
     name: pr-comment
     if: always() && github.event_name == 'pull_request'
-    needs: [compat, lint, typecheck, security, test, deps-audit, deps-freshness]
+    needs: [compat, lint, typecheck, security, test, deps-audit, deps-freshness, secret-scan]
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -185,6 +201,7 @@ jobs:
               ('lint (ruff)', '${{ needs.lint.result }}'),
               ('type-check (mypy)', '${{ needs.typecheck.result }}'),
               ('security (bandit)', '${{ needs.security.result }}'),
+              ('secret-scan (gitleaks)', '${{ needs.secret-scan.result }}'),
               ('test (pytest)', '${{ needs.test.result }}'),
               ('dependency-audit', '${{ needs.deps-audit.result }}'),
               ('dependency-freshness', '${{ needs.deps-freshness.result }}'),
@@ -214,6 +231,7 @@ jobs:
                   'lint (ruff)': 'Run `ruff check . && ruff format .` locally and commit fixes.',
                   'type-check (mypy)': 'Add type annotations or fix type errors shown in the workflow logs.',
                   'security (bandit)': 'Fix security issues reported by bandit. See workflow logs for details.',
+                  'secret-scan (gitleaks)': 'A secret (API key, token, password) was detected. Remove it from the diff and use a GitHub secret or environment variable instead.',
                   'test (pytest)': 'Fix failing tests. Run `PYTHONPATH=. pytest tests/ -v` locally to reproduce.',
                   'dependency-audit': 'Review vulnerable dependencies found by pip-audit.',
                   'dependency-freshness': 'Consider updating outdated dependencies if safe.',
