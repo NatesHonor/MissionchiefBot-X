@@ -234,9 +234,11 @@ jobs:
 
       - name: Post or update PR comment
         uses: actions/github-script@v7
+        env:
+          COMMENT_BODY: ${{ steps.build-comment.outputs.body }}
         with:
           script: |
-            const body = `${{ steps.build-comment.outputs.body }}`;
+            const body = process.env.COMMENT_BODY;
             const { data: comments } = await github.rest.issues.listComments({
               issue_number: context.issue.number,
               owner: context.repo.owner,
