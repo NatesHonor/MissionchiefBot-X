@@ -11,7 +11,6 @@ import configparser
 import json
 import logging
 import os
-import re
 import tempfile
 import threading
 from dataclasses import asdict, dataclass
@@ -162,18 +161,47 @@ def save_settings(updates: dict[str, Any], path: str | os.PathLike[str] | None =
     return typed_values
 
 
+def _section_name(line: str) -> str:
+    """Return the INI section header name on ``line`` or an empty string."""
+    stripped = line.lstrip(" \t\v\f")
+    if not stripped.startswith("["):
+        return ""
+    end = stripped.find("]")
+    if end == -1:
+        return ""
+    return stripped[1:end].strip().casefold()
+
+
+def _is_password_line(line: str) -> bool:
+    """Whether ``line`` is a ``password = ...`` setting (INI-style, case-insensitive)."""
+    stripped = line.lstrip(" \t\v\f")
+    lower = stripped.casefold()
+    if not lower.startswith("password"):
+        return False
+    return lower[len("password") :].lstrip(" \t\v\f").startswith("=")
+
+
+def _strip_value_from_password_line(line: str) -> str:
+    """Drop everything after the ``=`` on a password line, keeping its newline."""
+    newline = "\r\n" if line.endswith("\r\n") else "\n" if line.endswith("\n") else ""
+    try:
+        prefix = line[: line.index("=") + 1].rstrip()
+    except ValueError:
+        return ""
+    return f"{prefix}{newline}"
+
+
 def _redact_config_password(content: str) -> str:
     """Remove only the credentials password while preserving config formatting."""
 
     section = ""
     redacted = []
     for line in content.splitlines(keepends=True):
-        section_match = re.match(r"\s*\[([^]]+)\]", line)
-        if section_match:
-            section = section_match.group(1).strip().casefold()
-        if section == "credentials" and re.match(r"\s*password\s*=", line, re.IGNORECASE):
-            newline = "\r\n" if line.endswith("\r\n") else "\n" if line.endswith("\n") else ""
-            line = re.sub(r"(\s*password\s*=).*", rf"\1{newline}", line, flags=re.IGNORECASE)
+        name = _section_name(line)
+        if name:
+            section = name
+        if section == "credentials" and _is_password_line(line):
+            line = _strip_value_from_password_line(line)
         redacted.append(line)
     return "".join(redacted)
 
@@ -195,12 +223,12 @@ def _replace_config_password(content: str, password: str) -> str:
     lines = []
     replaced = False
     for line in content.splitlines(keepends=True):
-        section_match = re.match(r"\s*\[([^]]+)\]", line)
-        if section_match:
-            section = section_match.group(1).strip().casefold()
-        if section == "credentials" and re.match(r"\s*password\s*=", line, re.IGNORECASE):
+        name = _section_name(line)
+        if name:
+            section = name
+        if section == "credentials" and _is_password_line(line):
             newline = "\r\n" if line.endswith("\r\n") else "\n" if line.endswith("\n") else ""
-            prefix = line[: line.index("=") + 1]
+            prefix = line[: line.index("=") + 1].rstrip()
             line = f"{prefix} {password}{newline}"
             replaced = True
         lines.append(line)
