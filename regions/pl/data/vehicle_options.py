@@ -4,7 +4,15 @@ from core.vehicle_mapping import get_vehicle_options_from_map
 
 
 VEHICLE_OPTIONS = {
-    "firetruck": ["Samochód gaśniczy", "Samochody gaśnicze", "GBA", "GCBA", "GBA-Rt", "GCBA-Rt", "Samochód ratowniczo-gaśniczy"],
+    "firetruck": [
+        "Samochód gaśniczy",
+        "Samochody gaśnicze",
+        "GBA",
+        "GCBA",
+        "GBA-Rt",
+        "GCBA-Rt",
+        "Samochód ratowniczo-gaśniczy",
+    ],
     "firetrucks": ["Samochód gaśniczy", "Samochody gaśnicze", "GBA", "GCBA", "GBA-Rt", "GCBA-Rt"],
     "platform truck": ["Drabina mechaniczna", "SD", "SCD", "Drabina"],
     "battalion chief unit": ["Samochód szefa brygady", "Samochód operacyjny", "Samochód dowódcy"],
@@ -28,7 +36,7 @@ VEHICLE_OPTIONS = {
     "light boat": ["Łódź ratownicza", "Łódź"],
     "large rescue boat": ["Łódź ratownicza", "Łódź"],
     "prisoner transport van": ["Więźniarka", "Mała więźniarka", "Duża więźniarka", "Furgonetka policyjna", "Van OPP"],
-    "police bus": ["Autobus policyjny"]
+    "police bus": ["Autobus policyjny"],
 }
 
 

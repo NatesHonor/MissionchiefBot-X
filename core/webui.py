@@ -136,9 +136,7 @@ def save_settings(updates: dict[str, Any], path: str | os.PathLike[str] | None =
         parser.set(section, option, value)
 
     config_path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(
-        prefix=f"{config_path.stem}.", suffix=".tmp", dir=config_path.parent
-    )
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f"{config_path.stem}.", suffix=".tmp", dir=config_path.parent)
     try:
         with os.fdopen(descriptor, "w", encoding="utf-8", newline="") as stream:
             parser.write(stream)
@@ -239,9 +237,7 @@ def save_config(content: Any, path: str | os.PathLike[str] | None = None) -> dic
         content = _replace_config_password(content, existing_password)
 
     config_path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(
-        prefix=f"{config_path.stem}.", suffix=".tmp", dir=config_path.parent
-    )
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f"{config_path.stem}.", suffix=".tmp", dir=config_path.parent)
     try:
         with os.fdopen(descriptor, "w", encoding="utf-8", newline="") as stream:
             stream.write(content)
@@ -272,10 +268,7 @@ def read_log_tail(limit: int = 200) -> list[str]:
         return []
     # WebUI request logs are not BotX runtime logs.  Filter them as well as
     # suppressing new access logging so an old log file is still readable.
-    runtime_lines = [
-        line for line in lines
-        if "WebUI" not in line and '"/api/' not in line
-    ]
+    runtime_lines = [line for line in lines if "WebUI" not in line and '"/api/' not in line]
     return runtime_lines[-limit:]
 
 
@@ -495,7 +488,9 @@ class BotWebUI:
 
             def _control(self, body: dict[str, Any]) -> None:
                 action = body.get("action")
-                callback = webui._start_callback if action == "start" else webui._stop_callback if action == "stop" else None
+                callback = (
+                    webui._start_callback if action == "start" else webui._stop_callback if action == "stop" else None
+                )
                 if action not in {"start", "stop"}:
                     self._send_json({"error": "action must be start or stop"}, HTTPStatus.BAD_REQUEST)
                     return

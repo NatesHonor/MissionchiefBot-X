@@ -8,8 +8,10 @@ from utils.pretty_print import display_info, display_error
 
 TASKS_FILE = PROJECT_ROOT / "config" / "tasks.json"
 
+
 def clean_text(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
+
 
 async def grab_tasks(context, url):
     try:
@@ -52,13 +54,15 @@ async def grab_tasks(context, url):
                 continue
             seen.add(key)
 
-            tasks.append({
-                "title": title,
-                "description": description,
-                "countdown": countdown,
-                "progress": progress,
-                "rewards": rewards
-            })
+            tasks.append(
+                {
+                    "title": title,
+                    "description": description,
+                    "countdown": countdown,
+                    "progress": progress,
+                    "rewards": rewards,
+                }
+            )
 
         TASKS_FILE.parent.mkdir(parents=True, exist_ok=True)
         with TASKS_FILE.open("w", encoding="utf-8") as f:

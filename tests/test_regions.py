@@ -29,9 +29,7 @@ class GermanRegionTests(unittest.TestCase):
             is_locked=lambda vehicle_id: False,
         )
 
-        vehicle_ids = __import__("asyncio").run(
-            find_vehicle_ids("löschfahrzeug", profile, state)
-        )
+        vehicle_ids = __import__("asyncio").run(find_vehicle_ids("löschfahrzeug", profile, state))
 
         self.assertEqual(vehicle_ids, ["101", "202"])
 
@@ -56,9 +54,7 @@ class SwedishRegionTests(unittest.TestCase):
             is_locked=lambda vehicle_id: False,
         )
 
-        vehicle_ids = __import__("asyncio").run(
-            find_vehicle_ids("firetruck", profile, state)
-        )
+        vehicle_ids = __import__("asyncio").run(find_vehicle_ids("firetruck", profile, state))
 
         self.assertEqual(vehicle_ids, ["401", "402"])
 
@@ -83,9 +79,7 @@ class PortugueseRegionTests(unittest.TestCase):
             is_locked=lambda vehicle_id: False,
         )
 
-        vehicle_ids = __import__("asyncio").run(
-            find_vehicle_ids("firetruck", profile, state)
-        )
+        vehicle_ids = __import__("asyncio").run(find_vehicle_ids("firetruck", profile, state))
 
         self.assertEqual(vehicle_ids, ["501", "502"])
 
@@ -110,9 +104,7 @@ class FrenchRegionTests(unittest.TestCase):
             is_locked=lambda vehicle_id: False,
         )
 
-        vehicle_ids = __import__("asyncio").run(
-            find_vehicle_ids("firetruck", profile, state)
-        )
+        vehicle_ids = __import__("asyncio").run(find_vehicle_ids("firetruck", profile, state))
 
         self.assertEqual(vehicle_ids, ["701"])
 
@@ -137,9 +129,7 @@ class DanishRegionTests(unittest.TestCase):
             is_locked=lambda vehicle_id: False,
         )
 
-        vehicle_ids = __import__("asyncio").run(
-            find_vehicle_ids("firetruck", profile, state)
-        )
+        vehicle_ids = __import__("asyncio").run(find_vehicle_ids("firetruck", profile, state))
 
         self.assertEqual(vehicle_ids, ["601"])
 

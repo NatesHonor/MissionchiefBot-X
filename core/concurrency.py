@@ -41,10 +41,7 @@ async def split_mission_ids_among_threads(
     merged = {}
     for index, result in enumerate(results, start=1):
         if isinstance(result, BaseException):
-            display_error(
-                f"Mission collection worker {index} failed: "
-                f"{type(result).__name__}: {result}"
-            )
+            display_error(f"Mission collection worker {index} failed: {type(result).__name__}: {result}")
             continue
         merged.update(result)
     return merged

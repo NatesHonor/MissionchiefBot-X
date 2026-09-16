@@ -27,18 +27,10 @@ class MissionIgnoreRules:
     def matches(self, mission_id, *names: str | None) -> bool:
         if str(mission_id or "") in self.mission_ids:
             return True
-        normalized_names = {
-            normalize_vehicle_name(name)
-            for name in names
-            if normalize_vehicle_name(name)
-        }
+        normalized_names = {normalize_vehicle_name(name) for name in names if normalize_vehicle_name(name)}
         if normalized_names & self.mission_names:
             return True
-        return any(
-            fragment in name
-            for name in normalized_names
-            for fragment in self.name_fragments
-        )
+        return any(fragment in name for name in normalized_names for fragment in self.name_fragments)
 
 
 def load_mission_ignore_rules(profile) -> MissionIgnoreRules:
@@ -64,14 +56,8 @@ def load_mission_ignore_rules(profile) -> MissionIgnoreRules:
 
     return MissionIgnoreRules(
         mission_ids=frozenset(str(value).strip() for value in ids if str(value).strip()),
-        mission_names=frozenset(
-            normalize_vehicle_name(value) for value in names if normalize_vehicle_name(value)
-        ),
-        name_fragments=tuple(
-            normalize_vehicle_name(value)
-            for value in fragments
-            if normalize_vehicle_name(value)
-        ),
+        mission_names=frozenset(normalize_vehicle_name(value) for value in names if normalize_vehicle_name(value)),
+        name_fragments=tuple(normalize_vehicle_name(value) for value in fragments if normalize_vehicle_name(value)),
     )
 
 
@@ -120,11 +106,7 @@ def filter_ignored_mission_ids(
         )
         if rules.matches(mission_id, *names):
             reason = next(
-                (
-                    str(name)
-                    for name in names
-                    if name and rules.matches("", name)
-                ),
+                (str(name) for name in names if name and rules.matches("", name)),
                 "configured rule",
             )
             ignored.append((mission_id, reason))
