@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import atexit
 import logging
 import re
 import threading
@@ -24,74 +25,106 @@ DEFAULT_LOG_FILE = Path(__file__).resolve().parents[1] / "logs" / "missionchiefb
 _THREAD_MESSAGE = re.compile(r"^Thread (?P<thread>\d+):\s*(?P<message>.*)$")
 _console = Console()
 _configured = False
+_visual_handler: VisualConsoleHandler | None = None
 
 
 @dataclass
-class ThreadState:
+class Activity:
     message: str
     level: int
     updated_at: datetime
     repeats: int = 1
 
 
-class ActivityConsoleHandler(logging.Handler):
-    """Present thread activity as compact snapshots rather than duplicate lines."""
+class VisualConsoleHandler(logging.Handler):
+    """Render all runtime output through one compact visual language."""
 
-    def __init__(self, *, refresh_every: int = 3) -> None:
+    def __init__(self, *, snapshot_every: int = 4) -> None:
         super().__init__()
-        self.refresh_every = max(1, refresh_every)
-        self.thread_states: dict[str, ThreadState] = {}
-        self.other_repeats: defaultdict[tuple[int, str], int] = defaultdict(int)
-        self._events_since_snapshot = 0
+        self.snapshot_every = max(1, snapshot_every)
+        self.workers: dict[str, Activity] = {}
+        self.events: list[Activity] = []
+        self.repeats: defaultdict[tuple[int, str], int] = defaultdict(int)
+        self._updates = 0
         self._lock = threading.RLock()
 
     def emit(self, record: logging.LogRecord) -> None:
         try:
-            message = record.getMessage()
-            match = _THREAD_MESSAGE.match(message)
+            message = record.getMessage().strip()
+            if not message:
+                return
             with self._lock:
+                match = _THREAD_MESSAGE.match(message)
                 if match:
-                    self._record_thread(match.group("thread"), match.group("message"), record.levelno)
+                    self._worker(match.group("thread"), match.group("message"), record.levelno)
                 else:
-                    self._record_event(message, record.levelno)
+                    self._event(message, record.levelno)
         except Exception:
             self.handleError(record)
 
-    def _record_thread(self, thread_id: str, message: str, level: int) -> None:
-        previous = self.thread_states.get(thread_id)
+    def _worker(self, worker: str, message: str, level: int) -> None:
+        previous = self.workers.get(worker)
         repeats = previous.repeats + 1 if previous and previous.message == message else 1
-        self.thread_states[thread_id] = ThreadState(message, level, datetime.now(), repeats)
-        self._events_since_snapshot += 1
-        if level >= logging.ERROR or self._events_since_snapshot >= self.refresh_every:
-            self.render_snapshot()
+        self.workers[worker] = Activity(message, level, datetime.now(), repeats)
+        self._updates += 1
+        if level >= logging.ERROR or self._updates >= self.snapshot_every:
+            self.snapshot()
 
-    def _record_event(self, message: str, level: int) -> None:
+    def _event(self, message: str, level: int) -> None:
         key = (level, message)
-        self.other_repeats[key] += 1
-        count = self.other_repeats[key]
-        if count == 1 or level >= logging.WARNING:
-            style = "bold red" if level >= logging.ERROR else "yellow" if level >= logging.WARNING else "cyan"
-            suffix = f"  ×{count}" if count > 1 else ""
-            _console.print(Text(f"{message}{suffix}", style=style))
-
-    def render_snapshot(self) -> None:
-        if not self.thread_states:
+        self.repeats[key] += 1
+        count = self.repeats[key]
+        if count > 1 and level < logging.WARNING:
             return
-        table = Table(show_header=True, header_style="bold cyan", box=None, padding=(0, 2))
+        self.events.append(Activity(message, level, datetime.now(), count))
+        self.events = self.events[-5:]
+        if level >= logging.WARNING:
+            self.alert(message, level, count)
+        elif not self.workers:
+            self.status(message, level)
+
+    def status(self, message: str, level: int = logging.INFO) -> None:
+        label, style = _level_style(level)
+        _console.print(Panel(Text(message, style=style), title=f"MissionChief Bot · {label}", border_style=style))
+
+    def alert(self, message: str, level: int, repeats: int = 1) -> None:
+        label, style = _level_style(level)
+        suffix = f"\nRepeated {repeats} times" if repeats > 1 else ""
+        _console.print(Panel(Text(f"{message}{suffix}", style=style), title=label, border_style=style))
+
+    def snapshot(self, *, title: str = "Worker activity") -> None:
+        if not self.workers:
+            return
+        table = Table(show_header=True, header_style="bold cyan", box=None, padding=(0, 2), expand=True)
         table.add_column("Worker", width=8)
         table.add_column("State", width=10)
         table.add_column("Latest activity", ratio=1)
         table.add_column("Updated", justify="right", width=10)
-        for thread_id in sorted(self.thread_states, key=int):
-            state = self.thread_states[thread_id]
-            label, style = _level_label(state.level)
-            message = state.message + (f"  ×{state.repeats}" if state.repeats > 1 else "")
-            table.add_row(f"#{thread_id}", Text(label, style=style), message, state.updated_at.strftime("%H:%M:%S"))
-        _console.print(Panel(table, title="MissionChief Bot · Worker activity", border_style="bright_black"))
-        self._events_since_snapshot = 0
+        for worker in sorted(self.workers, key=int):
+            activity = self.workers[worker]
+            label, style = _level_style(activity.level)
+            message = activity.message + (f"  ×{activity.repeats}" if activity.repeats > 1 else "")
+            table.add_row(f"#{worker}", Text(label, style=style), message, activity.updated_at.strftime("%H:%M:%S"))
+        footer = Text("Detailed history: logs/missionchiefbot.log", style="dim")
+        _console.print(Panel(Group(table, footer), title=f"MissionChief Bot · {title}", border_style="bright_black"))
+        self._updates = 0
+
+    def session_summary(self) -> None:
+        if not self.workers and not self.events:
+            return
+        failed = sum(activity.level >= logging.ERROR for activity in self.workers.values())
+        warning = sum(activity.level == logging.WARNING for activity in self.workers.values())
+        table = Table(show_header=False, box=None, padding=(0, 2))
+        table.add_row("Workers observed", str(len(self.workers)))
+        table.add_row("Failed workers", str(failed))
+        table.add_row("Workers with warnings", str(warning))
+        table.add_row("Recorded event types", str(len(self.repeats)))
+        _console.print(Panel(table, title="MissionChief Bot · Session summary", border_style="cyan"))
 
 
-def _level_label(level: int) -> tuple[str, str]:
+def _level_style(level: int) -> tuple[str, str]:
+    if level >= logging.CRITICAL:
+        return "FATAL", "bold white on red"
     if level >= logging.ERROR:
         return "FAILED", "bold red"
     if level >= logging.WARNING:
@@ -113,9 +146,7 @@ def configure_logging(
     max_bytes: int = 5 * 1024 * 1024,
     backup_count: int = 5,
 ) -> logging.Logger:
-    """Configure application logging once for both console and file output."""
-
-    global _configured
+    global _configured, _visual_handler
     logger = get_logger()
     logger.handlers.clear()
     logger.setLevel(getattr(logging, level.upper(), logging.INFO))
@@ -123,7 +154,8 @@ def configure_logging(
 
     if console_enabled:
         if visual_console:
-            logger.addHandler(ActivityConsoleHandler())
+            _visual_handler = VisualConsoleHandler()
+            logger.addHandler(_visual_handler)
         else:
             handler = RichHandler(console=_console, show_path=False, rich_tracebacks=True, markup=False)
             handler.setFormatter(logging.Formatter("%(message)s"))
@@ -146,18 +178,24 @@ def ensure_logging() -> logging.Logger:
     return get_logger() if _configured else configure_logging()
 
 
-def display_table(title: str, columns: Iterable[str], rows: Iterable[Iterable[Any]]) -> None:
-    """Show structured console data and write the same information to the logfile."""
+def display_header(subtitle: str, details: Mapping[str, Any] | None = None) -> None:
+    title = Text("MISSIONCHIEF BOT", style="bold cyan")
+    copy = [title, Text(subtitle, style="white")]
+    if details:
+        copy.append(Text("  ·  ".join(f"{key}: {value}" for key, value in details.items()), style="dim"))
+    _console.print(Panel(Group(*copy), border_style="cyan", padding=(1, 2)))
 
+
+def display_table(title: str, columns: Iterable[str], rows: Iterable[Iterable[Any]]) -> None:
     logger = ensure_logging()
     headings = tuple(str(column) for column in columns)
     values = [tuple(str(value) for value in row) for row in rows]
-    table = Table(title=title, header_style="bold cyan", border_style="bright_black")
+    table = Table(title=title, header_style="bold cyan", border_style="bright_black", expand=True)
     for heading in headings:
         table.add_column(heading)
     for row in values:
         table.add_row(*row)
-    if any(isinstance(handler, ActivityConsoleHandler) for handler in logger.handlers):
+    if _visual_handler:
         _console.print(table)
     logger.info("%s | %s", title, " | ".join(headings))
     for row in values:
@@ -166,3 +204,21 @@ def display_table(title: str, columns: Iterable[str], rows: Iterable[Iterable[An
 
 def display_summary(title: str, values: Mapping[str, Any]) -> None:
     display_table(title, ("Setting", "Value"), values.items())
+
+
+def display_progress(label: str, completed: int, total: int) -> None:
+    total = max(total, 1)
+    completed = min(max(completed, 0), total)
+    width = 24
+    filled = round(width * completed / total)
+    bar = f"[{'━' * filled}{'─' * (width - filled)}] {completed}/{total}"
+    ensure_logging().info("%s %s", label, bar)
+
+
+def flush_visual_summary() -> None:
+    if _visual_handler:
+        _visual_handler.snapshot(title="Final worker state")
+        _visual_handler.session_summary()
+
+
+atexit.register(flush_visual_summary)

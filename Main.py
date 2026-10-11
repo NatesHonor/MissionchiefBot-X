@@ -5,7 +5,7 @@ import os
 import webbrowser
 from pathlib import Path
 
-from core.logging_config import configure_logging, get_logger
+from core.logging_config import configure_logging, display_header, flush_visual_summary, get_logger
 from core.runner import run_bot
 from core.settings import Settings, load_settings
 from core.webui import BotWebUI
@@ -15,34 +15,21 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 
 
 async def run_application(settings: Settings) -> None:
+    logger = get_logger("webui")
     stop_event = asyncio.Event()
-    webui = BotWebUI(
-        host=settings.webui_host,
-        port=settings.webui_port,
-        settings=settings,
-        stop_callback=stop_event.set,
-    )
+    webui = BotWebUI(host=settings.webui_host, port=settings.webui_port, settings=settings, stop_callback=stop_event.set)
     try:
         webui.start()
-        print(f"MissionChief Bot WebUI: {webui.url}")
+        logger.info("Local control panel available at %s", webui.url)
         try:
             webbrowser.open(webui.url)
         except (OSError, webbrowser.Error):
-            pass
-
+            logger.warning("Could not open the control panel automatically. Open %s manually.", webui.url)
         while not stop_event.is_set():
-            webui.update_state(
-                status="starting",
-                message="Starting automation runtime.",
-                running=True,
-            )
+            webui.update_state(status="starting", message="Starting automation runtime.", running=True)
             bot_task = asyncio.create_task(run_bot(settings=settings, webui=webui))
             stop_task = asyncio.create_task(stop_event.wait())
-            done, _ = await asyncio.wait(
-                {bot_task, stop_task},
-                return_when=asyncio.FIRST_COMPLETED,
-            )
-
+            done, _ = await asyncio.wait({bot_task, stop_task}, return_when=asyncio.FIRST_COMPLETED)
             if stop_task in done:
                 bot_task.cancel()
                 try:
@@ -50,27 +37,17 @@ async def run_application(settings: Settings) -> None:
                 except asyncio.CancelledError:
                     pass
                 break
-
             stop_task.cancel()
             try:
                 await stop_task
             except asyncio.CancelledError:
                 pass
-
             error = bot_task.exception()
             if error is not None:
-                webui.update_state(
-                    status="error",
-                    message=str(error),
-                    running=False,
-                )
+                webui.update_state(status="error", message=str(error), running=False)
+                logger.exception("Automation runtime stopped unexpectedly", exc_info=error)
                 raise error
-
-            webui.update_state(
-                status="idle",
-                message="Bot stopped. Waiting for a start request.",
-                running=False,
-            )
+            webui.update_state(status="idle", message="Bot stopped. Waiting for a start request.", running=False)
             await asyncio.to_thread(stop_event.wait)
             stop_event.clear()
     finally:
@@ -79,23 +56,26 @@ async def run_application(settings: Settings) -> None:
 
 
 def main() -> int:
-    """Run the bot from any working directory with a useful exit status."""
-
     os.chdir(PROJECT_ROOT)
     try:
         settings = load_settings()
         configure_logging()
-        get_logger("startup").info("MissionChief Bot starting · region %s · %s workers", settings.region.upper(), settings.browsers)
+        display_header("Automation control runtime", {"Region": settings.region.upper(), "Workers": settings.browsers, "Mode": "Headless" if settings.headless else "Visible"})
         if settings.webui_enabled:
             asyncio.run(run_application(settings))
         else:
             asyncio.run(run_bot(settings=settings))
     except KeyboardInterrupt:
-        get_logger("startup").info("MissionChief Bot stopped by operator.")
+        get_logger("startup").info("Stopped by operator")
         return 130
     except (FileNotFoundError, ValueError) as error:
         get_logger("startup").error("Configuration error: %s", error)
         return 2
+    except Exception:
+        get_logger("startup").exception("MissionChief Bot stopped unexpectedly")
+        return 1
+    finally:
+        flush_visual_summary()
     return 0
 
 
