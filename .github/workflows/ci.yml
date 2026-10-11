@@ -60,6 +60,9 @@ jobs:
           - os: windows-latest
             os-name: windows-py311
             python-version: "3.11"
+          - os: windows-latest
+            os-name: windows-py314
+            python-version: "3.14"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
