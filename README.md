@@ -119,7 +119,7 @@ Release Please maintains one release pull request containing all releasable chan
 - `feat:` creates a minor release.
 - `feat!:` or a `BREAKING CHANGE:` footer creates a major release.
 
-Merging the Release Please pull request creates the `vMAJOR.MINOR.PATCH` git tag and publishes the corresponding GitHub Release. Normal feature and fix pull requests do not publish a release directly.
+Merging the Release Please pull request creates the `vMAJOR.MINOR.PATCH` git tag and publishes the corresponding GitHub Release. Normal feature and fix pull requests do not publish a release directly. Squash merges are recommended so the PR's Conventional Commit title is preserved as the release-producing commit.
 
 ## 📥 Download
 
