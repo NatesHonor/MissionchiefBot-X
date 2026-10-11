@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability privately
+    url: https://github.com/NatesHonor/MissionchiefBot-X/security/advisories/new
+    about: Do not open a public issue. Submit a private draft security advisory to the maintainers.
+  - name: Support
+    url: https://support.natemarcellus.com
+    about: Request help with installation, configuration, or non-security problems.
