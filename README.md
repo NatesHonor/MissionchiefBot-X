@@ -1,142 +1,63 @@
 # 🚨 Mission Helper
 
-Mission Helper is an unofficial third-party automation application for [MissionChief](https://www.missionchief.com) designed to streamline gameplay and maximize efficiency.
-It handles everything from credit gathering to auto-dispatching, employee training, transport requests, and more — all while keeping resource usage low and performance high.
+Mission Helper (MissionchiefBot-X) is an unofficial Python and Playwright automation application for MissionChief. It provides mission collection and dispatch, transport handling, employee training, recruiting, task collection, regional vehicle mapping, a local WebUI, and Docker support.
 
----
+> [!WARNING]
+> MissionChief's terms may prohibit automated gameplay. This project is independent and is not created, approved, sponsored, maintained, or supported by MissionChief, SHPlay GmbH, Xyrality GmbH, or their affiliates. Use it only after confirming that your intended use is permitted. You are responsible for your account, credentials, network activity, and compliance with applicable rules and laws. Do not use this project to bypass access controls or rate limits, exploit bugs, interfere with others, or continue after an operator asks you to stop.
 
-## ⚠️ Important legal, terms, and safety notice
+The software is provided as-is. The maintainers are not responsible for account action, lost progress, downtime, service changes, data loss, or other consequences of its use. Review the applicable service's current terms and privacy policy before use.
 
-**Read this before installing, running, or distributing Mission Helper.**
+## Features
 
-Mission Helper / MissionchiefBotX is independent, unofficial software. It is not created,
-owned, operated, approved, sponsored, endorsed, maintained, or supported by MissionChief,
-SHPlay GmbH, Xyrality GmbH, any MissionChief regional operator, or any of their affiliates,
-partners, licensors, competitors, or other third parties. MissionChief, SHPlay, Xyrality,
-and related names, logos, and services belong to their respective owners. No relationship,
-partnership, sponsorship, or endorsement should be inferred from this project.
+- Mission collection, filtering, prioritization, and dispatch
+- Distance-aware vehicle and personnel selection
+- Transport and prisoner handling
+- Optional training, recruiting, special-resource, and task workflows
+- Shared runtime with localized data for supported regions
+- Local control WebUI and headless operation
+- Windows setup scripts and multi-architecture Docker images
 
-The [official MissionChief terms and conditions](https://www.missionchief.com/agb) currently
-state that tools, scripts, bots, and other programs suitable for automatically performing
-activities in a game are prohibited, and that games must be used personally. Therefore,
-**using this application may violate MissionChief's terms, game rules, or other policies.**
-The existence of this repository, its API integrations, or a working release does not mean
-that MissionChief has authorized it. The same warning applies to every supported regional
-MissionChief service; check the rules for the specific service and region you use.
+## Compatibility
 
-Use this software only if you have independently confirmed that your intended use is
-permitted, preferably through current written authorization from the applicable operator.
-If you cannot confirm that, do not run it. Rules and policies can change, so review the
-official [terms and conditions](https://www.missionchief.com/agb), [privacy policy](https://www.missionchief.com/datenschutz),
-and [imprint/operator information](https://www.missionchief.com/impressum) before each
-major update or change in use. These links are provided for convenience and the official
-operator's current documents control if anything here conflicts with them.
+- **Python:** 3.11 and 3.14 are tested on Windows and Linux.
+- **Operating systems:** Windows and Linux are tested in CI.
+- **Containers:** `linux/amd64` and `linux/arm64` images are published.
+- **Regions:** US, UK, Australia, Germany, the Netherlands, Sweden, Portugal, Denmark, Poland, and France.
+- **Support:** fixes target the latest release and `main`.
 
-You are solely responsible for your account, credentials, devices, network activity, and
-compliance with all applicable laws, terms, game rules, and third-party policies. Do not
-use this project to evade restrictions, create or operate prohibited multiple accounts,
-exploit bugs, bypass rate limits or access controls, overload a service, interfere with
-other players, or continue after the operator asks you to stop. Keep credentials out of
-issues, screenshots, logs, commits, and shared configuration files, and stop using the
-application immediately if you suspect an account, security, or terms-of-service problem.
+## Install and run
 
-This project is provided for informational and experimental purposes **as-is**, without
-any promise that it is permitted, safe, accurate, available, or compatible with any
-MissionChief service. To the maximum extent permitted by applicable law, the maintainers
-are not responsible for account suspension or termination, lost progress, lost virtual
-items or currency, service changes, downtime, data loss, security incidents, or any other
-loss resulting from use or inability to use this project. Nothing in this notice is legal
-advice, creates a contract with MissionChief or its operator, or guarantees protection
-from enforcement. Obtain advice from a qualified lawyer for your situation.
-
-**Last reviewed:** 2026-08-30. Official policies may change after this date; always verify
-the current policy directly with the applicable operator.
-
----
-
-## 💙 Free forever
-
-MissionchiefBotX is intended to remain free forever. The maintainers will never require
-payment, a subscription, or a purchase to download, access, or use this project. Be
-careful of anyone claiming to represent this project who asks you for money or payment
-details.
-
----
-
-## ✨ Features
-
-- **Credit Gathering**: Automatically solves missions to maximize income.  
-- **Auto Dispatching**: Smart dispatch system with mission prioritization and geographic clustering.  
-- **Mission Gathering**: Collects and organizes missions for efficient handling.  
-- **Employee Training**: Automates staff training workflows.  
-- **Transport Requests**: Handles hospital and prison rerouting with adaptive transport logic.  
-- **Support & Auto Updating**: Built-in support hooks and seamless auto-update system.  
-
-## Project layout
-
-The bot has one runtime and one set of mission/dispatch services. Region folders
-only provide compatibility entrypoints and region data, so adding a new region
-does not require copying the login, browser, parser, or dispatch loops.
-
-- `Main.py` starts `core.runner.run_bot()`.
-- `core.settings` loads one validated configuration snapshot and applies Docker
-  environment overrides.
-- `core.regions` owns region URLs, language catalogs, aliases, requirement maps,
-  data paths, and standardized region entrypoints.
-- `core.auth`, `core.browser`, and `core.vehicle_state` own shared resources.
-- `core.buildings`, `core.mission_*`, and `core.dispatching` contain the shared
-  workflows.
-- `regions/<region>` keeps a thin compatibility entrypoint and the region's
-  localized vehicle/requirement data.
-
-US, UK, Australia, Germany, the Netherlands, Sweden, Portugal, Denmark, Poland,
-and France are wired into the same automation runtime. Each region keeps its own
-vehicle aliases, requirement classification, localized labels, and cache
-directory, while browser/login/API, mission parsing, dispatching, transport, and
-background loops remain shared. The launcher resolves a region by its canonical
-key, common name, country code, or configured regional hostname.
-
-Regional support is intentionally data-driven: adding a service requires a real
-official hostname, a localized vehicle/requirement map, a mission-ignore file,
-and a compatibility entrypoint. The mapping audit and full test suite must pass
-before the region is considered supported; the runtime never silently redirects
-an unknown region to another country's service.
-
-To give units time to clear missions and return to their normal areas, set
-`dispatch` in the `[delays]` section of `config.ini` (seconds). This pause is
-applied between missions on each dispatch worker; `missions` still controls the
-pause before the next mission-gathering cycle, and `other` controls background
-work such as transport handling.
-
-The project does not invent a regional server for New Zealand.  A region must have a
-real MissionChief service URL and a verified set of game vehicle names before it can be
-enabled.  New Zealand remains explicitly unsupported until an official service is
-identified; the launcher rejects it instead of silently using another country's site.
-
-### Run locally on Windows
-
-From the repository root, run the setup script with the Python version you intend to use:
+### Windows
 
 ```powershell
+git clone https://github.com/NatesHonor/MissionchiefBot-X.git
+cd MissionchiefBot-X
+copy config.ini.example config.ini
 python setup_environment.py
+./run.ps1
 ```
 
-This creates `.venv` when needed, installs `requirements.txt`, installs the matching
-Playwright Chromium browser, and verifies that the executable is available. To validate
-an existing installation without changing it, run `python setup_environment.py --check`.
+Edit `config.ini` before starting. `run.cmd` is also available. To validate an existing environment without changing it, run `python setup_environment.py --check`.
 
-The supported local entrypoint is `Main.py`. After setup, use `run.cmd` from Command
-Prompt or `./run.ps1` from PowerShell. Both
-wrappers resolve the project directory and always use `.venv\Scripts\python.exe`, so
-launching from another working directory does not change where configuration and regional
-data are read from. A missing environment reports a setup error instead of silently using
-another Python installation.
+### Docker
 
-### Mission ignore list
+Copy `.env.example` to `.env`, set `MISSIONCHIEF_USERNAME` and `MISSIONCHIEF_PASSWORD`, then run:
 
-To keep a mission type out of collection and dispatch, edit the region-specific file
-`regions/<region>/data/mission_ignore_list.json`.  Use mission IDs for one-off active
-missions, exact names for stable mission types, or `contains` for a name fragment:
+```bash
+docker compose up --build
+```
+
+Published images are available at `ghcr.io/nateshonor/missionchiefbot-x`.
+
+## Configuration
+
+`core.settings` loads a validated configuration snapshot from `config.ini`. Docker and deployment environments can override settings with `MISSIONCHIEF_*` environment variables. Start from `config.ini.example`; never commit the resulting `config.ini` or `.env` file.
+
+The WebUI is disabled by default. If enabled, keep it bound to `127.0.0.1`: it has no authentication and must not be exposed directly to a network or the public internet.
+
+Mission collection includes alliance missions by default. Set `include_alliance_missions = false` under `[missions]`, or `MISSIONCHIEF_INCLUDE_ALLIANCE_MISSIONS=false`, to collect only your own missions.
+
+Region-specific exclusions live in `regions/<region>/data/mission_ignore_list.json`:
 
 ```json
 {
@@ -146,112 +67,32 @@ missions, exact names for stable mission types, or `contains` for a name fragmen
 }
 ```
 
-The list is read before detailed mission pages are scanned.  Mission names are matched
-without accents or punctuation, and an empty or missing file disables filtering.
+## Architecture
 
-Mission collection includes alliance missions by default so existing configurations keep
-their current behavior.  Set `include_alliance_missions = false` under `[missions]`, or
-set `MISSIONCHIEF_INCLUDE_ALLIANCE_MISSIONS=false`, to collect and dispatch only your own
-missions.  This setting controls the marker feed before the ignore-list rules are applied.
+- `Main.py` loads settings, optionally starts the WebUI, and launches `core.runner.run_bot()`.
+- `core.auth`, `core.browser`, and `core.vehicle_state` own shared runtime resources.
+- `core.mission_*`, `core.buildings`, and `core.dispatching` implement collection and dispatch workflows.
+- `core.regions` resolves regional URLs, localization, aliases, requirement maps, and data paths.
+- `regions/<region>` contains thin compatibility entrypoints and localized data.
+- `utils` contains transport, training, recruiting, task, and vehicle helpers.
 
----
+Regional support is data-driven. A new region requires a real official hostname, verified localized mappings, a mission-ignore file, and passing mapping and runtime tests. Unknown regions are rejected rather than redirected elsewhere.
 
-## 🐳 Run with Docker
+## Data, privacy, and security
 
-The image includes Python, the project dependencies, and the Playwright Chromium browser.
+The application runs locally and signs in with credentials supplied by its operator. The repository does not collect telemetry or send credentials to maintainers. Runtime logs may contain operational details; redact them before sharing. Never share configuration files, `.env` files, browser profiles, cookies, tokens, or account screenshots.
 
-1. Copy `.env.example` to `.env` and set `MISSIONCHIEF_USERNAME` and `MISSIONCHIEF_PASSWORD`.
-2. Build and start the bot:
+See [SECURITY.md](SECURITY.md) for vulnerability reporting and security boundaries.
 
-   ```bash
-   docker compose up --build
-   ```
+## Contributing
 
-The container runs headless by default, stores runtime logs in `./logs`, and builds the
-`missionchiefbotx:latest` image. To build or run it directly:
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, quality checks, and pull-request requirements. CI runs Ruff, mypy, Bandit, pytest on Windows and Linux, dependency auditing, secret scanning, CodeQL, workflow linting, and Docker validation.
 
-```bash
-docker build -t missionchiefbotx:latest .
-docker run --rm --name missionchiefbotx --env-file .env -v "${PWD}/logs:/app/logs" missionchiefbotx:latest
-```
+## Downloads and support
 
-The repository's `config.ini` is intentionally excluded from the image. Docker settings
-can be supplied with the `MISSIONCHIEF_*` environment variables; a custom config can also
-be mounted at `/app/config.ini` if needed.
+Use versioned source archives from [GitHub Releases](https://github.com/NatesHonor/MissionchiefBot-X/releases) or the published container image. A separately hosted convenience download is available at [files.natemarcellus.com](https://files.natemarcellus.com/download/MissionchiefBot); verify its version against the corresponding GitHub release.
 
-GitHub Actions builds the image for pull requests and publishes it to GitHub Container
-Registry for pushes to `main` and version tags. Published images are available as
-`ghcr.io/nateshonor/missionchiefbot-x`.
+- [Support](https://support.natemarcellus.com)
+- [Discord community](https://discord.gg/UrGZwfjxND)
 
----
-
-## 📥 Download
-
-To download Mission Helper, click [here](https://files.natemarcellus.com/download/MissionchiefBot).
-
----
-
-## 🆘 Support
-
-Need help? Visit our support page [here](https://support.natemarcellus.com).
-
----
-
-## 💬 Community
-
-Join our Discord server to connect with other players and get live updates:  
-[Join Discord](https://discord.gg/UrGZwfjxND)
-
----
-
-## 📜 Latest Changelog
-
-### 🆕 Update (v3.0.1x) - Bot Remake
-
-#### 🎉 New Features
-
-**🔧 Bot**
-- Improved performance and reliability  
-- Added auto installation  
-- Added logging  
-- Better integration with Launcher  
-- Fixed issues with credit gathering  
-- Fixed issue with bot only using 1 thread  
-- Added more customization  
-- Decreased resource usage  
-- Resource balancing to prevent over-dispatching  
-- Smart transport handling with hospital/prison rerouting  
-- Mission prioritization by severity  
-- Geographic clustering of units to reduce travel time  
-- Adaptive scaling of browser instances based on mission volume  
-- API hook support for faster dispatch  
-- Rate limiting safeguards for fair-use compliance  
-- Auto Updating  
-
-**🚀 Launcher**
-- Fixed console output issues  
-- Fixed launcher being unmovable  
-- Fixed logging problems  
-- Fixed launcher not stopping correctly  
-- Simplified codebase for smaller footprint  
-- Added auto-scroll toggle button  
-- Configurable profiles for different play styles  
-- Error recovery with automatic retry on failed dispatches  
-- Auto Updating  
-
-**🐞 Bug Fixes**
-- Included in features above  
-
-**📊 Logging & Analytics**
-- Mission outcomes and dispatch times stored for later review  
-- Transport durations tracked for optimization  
-- Alliance vs. solo mission contributions logged  
-
----
-
-## 🙌 Feedback
-
-Your feedback is important! It helps us improve Mission Helper and make the game better for everyone.  
-Please share your thoughts on our [support page](https://support.natemarcellus.com) or in the [Discord server](https://discord.gg/UrGZwfjxND).
-
----
+MissionchiefBot-X is intended to remain free to download and use. Be cautious of anyone claiming to represent the project who requests payment or payment details.
