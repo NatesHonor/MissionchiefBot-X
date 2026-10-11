@@ -19,7 +19,7 @@ The software is provided as-is. The maintainers are not responsible for account 
 
 ## Compatibility
 
-- **Python:** 3.11 is the primary version; 3.14 is tested on Linux.
+- **Python:** 3.11 and 3.14 are tested on Windows and Linux.
 - **Operating systems:** Windows and Linux are tested in CI.
 - **Containers:** `linux/amd64` and `linux/arm64` images are published.
 - **Regions:** US, UK, Australia, Germany, the Netherlands, Sweden, Portugal, Denmark, Poland, and France.
