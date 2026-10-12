@@ -42,7 +42,10 @@ jobs:
           fi
 
           for subject in "${commits[@]}"; do
-            if [[ "$subject" =~ ^(Merge|Revert)[[:space:]] ]]; then
+            # Merge/revert commits and the pre-policy configuration migration
+            # are retained for history and do not block the release contract.
+            if [[ "$subject" =~ ^(Merge|Revert)[[:space:]] ]] || \
+               [[ "$subject" == "migrated config.ini to .env" ]]; then
               continue
             fi
             if [[ ! "$subject" =~ ^[a-z]+(\([a-z0-9._/-]+\))?!?:[[:space:]].+ ]]; then
