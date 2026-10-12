@@ -393,6 +393,10 @@ class BotWebUI:
         state["recent_logs"] = read_log_tail()
         return state
 
+    def update_state(self, **changes: Any) -> None:
+        """Update runtime state using the legacy public API name."""
+        self.update(**changes)
+
     def start(self) -> bool:
         if self._server is not None:
             return True
