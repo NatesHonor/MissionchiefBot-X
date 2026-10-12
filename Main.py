@@ -33,8 +33,9 @@ def display_failure_help(log_file: str) -> None:
 async def run_application(settings: Settings) -> None:
     logger = get_logger("webui")
     stop_event = asyncio.Event()
-    webui = BotWebUI(host=settings.webui_host, port=settings.webui_port, stop_callback=stop_event.set)
+    webui = BotWebUI(host=settings.webui_host, port=settings.webui_port)
     webui.set_settings(settings)
+    webui.set_stop_callback(stop_event.set)
     try:
         webui.start()
         logger.info("Local control panel available at %s", webui.url)
