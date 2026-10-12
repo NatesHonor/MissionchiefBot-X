@@ -1,95 +1,98 @@
+from __future__ import annotations
+
 import asyncio
 import os
-import sys
 import webbrowser
 from pathlib import Path
 
+from core.logging_config import configure_logging, display_header, flush_visual_summary, get_logger
 from core.runner import run_bot
 from core.settings import Settings, load_settings
 from core.webui import BotWebUI
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
+SUPPORT_URL = "https://discord.gg/AujkpRZj7D"
+
+
+def display_failure_help(log_file: str) -> None:
+    """Tell users where to find diagnostics and community support."""
+    log_path = Path(log_file)
+    if not log_path.is_absolute():
+        log_path = PROJECT_ROOT / log_path
+    print(f"Check the logs for more information: {log_path}")
+    print("       __      __")
+    print("    .-'  `----'  `-.")
+    print("   /   .--.  .--.   \\")
+    print("  |   (    \\/    )   |  DISCORD SUPPORT")
+    print("   \\   `--'  `--'   /")
+    print("    `-._  /\\  _.-'")
+    print(f"Need help? Join us at {SUPPORT_URL}")
 
 
 async def run_application(settings: Settings) -> None:
-    """Serve the control page and wait for the user to start BotX."""
-
-    webui = BotWebUI(
-        host=settings.webui_host,
-        port=settings.webui_port,
-    )
-    if not webui.start():
-        raise RuntimeError(f"The WebUI could not start on {settings.webui_host}:{settings.webui_port}.")
-    webbrowser.open(webui.url)
+    logger = get_logger("webui")
+    stop_event = asyncio.Event()
+    webui = BotWebUI(host=settings.webui_host, port=settings.webui_port)
     webui.set_settings(settings)
-    webui.update(
-        status="ready",
-        message="WebUI ready. Press Start bot when you want to begin.",
-        running=False,
-        region=settings.region,
-        version=settings.version,
-    )
-    loop = asyncio.get_running_loop()
-    current_task: asyncio.Task | None = None
-    current_stop_event: asyncio.Event | None = None
-
-    def report_finished(task: asyncio.Task) -> None:
-        if task is not current_task or task.cancelled():
-            return
-        try:
-            task.result()
-        except Exception as error:
-            print(f"MissionChief Bot could not start: {error}", file=sys.stderr)
-            webui.update(
-                status="error",
-                message=f"Bot could not start: {error}",
-                running=False,
-            )
-
-    def start_bot() -> None:
-        nonlocal current_task, current_stop_event
-        if current_task is not None and not current_task.done():
-            return
-        current_stop_event = asyncio.Event()
-        current_task = asyncio.create_task(
-            run_bot(webui=webui, stop_event=current_stop_event),
-            name="missionchief-bot-runtime",
-        )
-        current_task.add_done_callback(report_finished)
-
-    def request_start() -> None:
-        loop.call_soon_threadsafe(start_bot)
-
-    def request_stop() -> None:
-        if current_stop_event is not None:
-            loop.call_soon_threadsafe(current_stop_event.set)
-
-    webui.set_control_callbacks(start=request_start, stop=request_stop)
     try:
-        await asyncio.Event().wait()
+        webui.start()
+        logger.info("Local control panel available at %s", webui.url)
+        try:
+            webbrowser.open(webui.url)
+        except (OSError, webbrowser.Error):
+            logger.warning("Could not open the control panel automatically. Open %s manually.", webui.url)
+        while not stop_event.is_set():
+            webui.update(status="starting", message="Starting automation runtime.", running=True)
+            bot_task = asyncio.create_task(run_bot(settings=settings, webui=webui))
+            stop_task = asyncio.create_task(stop_event.wait())
+            done, _ = await asyncio.wait({bot_task, stop_task}, return_when=asyncio.FIRST_COMPLETED)
+            if stop_task in done:
+                bot_task.cancel()
+                try:
+                    await bot_task
+                except asyncio.CancelledError:
+                    pass
+                break
+            stop_task.cancel()
+            try:
+                await stop_task
+            except asyncio.CancelledError:
+                pass
+            error = bot_task.exception()
+            if error is not None:
+                webui.update_state(status="error", message=str(error), running=False)
+                logger.exception("Automation runtime stopped unexpectedly", exc_info=error)
+                raise error
+            webui.update_state(status="idle", message="Bot stopped. Waiting for a start request.", running=False)
+            await asyncio.to_thread(stop_event.wait)
+            stop_event.clear()
     finally:
-        request_stop()
-        if current_task is not None:
-            await asyncio.gather(current_task, return_exceptions=True)
+        webui.update_state(status="stopped", message="Application stopped.", running=False)
         webui.stop()
 
 
 def main() -> int:
-    """Run the bot from any working directory with a useful exit status."""
-
     os.chdir(PROJECT_ROOT)
     try:
         settings = load_settings()
+        configure_logging()
+        display_header("Automation control runtime", {"Region": settings.region.upper(), "Workers": settings.browsers, "Mode": "Headless" if settings.headless else "Visible"})
         if settings.webui_enabled:
             asyncio.run(run_application(settings))
         else:
             asyncio.run(run_bot(settings=settings))
     except KeyboardInterrupt:
-        print("MissionChief Bot stopped.")
-    except Exception as error:
-        print(f"MissionChief Bot could not start: {error}", file=sys.stderr)
+        get_logger("startup").info("Stopped by operator")
+        return 130
+    except (FileNotFoundError, ValueError) as error:
+        get_logger("startup").error("Configuration error: %s", error)
+        return 2
+    except Exception:
+        get_logger("startup").exception("MissionChief Bot stopped unexpectedly")
         return 1
+    finally:
+        flush_visual_summary()
     return 0
 
 
