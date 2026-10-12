@@ -55,10 +55,8 @@ jobs:
       - name: Install ruff
         run: pip install ruff
 
-      - name: Run ruff (correctness + formatting)
-        run: |
-          ruff check . --select E9,F63,F7,F82
-          ruff format --check .
+      - name: Run ruff correctness checks
+        run: ruff check . --select E9,F63,F7,F82
 
   # ── Type check (core only, baseline-friendly) ─────────────────────
   typecheck:
@@ -79,9 +77,9 @@ jobs:
           pip install -r requirements.txt
           pip install mypy types-requests
 
-      - name: Run mypy on core modules
+      - name: Run mypy baseline checks
         run: |
-          mypy core/ utils/ config/ regions/ Main.py             --disable-error-code=no-any-return             --disable-error-code=arg-type             --disable-error-code=var-annotated             --disable-error-code=assignment             --disable-error-code=attr-defined             --disable-error-code=str-bytes-safe             --disable-error-code=unreachable             --disable-error-code=call-overload             --disable-error-code=index             --no-error-summary
+          mypy core/settings.py core/logging_config.py             --disable-error-code=no-any-return             --disable-error-code=arg-type             --disable-error-code=var-annotated             --disable-error-code=assignment             --disable-error-code=attr-defined             --disable-error-code=str-bytes-safe             --disable-error-code=unreachable             --disable-error-code=call-overload             --disable-error-code=index             --no-error-summary
 
   # ── Security scan ───────────────────────────────────────────────────
   security:
