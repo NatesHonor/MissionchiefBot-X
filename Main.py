@@ -35,7 +35,7 @@ async def run_application(settings: Settings) -> None:
     stop_event = asyncio.Event()
     webui = BotWebUI(host=settings.webui_host, port=settings.webui_port)
     webui.set_settings(settings)
-    webui.set_stop_callback(stop_event.set)
+    webui.set_control_callbacks(stop_callback=stop_event.set)
     try:
         webui.start()
         logger.info("Local control panel available at %s", webui.url)
@@ -44,7 +44,7 @@ async def run_application(settings: Settings) -> None:
         except (OSError, webbrowser.Error):
             logger.warning("Could not open the control panel automatically. Open %s manually.", webui.url)
         while not stop_event.is_set():
-            webui.update_state(status="starting", message="Starting automation runtime.", running=True)
+            webui.update(status="starting", message="Starting automation runtime.", running=True)
             bot_task = asyncio.create_task(run_bot(settings=settings, webui=webui))
             stop_task = asyncio.create_task(stop_event.wait())
             done, _ = await asyncio.wait({bot_task, stop_task}, return_when=asyncio.FIRST_COMPLETED)
