@@ -1,20 +1,22 @@
-FROM python:3.14-slim
+FROM mcr.microsoft.com/playwright/python:v1.62.0-noble
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
 COPY requirements.txt ./
-RUN python -m pip install --no-cache-dir -r requirements.txt \
-    && python -m playwright install --with-deps chromium
+RUN python -m pip install --no-cache-dir -r requirements.txt
 
+# The real .env is excluded from the build context so credentials are never
+# baked into the image. Supply it at runtime with --env-file or Compose.
 COPY . .
 
-RUN useradd --create-home --uid 10001 missionchief \
-    && mkdir -p /app/logs \
-    && chown -R missionchief:missionchief /app /ms-playwright
-USER missionchief
+RUN mkdir -p /app/logs \
+    && chown -R pwuser:pwuser /app
+
+USER pwuser
+
+EXPOSE 8765
 
 CMD ["python", "Main.py"]
