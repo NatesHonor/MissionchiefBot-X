@@ -72,6 +72,21 @@ details.
 - **Transport Requests**: Handles hospital and prison rerouting with adaptive transport logic.  
 - **Support & Auto Updating**: Built-in support hooks and seamless auto-update system.  
 
+## Compatibility and support
+
+- **Python:** 3.11 is the primary development and CI version; 3.14 is also tested on Linux.
+- **Operating systems:** Windows and Linux are tested in CI. Docker images target `linux/amd64` and `linux/arm64`.
+- **Regions:** US, UK, Australia, Germany, the Netherlands, Sweden, Portugal, Denmark, Poland, and France.
+- **Support scope:** fixes target the latest release and `main`; older releases may require upgrading first.
+
+For responsible vulnerability reporting and local-data guidance, see [SECURITY.md](SECURITY.md). Contributors should read [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Data and privacy
+
+The application runs locally and signs in with credentials supplied through a `.env` file or `MISSIONCHIEF_*` process environment variables. Keep the WebUI bound to `127.0.0.1`; it has no authentication and is not intended for network or internet exposure. Logs may contain operational details, so redact them before sharing. Never share `.env` files, browser data, cookies, or account credentials.
+
+The repository does not collect telemetry or send credentials to the maintainers. Network requests required for operation go to the configured regional MissionChief service; optional support, download, community, and container links are only contacted when you choose to use them.
+
 ## Project layout
 
 The bot has one runtime and one set of mission/dispatch services. Region folders
@@ -103,10 +118,10 @@ before the region is considered supported; the runtime never silently redirects
 an unknown region to another country's service.
 
 To give units time to clear missions and return to their normal areas, set
-`dispatch` in the `[delays]` section of `config.ini` (seconds). This pause is
-applied between missions on each dispatch worker; `missions` still controls the
-pause before the next mission-gathering cycle, and `other` controls background
-work such as transport handling.
+`MISSIONCHIEF_DISPATCH_DELAY` in `.env` (seconds). This pause is applied between
+missions on each dispatch worker; `MISSIONCHIEF_MISSION_DELAY` still controls the
+pause before the next mission-gathering cycle, and `MISSIONCHIEF_OTHER_DELAY`
+controls background work such as transport handling.
 
 The project does not invent a regional server for New Zealand.  A region must have a
 real MissionChief service URL and a verified set of game vehicle names before it can be
@@ -115,9 +130,10 @@ identified; the launcher rejects it instead of silently using another country's 
 
 ### Run locally on Windows
 
-From the repository root, run the setup script with the Python version you intend to use:
+From the repository root, copy `.env.example` to `.env`, fill in your credentials and settings, then run the setup script with the Python version you intend to use:
 
 ```powershell
+Copy-Item .env.example .env
 python setup_environment.py
 ```
 
@@ -175,9 +191,9 @@ docker build -t missionchiefbotx:latest .
 docker run --rm --name missionchiefbotx --env-file .env -v "${PWD}/logs:/app/logs" missionchiefbotx:latest
 ```
 
-The repository's `config.ini` is intentionally excluded from the image. Docker settings
-can be supplied with the `MISSIONCHIEF_*` environment variables; a custom config can also
-be mounted at `/app/config.ini` if needed.
+The repository's `.env` is intentionally excluded from the image. Docker settings are
+supplied from `.env` by Compose or with `docker run --env-file .env`; process environment
+variables can override values loaded from the file.
 
 GitHub Actions builds the image for pull requests and publishes it to GitHub Container
 Registry for pushes to `main` and version tags. Published images are available as
@@ -187,7 +203,7 @@ Registry for pushes to `main` and version tags. Published images are available a
 
 ## 📥 Download
 
-To download Mission Helper, click [here](https://files.natemarcellus.com/download/MissionchiefBot).
+Prefer versioned source archives from the repository's [GitHub Releases](https://github.com/NatesHonor/MissionchiefBot-X/releases) or the published container image `ghcr.io/nateshonor/missionchiefbot-x`. A separately hosted convenience download is also available [here](https://files.natemarcellus.com/download/MissionchiefBot); verify its version against the matching GitHub release before use.
 
 ---
 

@@ -1,20 +1,17 @@
-"""Typed configuration loading with environment overrides.
-
-Configuration is deliberately loaded on demand.  Importing a module should
-not read credentials, depend on the current working directory, or freeze the
-selected region before the application starts.
-"""
+"""Typed configuration loaded from `.env` and process environment."""
 
 from __future__ import annotations
 
-import configparser
+import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from dotenv import dotenv_values
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config.ini"
+DEFAULT_ENV_PATH = PROJECT_ROOT / ".env"
 
 
 @dataclass(frozen=True)
@@ -57,38 +54,37 @@ class Settings:
     webui_enabled: bool = False
     webui_host: str = "127.0.0.1"
     webui_port: int = 8765
+    log_level: str = "INFO"
+    log_console: bool = True
+    log_file_enabled: bool = True
+    log_rich_console: bool = True
+    log_file: str = "logs/missionchiefbot.log"
+    log_max_bytes: int = 5 * 1024 * 1024
+    log_backup_count: int = 5
 
 
-def _config_path(path: str | os.PathLike[str] | None = None) -> Path:
-    configured = path or os.getenv("MISSIONCHIEF_CONFIG_FILE")
-    return Path(configured).expanduser().resolve() if configured else DEFAULT_CONFIG_PATH
-
-
-def _read_config(path: Path) -> configparser.ConfigParser:
-    parser = configparser.ConfigParser()
-    parser.read(path)
-    return parser
+def _env_path(path: str | os.PathLike[str] | None = None) -> Path:
+    configured = path or os.getenv("MISSIONCHIEF_ENV_FILE")
+    return Path(configured).expanduser().resolve() if configured else DEFAULT_ENV_PATH
 
 
 def _value(
-    parser: configparser.ConfigParser,
+    source: dict[str, str | None],
     path: Path,
-    section: str,
-    option: str,
+    _section: str,
+    _option: str,
     environment_name: str,
     default: str | None = None,
 ) -> str:
     environment_value = os.getenv(environment_name)
     if environment_value is not None:
         return environment_value
-    try:
-        return parser.get(section, option)
-    except (configparser.NoSectionError, configparser.NoOptionError) as error:
-        if default is not None:
-            return default
-        raise RuntimeError(
-            f"Missing configuration value [{section}] {option}. Set {environment_name} or add it to {path}."
-        ) from error
+    file_value = source.get(environment_name)
+    if file_value is not None:
+        return file_value
+    if default is not None:
+        return default
+    raise RuntimeError(f"Missing {environment_name}. Add it to {path} or set it in the process environment.")
 
 
 def _required(value: str, environment_name: str) -> str:
@@ -117,30 +113,27 @@ def _integer(value: str, environment_name: str, minimum: int | None = None) -> i
     return parsed
 
 
-def _training_plans(parser: configparser.ConfigParser, path: Path) -> tuple[TrainingPlan, ...]:
-    plans = []
-    for section in parser.sections():
-        if not section.casefold().startswith("trainings."):
-            continue
-        fallback_school = section.split(".", 1)[1].replace("_", " ").strip().title()
-        school = parser.get(section, "school", fallback=fallback_school).strip()
-        course = parser.get(section, "training", fallback="").strip()
-        if not school or not course:
-            continue
-        rooms = _integer(
-            parser.get(section, "rooms", fallback="1"),
-            f"[{section}] rooms in {path}",
-            minimum=1,
+def _training_plans(value: str, path: Path) -> tuple[TrainingPlan, ...]:
+    try:
+        entries = json.loads(value)
+        return tuple(
+            TrainingPlan(
+                school=_required(str(entry["school"]), "school"),
+                course=_required(str(entry["course"]), "course"),
+                rooms=_integer(str(entry.get("rooms", 1)), "rooms", minimum=1),
+            )
+            for entry in entries
         )
-        plans.append(TrainingPlan(school=school, course=course, rooms=rooms))
-    return tuple(plans)
+    except (KeyError, TypeError, json.JSONDecodeError) as error:
+        raise ValueError(f"Invalid MISSIONCHIEF_TRAINING_PLANS in {path}; expected a JSON array.") from error
 
 
 def load_settings(path: str | os.PathLike[str] | None = None) -> Settings:
-    """Load one complete, validated settings snapshot."""
+    """Load one complete, validated settings snapshot from a dotenv file."""
 
-    config_file = _config_path(path)
-    parser = _read_config(config_file)
+    env_file = _env_path(path)
+    parser = dict(dotenv_values(env_file))
+    config_file = env_file
 
     return Settings(
         username=_required(
@@ -313,10 +306,27 @@ def load_settings(path: str | os.PathLike[str] | None = None) -> Settings:
             "MISSIONCHIEF_DISPATCH_DELAY",
             minimum=0,
         ),
-        training_plans=_training_plans(parser, config_file),
+        training_plans=_training_plans(
+            _value(
+                parser,
+                config_file,
+                "training",
+                "plans",
+                "MISSIONCHIEF_TRAINING_PLANS",
+                default="[]",
+            ),
+            config_file,
+        ),
         recruiting_days=_integer(
-            parser.get("recruiting", "days", fallback="1"),
-            "[recruiting] days",
+            _value(
+                parser,
+                config_file,
+                "recruiting",
+                "days",
+                "MISSIONCHIEF_RECRUITING_DAYS",
+                default="1",
+            ),
+            "MISSIONCHIEF_RECRUITING_DAYS",
             minimum=1,
         ),
         version=_value(
@@ -357,6 +367,39 @@ def load_settings(path: str | os.PathLike[str] | None = None) -> Settings:
             ),
             "MISSIONCHIEF_WEBUI_PORT",
             minimum=1,
+        ),
+        log_level=_value(parser, config_file, "logging", "level", "MISSIONCHIEF_LOG_LEVEL", default="INFO")
+        .strip()
+        .upper(),
+        log_console=_boolean(
+            _value(parser, config_file, "logging", "console", "MISSIONCHIEF_LOG_CONSOLE", default="true"),
+            "MISSIONCHIEF_LOG_CONSOLE",
+        ),
+        log_file_enabled=_boolean(
+            _value(parser, config_file, "logging", "file", "MISSIONCHIEF_LOG_FILE_ENABLED", default="true"),
+            "MISSIONCHIEF_LOG_FILE_ENABLED",
+        ),
+        log_rich_console=_boolean(
+            _value(parser, config_file, "logging", "rich_console", "MISSIONCHIEF_LOG_RICH_CONSOLE", default="true"),
+            "MISSIONCHIEF_LOG_RICH_CONSOLE",
+        ),
+        log_file=_value(
+            parser,
+            config_file,
+            "logging",
+            "path",
+            "MISSIONCHIEF_LOG_FILE",
+            default="logs/missionchiefbot.log",
+        ).strip(),
+        log_max_bytes=_integer(
+            _value(parser, config_file, "logging", "max_bytes", "MISSIONCHIEF_LOG_MAX_BYTES", default="5242880"),
+            "MISSIONCHIEF_LOG_MAX_BYTES",
+            minimum=1024,
+        ),
+        log_backup_count=_integer(
+            _value(parser, config_file, "logging", "backup_count", "MISSIONCHIEF_LOG_BACKUP_COUNT", default="5"),
+            "MISSIONCHIEF_LOG_BACKUP_COUNT",
+            minimum=0,
         ),
     )
 
