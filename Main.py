@@ -36,8 +36,11 @@ async def run_application(settings: Settings) -> None:
     stop_event = asyncio.Event()
     webui = BotWebUI(host=settings.webui_host, port=settings.webui_port)
     webui.set_settings(settings)
+    # BotWebUI's public callback API currently only accepts a positional stop
+    # callback. Keep the asyncio event update thread-safe because requests are
+    # handled by the WebUI's HTTP server thread.
     webui.set_control_callbacks(
-        on_stop=lambda: loop.call_soon_threadsafe(stop_event.set),
+        lambda: loop.call_soon_threadsafe(stop_event.set),
     )
     try:
         webui.start()
