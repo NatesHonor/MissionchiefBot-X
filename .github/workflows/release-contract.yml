@@ -42,10 +42,7 @@ jobs:
           fi
 
           for subject in "${commits[@]}"; do
-            # Merge/revert commits and the pre-policy configuration migration
-            # are retained for history and do not block the release contract.
-            if [[ "$subject" =~ ^(Merge|Revert)[[:space:]] ]] || \
-               [[ "$subject" == "migrated config.ini to .env" ]]; then
+            if [[ "$subject" =~ ^(Merge|Revert)[[:space:]] ]]; then
               continue
             fi
             if [[ ! "$subject" =~ ^[a-z]+(\([a-z0-9._/-]+\))?!?:[[:space:]].+ ]]; then
@@ -64,7 +61,7 @@ jobs:
           {
             echo '## Release contract passed'
             echo
-            echo "- PR title: \`$PR_TITLE\`"
-            echo "- Commits checked: ${#commits[@]}"
-            echo '- Release Please will recognize the squash-merge title.'
+            echo "PR title: \`$PR_TITLE\`"
+            echo
+            echo 'All commit subjects follow the Conventional Commits format.'
           } >> "$GITHUB_STEP_SUMMARY"
