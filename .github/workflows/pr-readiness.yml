@@ -38,7 +38,7 @@ jobs:
       - name: Check out assessment script
         uses: actions/checkout@v4
         with:
-          ref: ${{ steps.target.outputs.sha }}
+          ref: main
 
       - name: Collect check results
         env:
