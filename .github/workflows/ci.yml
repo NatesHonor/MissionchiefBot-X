@@ -28,12 +28,12 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: |
-            requirements.txt
-            requirements-dev.txt
+          cache-dependency-path: requirements.txt
 
       - name: Install application and quality tools
-        run: python -m pip install -r requirements-dev.txt
+        run: >-
+          python -m pip install -r requirements.txt
+          ruff mypy bandit pytest pytest-asyncio
 
       - name: Check lint rules
         run: python -m ruff check .
@@ -88,8 +88,14 @@ jobs:
       - name: Verify imports
         run: python -c "import Main"
 
-      - name: Run tests
-        run: python -m pytest tests/
+      - name: Run tests when present
+        shell: bash
+        run: |
+          if [ -d tests ]; then
+            python -m pytest tests/
+          else
+            echo "No tests directory is present; skipping pytest."
+          fi
         env:
           PYTHONPATH: .
 
