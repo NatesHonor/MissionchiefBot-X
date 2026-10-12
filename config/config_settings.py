@@ -6,9 +6,9 @@ getters remain for older integrations that still import this module.
 
 import os
 
-from core.settings import DEFAULT_CONFIG_PATH, get_settings
+from core.settings import DEFAULT_ENV_PATH, get_settings
 
-config_path = os.getenv("MISSIONCHIEF_CONFIG_FILE", str(DEFAULT_CONFIG_PATH))
+env_path = os.getenv("MISSIONCHIEF_ENV_FILE", str(DEFAULT_ENV_PATH))
 
 
 def get_username():

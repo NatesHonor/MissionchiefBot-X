@@ -1,4 +1,8 @@
-deep-translator
-# Playwright 1.62 is the tested Python 3.14-compatible dependency line.
-playwright>=1.62,<1.63
-art~=6.3
+# Runtime dependencies are exact pins so local, CI, and container installs resolve
+# the same package versions. Dependabot keeps these pins current.
+art==6.5
+deep-translator==1.11.4
+playwright==1.63.0
+python-dotenv==1.1.1
+rich==14.2.0
+

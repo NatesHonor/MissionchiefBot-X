@@ -4,6 +4,7 @@ import sys
 import webbrowser
 from pathlib import Path
 
+from core.logging_config import configure_logging, get_logger
 from core.runner import run_bot
 from core.settings import Settings, load_settings
 from core.webui import BotWebUI
@@ -81,6 +82,16 @@ def main() -> int:
     os.chdir(PROJECT_ROOT)
     try:
         settings = load_settings()
+        configure_logging(
+            level=settings.log_level,
+            console_enabled=settings.log_console,
+            file_enabled=settings.log_file_enabled,
+            rich_console=settings.log_rich_console,
+            log_file=settings.log_file,
+            max_bytes=settings.log_max_bytes,
+            backup_count=settings.log_backup_count,
+        )
+        get_logger("startup").info("Logging initialized at %s level.", settings.log_level)
         if settings.webui_enabled:
             asyncio.run(run_application(settings))
         else:

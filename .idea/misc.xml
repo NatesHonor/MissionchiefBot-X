@@ -3,9 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="Python 3.12 (MissionchiefBot X)" />
   </component>
-  <component name="DiscordProjectSettings">
-    <option name="show" value="ASK" />
-    <option name="description" value="" />
-  </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.12 (MissionchiefBot X) (2)" project-jdk-type="Python SDK" />
 </project>
