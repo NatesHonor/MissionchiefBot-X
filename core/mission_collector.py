@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 
 from utils.pretty_print import display_error, display_info
-from utils.progress import ProgressBar
+from utils.progress import ProgressDisplay as ProgressBar
 
 from .concurrency import split_mission_ids_among_threads
 from .missionchief_api import fetch_mission_markers, refresh_mission_index

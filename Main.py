@@ -12,12 +12,23 @@ from core.webui import BotWebUI
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
+SUPPORT_URL = "https://discord.gg/AujkpRZj7D"
+
+
+def display_failure_help(log_file: str) -> None:
+    """Tell users where to find diagnostics and community support."""
+    log_path = Path(log_file)
+    if not log_path.is_absolute():
+        log_path = PROJECT_ROOT / log_path
+    print(f"Check the logs for more information: {log_path}")
+    print(f"💬 Need help? Join the support Discord: {SUPPORT_URL}")
 
 
 async def run_application(settings: Settings) -> None:
     logger = get_logger("webui")
     stop_event = asyncio.Event()
-    webui = BotWebUI(host=settings.webui_host, port=settings.webui_port, settings=settings, stop_callback=stop_event.set)
+    webui = BotWebUI(host=settings.webui_host, port=settings.webui_port, stop_callback=stop_event.set)
+    webui.set_settings(settings)
     try:
         webui.start()
         logger.info("Local control panel available at %s", webui.url)

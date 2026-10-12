@@ -21,7 +21,18 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import urlsplit
 
-from .settings import DEFAULT_CONFIG_PATH, Settings, _config_path
+from .settings import DEFAULT_ENV_PATH, Settings
+
+
+def _config_path(path: str | os.PathLike[str] | None = None) -> Path:
+    """Resolve the environment file used by the local settings editor."""
+    configured = path or os.getenv("MISSIONCHIEF_ENV_FILE")
+    return Path(configured).expanduser() if configured else DEFAULT_ENV_PATH
+
+
+# Temporary internal alias while the WebUI settings editor is migrated from
+# INI sections to environment-variable names.
+DEFAULT_CONFIG_PATH = DEFAULT_ENV_PATH
 
 
 LOGGER = logging.getLogger("missionchiefbot.webui")
