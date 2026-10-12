@@ -13,6 +13,11 @@ class ProgressDisplay:
         self.completed = 0
         self._last_reported = -1
 
+    def start(self) -> ProgressDisplay:
+        """Start reporting and support the legacy ProgressBar lifecycle."""
+        ensure_logging().info("%s started", self.label)
+        return self
+
     def update(self, completed: int, message: str | None = None) -> None:
         self.completed = min(max(completed, 0), self.total)
         percentage = round(self.completed * 100 / self.total)
@@ -26,8 +31,7 @@ class ProgressDisplay:
         self.update(self.total, message or f"{self.label} complete")
 
     def __enter__(self) -> ProgressDisplay:
-        ensure_logging().info("%s started", self.label)
-        return self
+        return self.start()
 
     def __exit__(self, exc_type, exc, traceback) -> None:
         if exc is None:
