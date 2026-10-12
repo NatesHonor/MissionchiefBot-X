@@ -21,7 +21,13 @@ def display_failure_help(log_file: str) -> None:
     if not log_path.is_absolute():
         log_path = PROJECT_ROOT / log_path
     print(f"Check the logs for more information: {log_path}")
-    print(f"💬 Need help? Join the support Discord: {SUPPORT_URL}")
+    print("       __      __")
+    print("    .-'  `----'  `-.")
+    print("   /   .--.  .--.   \\")
+    print("  |   (    \\/    )   |  DISCORD SUPPORT")
+    print("   \\   `--'  `--'   /")
+    print("    `-._  /\\  _.-'")
+    print(f"Need help? Join us at {SUPPORT_URL}")
 
 
 async def run_application(settings: Settings) -> None:
