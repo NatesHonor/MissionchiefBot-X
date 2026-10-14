@@ -5,7 +5,19 @@
       "release-type": "simple",
       "package-name": "MissionchiefBot-X",
       "include-component-in-tag": false,
-      "changelog-path": "CHANGELOG.md"
+      "changelog-path": "CHANGELOG.md",
+      "changelog-sections": [
+        { "type": "feat", "section": "Features" },
+        { "type": "fix", "section": "Bug Fixes" },
+        { "type": "perf", "section": "Performance Improvements" },
+        { "type": "refactor", "section": "Code Refactoring" },
+        { "type": "docs", "section": "Documentation" },
+        { "type": "test", "section": "Tests" },
+        { "type": "ci", "section": "Continuous Integration" },
+        { "type": "build", "section": "Build System" },
+        { "type": "chore", "section": "Miscellaneous Chores" },
+        { "type": "revert", "section": "Reverts" }
+      ]
     }
   }
 }
