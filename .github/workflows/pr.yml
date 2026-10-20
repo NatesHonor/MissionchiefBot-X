@@ -1,0 +1,106 @@
+name: PR
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize, ready_for_review, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-policy-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-description:
+    name: Validate PR description
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check required description sections
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+            const content = body.replace(/<!--[\s\S]*?-->/g, '').trim();
+            const errors = [];
+            const section = (names) => {
+              const heading = names.join('|');
+              const match = content.match(new RegExp(
+                `^#{1,6}\\s+(?:${heading})\\b[^\\n]*\\n([\\s\\S]*?)(?=^#{1,6}\\s|$)`,
+                'im'
+              ));
+              return match?.[1].replace(/^\s*[-*]\s*\[[ xX]\].*$/gm, '').trim() || '';
+            };
+
+            const summary = section(['summary', 'what changed']);
+            const testing = section(['testing', 'test plan', 'validation']);
+            if (content.length < 80) {
+              errors.push('Provide at least 80 characters describing the change.');
+            }
+            if (summary.length < 20) {
+              errors.push('Add at least 20 characters to `## Summary` or `## What changed`.');
+            }
+            if (testing.length < 10) {
+              errors.push('Add your validation steps to `## Testing`, `## Test plan`, or `## Validation`.');
+            }
+            if (errors.length) {
+              core.setFailed(errors.join('\n'));
+            }
+
+  pr-title:
+    name: Lint PR title (conventional)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate conventional title
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.pull_request.title.trim();
+            const pattern = /^(feat|fix|docs|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9._/-]+\))?!?: .{1,72}$/;
+            if (/^(wip|draft)\b/i.test(title)) {
+              core.setFailed('Remove the WIP/draft prefix and use GitHub draft status instead.');
+            } else if (!pattern.test(title)) {
+              core.setFailed('Use a conventional title, for example: `fix(auth): handle expired sessions`.');
+            }
+
+  apply-type-label:
+    name: Apply conventional-type label
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Synchronize type label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.pull_request.title.trim();
+            const match = /^(feat|fix|docs|refactor|perf|test|build|ci|chore|revert)(?:\(|:)/.exec(title);
+            if (!match) return;
+
+            const type = match[1];
+            const colors = {
+              feat: '0e8a16', fix: 'd73a4a', docs: '0075ca', refactor: 'fbca04',
+              perf: '5319e7', test: 'bfdadc', build: 'c5def5', ci: '1d76db',
+              chore: 'ededed', revert: 'b60205'
+            };
+            const desired = `type: ${type}`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const current = context.payload.pull_request.labels.map(label => label.name);
+
+            for (const label of current.filter(name => name.startsWith('type: ') && name !== desired)) {
+              await github.rest.issues.removeLabel({ owner, repo, issue_number, name: label });
+            }
+
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: desired });
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              await github.rest.issues.createLabel({
+                owner, repo, name: desired, color: colors[type], description: `Conventional commit type: ${type}`
+              });
+            }
+            if (!current.includes(desired)) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number, labels: [desired] });
+            }

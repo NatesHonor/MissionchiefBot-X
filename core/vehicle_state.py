@@ -8,6 +8,8 @@ from pathlib import Path
 
 from utils.pretty_print import display_info
 
+from .data_store import load_document
+
 
 @dataclass
 class VehicleState:
@@ -17,11 +19,8 @@ class VehicleState:
 
     def get_data(self) -> dict:
         if self._data is None:
-            if not self.data_file.exists():
-                self._data = {}
-            else:
-                with self.data_file.open("r", encoding="utf-8") as stream:
-                    self._data = json.load(stream)
+            value = load_document(self.data_file, {})
+            self._data = value if isinstance(value, dict) else {}
         return self._data
 
     def refresh(self) -> dict:

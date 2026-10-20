@@ -8,6 +8,7 @@ from pathlib import Path
 
 from utils.pretty_print import display_error, display_info
 
+from .data_store import save_document
 from .pages import ensure_page
 from .regions import get_region_profile
 
@@ -70,9 +71,7 @@ async def gather_building_data(contexts, thread_count, url, save_path=None, prof
             values = merged.setdefault(name, [])
             values.extend(item for item in ids if item not in values)
     destination = Path(save_path or profile.building_file)
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    with destination.open("w", encoding="utf-8") as stream:
-        json.dump(merged, stream, indent=2, ensure_ascii=False)
+    save_document(destination, merged)
     display_info(f"Saved building config to {destination} with {len(merged)} categories.")
 
 
