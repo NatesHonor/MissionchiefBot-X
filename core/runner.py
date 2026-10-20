@@ -15,6 +15,7 @@ from utils.vehicle_data import gather_vehicle_data
 from .auth import login_all
 from .browser import BrowserPool
 from .buildings import gather_building_data
+from .data_store import load_document
 from .dispatching import navigate_and_dispatch
 from .logging_config import log_mapping
 from .mission_collector import check_and_grab_missions
@@ -88,10 +89,8 @@ def _cache_has_records(path) -> bool:
     """Treat missing, empty, or corrupt regional caches as needing refresh."""
 
     try:
-        with path.open("r", encoding="utf-8") as stream:
-            value = json.load(stream)
-        return bool(value)
-    except (FileNotFoundError, OSError, json.JSONDecodeError, TypeError):
+        return bool(load_document(path, None))
+    except (OSError, TypeError):
         return False
 
 
