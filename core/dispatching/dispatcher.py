@@ -7,7 +7,6 @@ import re
 
 from utils.pretty_print import display_error, display_info
 
-from ..data_store import load_document
 from ..regions import get_region_profile
 from ..localization import get_localized_terms
 from ..mission_requirements import (
@@ -175,10 +174,10 @@ async def navigate_and_dispatch(contexts, url, profile=None, state=None, setting
     profile = profile or get_region_profile()
     state = state or get_vehicle_state(profile)
     settings = settings or get_settings()
-    stored_missions = load_document(profile.mission_file, None)
-    if not isinstance(stored_missions, dict):
+    if not profile.mission_file.exists():
         return
-    missions = list(stored_missions.items())
+    with profile.mission_file.open("r", encoding="utf-8") as stream:
+        missions = list(json.load(stream).items())
     pages = [context.pages[0] for context in contexts if context.pages]
     if not pages or not missions:
         return

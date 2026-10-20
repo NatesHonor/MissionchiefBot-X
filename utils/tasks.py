@@ -2,7 +2,6 @@ import json
 import re
 from pathlib import Path
 
-from core.data_store import save_document
 from core.pages import ensure_page
 from core.settings import PROJECT_ROOT
 from utils.pretty_print import display_info, display_error
@@ -65,7 +64,9 @@ async def grab_tasks(context, url):
                 }
             )
 
-        save_document(TASKS_FILE, tasks)
+        TASKS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with TASKS_FILE.open("w", encoding="utf-8") as f:
+            json.dump(tasks, f, indent=2, ensure_ascii=False)
 
         display_info(f"Saved {len(tasks)} unique tasks to {TASKS_FILE}")
 

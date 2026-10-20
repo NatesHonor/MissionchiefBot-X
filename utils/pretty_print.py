@@ -6,8 +6,7 @@ from core.logging_config import ensure_logging
 
 
 def display_message(message):
-    logger = ensure_logging()
-    logger.info("\n%s", art.text2art(str(message)))
+    ensure_logging().info("\n%s", art.text2art(str(message)))
 
 
 def display_error(message):

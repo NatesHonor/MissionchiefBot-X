@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import re
 
-from .data_store import load_document
 from .mission_helpers import normalize_name
 from .localization import contains_localized_term, get_localized_terms
 from .regions import get_region_profile
@@ -13,8 +12,11 @@ from .vehicle_mapping import normalize_vehicle_name, vehicle_name_variants
 
 
 def _load_json(path):
-    value = load_document(path, {})
-    return {} if value is None else value
+    try:
+        with path.open("r", encoding="utf-8") as stream:
+            return json.load(stream)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
 
 
 def _normalize(value: str) -> str:

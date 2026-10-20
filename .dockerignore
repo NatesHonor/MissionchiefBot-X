@@ -1,10 +1,9 @@
 .git
-.gitignore
-.idea
+.github
 .venv
 __pycache__
 *.py[cod]
 *.log
 logs
-config.ini
 .env
+config.ini

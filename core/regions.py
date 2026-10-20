@@ -24,8 +24,6 @@ from .vehicle_mapping import (
 )
 from utils.personnel_options import get_personnel_options
 
-from .data_store import document_exists, load_document, save_document
-
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -88,16 +86,13 @@ class RegionProfile:
         return self.data_dir
 
     def load_json(self, filename: str, default: Any = None) -> Any:
-        """Load one region data document from SQLite without letting a broken cache stop startup."""
+        """Load one region data file without allowing a broken cache to stop startup."""
 
-        fallback = {} if default is None else default
-        value = load_document(self.data_dir / filename, None)
-        return fallback if value is None else value
-
-    def save_json(self, filename: str, value: Any) -> None:
-        """Store one region data document in SQLite."""
-
-        save_document(self.data_dir / filename, value)
+        try:
+            with (self.data_dir / filename).open("r", encoding="utf-8") as stream:
+                return json.load(stream)
+        except (FileNotFoundError, OSError, json.JSONDecodeError):
+            return {} if default is None else default
 
     def vehicle_aliases(self) -> dict[str, list[str]]:
         value = self.load_json("vehicle_aliases.json", {})
@@ -119,7 +114,7 @@ class RegionProfile:
             "personnel_aliases.json",
             "requirement_mapping.json",
         )
-        return [filename for filename in required if not document_exists(self.data_dir / filename)]
+        return [filename for filename in required if not (self.data_dir / filename).is_file()]
 
     def validate_vehicle_mappings(self) -> list[str]:
         """Validate every regional alias, personnel, and requirement map."""

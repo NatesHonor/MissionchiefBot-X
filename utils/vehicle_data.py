@@ -4,7 +4,6 @@ from pathlib import Path
 
 from utils.pretty_print import display_info, display_error
 
-from core.data_store import save_document
 from core.missionchief_api import fetch_vehicle_records, vehicle_inventory_from_records
 
 
@@ -22,7 +21,9 @@ async def gather_vehicle_data(contexts, num_threads, url, save_path):
         api_vehicle_data = vehicle_inventory_from_records(api_records)
         if api_vehicle_data:
             save_path = Path(save_path)
-            save_document(save_path, api_vehicle_data)
+            save_path.parent.mkdir(parents=True, exist_ok=True)
+            with save_path.open("w", encoding="utf-8") as outfile:
+                json.dump(api_vehicle_data, outfile, indent=4, ensure_ascii=False)
             display_info(f"Vehicle API collection complete. Stored {len(api_records)} vehicles in {save_path}.")
             return
         await page.goto(url + "leitstellenansicht", wait_until="domcontentloaded")
@@ -38,7 +39,9 @@ async def gather_vehicle_data(contexts, num_threads, url, save_path):
         vehicle_data = await split_vehicle_ids_among_threads(vehicle_ids, contexts, threads, url)
 
         save_path = Path(save_path)
-        save_document(save_path, vehicle_data)
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        with save_path.open("w", encoding="utf-8") as outfile:
+            json.dump(vehicle_data, outfile, indent=4)
 
         display_info(f"Vehicle config collection complete. Stored vehicle config in {save_path}.")
     except Exception as e:
