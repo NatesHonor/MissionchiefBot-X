@@ -2,7 +2,7 @@
 # the same package versions. Dependabot keeps these pins current.
 art==6.5
 deep-translator==1.11.4
-playwright==1.63.0
+playwright==1.64.0
 python-dotenv==1.1.1
 rich==14.2.0
 
