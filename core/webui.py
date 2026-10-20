@@ -19,8 +19,18 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import urlsplit
 
-from .logging_config import get_logger
-from .settings import DEFAULT_ENV_PATH, Settings, _env_path, load_settings
+from .settings import DEFAULT_ENV_PATH, Settings
+
+
+def _config_path(path: str | os.PathLike[str] | None = None) -> Path:
+    """Resolve the environment file used by the local settings editor."""
+    configured = path or os.getenv("MISSIONCHIEF_ENV_FILE")
+    return Path(configured).expanduser() if configured else DEFAULT_ENV_PATH
+
+
+# Temporary internal alias while the WebUI settings editor is migrated from
+# INI sections to environment-variable names.
+DEFAULT_CONFIG_PATH = DEFAULT_ENV_PATH
 
 
 LOGGER = get_logger("webui")
@@ -337,6 +347,10 @@ class BotWebUI:
         state["recent_logs"] = read_log_tail()
         return state
 
+    def update_state(self, **changes: Any) -> None:
+        """Update runtime state using the legacy public API name."""
+        self.update(**changes)
+
     def start(self) -> bool:
         if self._server is not None:
             return True
@@ -494,27 +508,27 @@ DASHBOARD_HTML = r"""<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MissionchiefBot-X Control Center</title>
+<title>MissionBot</title>
 <style>
-:root { color-scheme:dark; --bg:#0b1015; --panel:#131a21; --panel-2:#0e151c; --line:#2a3641; --text:#f4f7f9; --muted:#9caab5; --accent:#45b97c; --accent-dark:#173e2b; --danger:#e26d76; --danger-dark:#472329; }
-* { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; } button,textarea,input { font:inherit; }
-.layout { min-height:100vh; } .sidebar { position:sticky; top:0; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:24px; padding:14px max(20px,calc((100vw - 1080px)/2)); border-bottom:1px solid var(--line); background:#0b1015ee; backdrop-filter:blur(12px); } .brand { display:flex; align-items:center; gap:10px; font-weight:750; letter-spacing:-.02em; } .brand-mark { width:12px; height:12px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 5px var(--accent-dark); } .tabs { display:flex; gap:4px; } .tab { padding:8px 12px; border:0; border-radius:6px; color:var(--muted); background:transparent; cursor:pointer; } .tab:hover { color:var(--text); background:var(--panel); } .tab.active { color:var(--text); background:var(--panel); }
-.page { width:min(100% - 40px,1080px); margin:0 auto; padding:48px 0 32px; } header { display:flex; justify-content:space-between; align-items:end; gap:24px; margin-bottom:30px; } h1,h2,p { margin:0; } h1 { font-size:clamp(28px,4vw,42px); line-height:1.1; letter-spacing:-.04em; } h2 { font-size:17px; } header p,.message,.label,.note,footer { color:var(--muted); } header p { margin-top:8px; }
-.view { display:none; } .view.active { display:block; } .summary { display:grid; grid-template-columns:repeat(3,1fr); border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--panel); } .summary div { padding:22px; border-right:1px solid var(--line); } .summary div:last-child { border:0; } .label { display:block; font-size:12px; letter-spacing:.04em; text-transform:uppercase; } .value { display:block; margin-top:6px; font-size:20px; font-weight:700; } .message { margin:18px 0; }
-.section { margin-top:18px; padding:22px; border:1px solid var(--line); border-radius:10px; background:var(--panel); } .section-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; } .actions { display:flex; gap:8px; flex-wrap:wrap; }
-button { border:1px solid var(--line); border-radius:6px; padding:9px 14px; color:var(--text); background:var(--panel-2); cursor:pointer; transition:background .15s,border-color .15s,transform .15s; } button:hover { border-color:#607383; background:#1a242d; } button:active { transform:translateY(1px); } button:focus-visible,textarea:focus-visible,input:focus-visible { outline:2px solid var(--accent); outline-offset:2px; } button.start { color:#07140d; font-weight:700; background:var(--accent); border-color:var(--accent); } button.stop { background:var(--danger-dark); border-color:#7d3b44; }
-.logs { height:calc(100vh - 245px); min-height:320px; overflow:auto; margin:0; padding:16px; white-space:pre-wrap; overflow-wrap:anywhere; background:#070b0f; border:1px solid var(--line); border-radius:7px; color:#d9e4eb; font:13px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace; } .option { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:13px; }
-.config { width:100%; min-height:520px; padding:16px; resize:vertical; color:var(--text); background:#070b0f; border:1px solid var(--line); border-radius:7px; font:13px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace; } .note { min-height:22px; padding-top:10px; } footer { margin-top:24px; font-size:12px; }
-@media (max-width:650px) { .sidebar { position:static; display:block; padding:14px 16px; } .tabs { margin-top:14px; display:grid; grid-template-columns:repeat(3,1fr); } .tab { padding:9px 6px; } .page { width:min(100% - 28px,1080px); padding-top:28px; } header { display:block; } .summary { grid-template-columns:1fr; } .summary div { border-right:0; border-bottom:1px solid var(--line); } .section-head { align-items:flex-start; flex-direction:column; } .actions { width:100%; } .actions button { flex:1; } .logs { height:58vh; } }
+:root { color-scheme:dark; --background:#0b0d12; --surface:#151820; --border:#2b303c; --text:#f4f5f8; --muted:#969dab; --blue:#5865f2; --red:#d64f5c; }
+* { box-sizing:border-box; } body { margin:0; background:radial-gradient(900px 460px at 15% -10%,rgba(88,101,242,.2),transparent 65%),var(--background); color:var(--text); font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+.layout { display:grid; grid-template-columns:170px minmax(0,1fr); min-height:100vh; } .sidebar { padding:22px 12px; border-right:1px solid var(--border); } .sidebar h1 { padding:0 10px 20px; font-size:18px; } .tabs { display:grid; gap:4px; } .tab { width:100%; padding:10px; border:1px solid transparent; border-radius:4px; color:var(--muted); background:transparent; text-align:left; cursor:pointer; font:inherit; } .tab:hover { color:var(--text); background:#123453; } .tab.active { color:var(--text); border-color:var(--blue); background:#123b5c; }
+.page { width:min(100% - 40px,960px); margin:0 auto; padding:30px 0 44px; } header { border-bottom:1px solid var(--border); padding-bottom:18px; margin-bottom:18px; } h1,h2,p { margin:0; } h1 { font-size:24px; } h2 { font-size:17px; } header p,.message,.label,.note,footer { color:var(--muted); } header p { margin-top:4px; }
+.view { display:none; } .view.active { display:block; } .summary { display:flex; flex-wrap:wrap; gap:28px; padding:16px 0 20px; } .summary div { min-width:120px; } .label { display:block; font-size:12px; } .value { display:block; margin-top:2px; font-weight:650; } .message { margin-bottom:18px; }
+.section { margin-top:18px; padding:18px; border:1px solid var(--border); background:var(--surface); } .section-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; } .actions { display:flex; gap:8px; flex-wrap:wrap; }
+button { border:1px solid var(--border); border-radius:4px; padding:9px 14px; color:var(--text); background:#123453; cursor:pointer; font:inherit; } button:hover { border-color:#52a8e7; } button.start { background:var(--blue); border-color:var(--blue); } button.stop { background:#642b38; border-color:var(--red); }
+.logs { height:calc(100vh - 210px); min-height:280px; overflow:auto; margin:0; padding:12px; white-space:pre-wrap; overflow-wrap:anywhere; background:#04111e; border:1px solid #163b5c; color:#d5e9f8; font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace; } .option { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:12px; }
+.config { width:100%; min-height:560px; padding:12px; resize:vertical; color:var(--text); background:#071a2d; border:1px solid var(--border); border-radius:4px; font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace; } .config:focus { outline:2px solid #238ddd66; border-color:#52a8e7; } .note { min-height:20px; padding-top:10px; } footer { margin-top:20px; font-size:12px; }
+@media (max-width:650px) { .layout { grid-template-columns:1fr; } .sidebar { padding:12px; border-right:0; border-bottom:1px solid var(--border); } .sidebar h1 { padding:0 0 10px; } .tabs { grid-template-columns:repeat(3,1fr); } .tab { text-align:center; } .page { width:min(100% - 20px,960px); padding-top:18px; } .logs { height:60vh; } }
 </style>
 </head>
 <body>
-<div class="layout"><aside class="sidebar"><div class="brand"><span class="brand-mark" aria-hidden="true"></span>MissionchiefBot-X</div><nav class="tabs" aria-label="Control center"><button class="tab active" data-view="dashboard">Overview</button><button class="tab" data-view="logs">Console</button><button class="tab" data-view="settings">Configuration</button></nav></aside>
-<main class="page"><header><div><h1 id="page-title">Overview</h1><p>Monitor and control this BotX process.</p></div></header>
-<section id="view-dashboard" class="view active"><section class="summary" aria-label="Bot status"><div><span class="label">Status</span><span id="status" class="value">Ready</span></div><div><span class="label">Region</span><span id="region" class="value">—</span></div><div><span class="label">Version</span><span id="version" class="value">—</span></div></section><p id="message" class="message" aria-live="polite">Waiting for the bot.</p><section class="section"><div class="section-head"><div><h2>Bot control</h2><p class="message">Start or stop the current process without leaving this page.</p></div><div class="actions"><button class="start" onclick="control('start')">Start bot</button><button class="stop" onclick="control('stop')">Stop bot</button></div></div><div id="control-note" class="note" aria-live="polite"></div></section></section>
-<section id="view-logs" class="view"><section class="section" style="margin-top:0"><div class="section-head"><div><h2>MissionChief output</h2><p class="message">Recent runtime activity, refreshed every two seconds.</p></div><div class="actions"><label class="option"><input id="auto-scroll" type="checkbox"> Auto-scroll</label><button onclick="refresh()">Refresh</button></div></div><pre id="logs" class="logs" aria-live="polite">No MissionChief output yet.</pre></section></section>
-<section id="view-settings" class="view"><section class="section" style="margin-top:0"><div class="section-head"><div><h2>Environment configuration</h2><p class="message">Edit the complete .env file. Leave the hidden password blank to keep its current value.</p></div><span class="label">Applied after restart</span></div><textarea id="config" class="config" spellcheck="false" aria-label="Complete BotX environment configuration"></textarea><div class="actions" style="margin-top:16px"><button class="start" onclick="saveConfig()">Save .env</button></div><div id="settings-note" class="note" aria-live="polite"></div></section></section>
-<footer>Configuration changes are loaded the next time the bot starts.</footer></main></div>
+<div class="layout"><aside class="sidebar"><h1>MissionBot</h1><nav class="tabs"><button class="tab active" data-view="dashboard">Overview</button><button class="tab" data-view="logs">Console</button><button class="tab" data-view="settings">Configuration</button></nav></aside>
+<main class="page"><header><h1 id="page-title">Overview</h1><p>Local BotX control page</p></header>
+<section id="view-dashboard" class="view active"><section class="summary"><div><span class="label">Status</span><span id="status" class="value">Ready</span></div><div><span class="label">Region</span><span id="region" class="value">—</span></div><div><span class="label">Version</span><span id="version" class="value">—</span></div></section><p id="message" class="message">Waiting for the bot.</p><section class="section"><div class="section-head"><h2>Bot control</h2><div class="actions"><button class="start" onclick="control('start')">Start bot</button><button class="stop" onclick="control('stop')">Stop bot</button></div></div><div id="control-note" class="note"></div></section></section>
+<section id="view-logs" class="view"><section class="section" style="margin-top:0"><div class="section-head"><h2>MissionChief output</h2><div class="actions"><label class="option"><input id="auto-scroll" type="checkbox"> Auto-scroll</label><button onclick="refresh()">Refresh</button></div></div><pre id="logs" class="logs">No MissionChief output yet.</pre></section></section>
+<section id="view-settings" class="view"><section class="section" style="margin-top:0"><div class="section-head"><h2>Complete config.ini</h2><span class="label">Saved for next start</span></div><p class="message">Edit the complete BotX configuration here. The password is hidden when loaded; leaving it blank keeps the saved password.</p><textarea id="config" class="config" spellcheck="false" aria-label="Complete BotX configuration"></textarea><div class="actions" style="margin-top:16px"><button class="start" onclick="saveConfig()">Save config.ini</button></div><div id="settings-note" class="note"></div></section></section>
+<footer>Bot settings are read again when the bot starts.</footer></main></div>
 <script>
 const $ = (id) => document.getElementById(id);
 let autoScroll = localStorage.getItem('missionchief.autoScroll') !== 'false';

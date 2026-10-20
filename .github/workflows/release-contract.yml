@@ -1,0 +1,71 @@
+name: release-contract
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  validate:
+    name: Release contract
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR title and commits
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pattern='^(fix|feat)(\([a-z0-9._/-]+\))?!?: .+'
+          errors=()
+
+          if [[ ! "$PR_TITLE" =~ $pattern ]]; then
+            errors+=("PR title must begin with fix: or feat: (optionally with a scope or !).")
+          fi
+
+          # Validate commits created after Conventional Commit enforcement was
+          # introduced. Earlier history predates this repository policy.
+          policy_commit='b0f2bdaf437eb86e3b7f3916b96eaa940e47ef4c'
+          mapfile -t commits < <(
+            gh api --paginate \
+              -H 'Accept: application/vnd.github+json' \
+              "/repos/${REPOSITORY}/pulls/${PR_NUMBER}/commits" \
+              --jq --arg policy "$policy_commit" \
+              '[.[] | {sha, subject: (.commit.message | split("\n")[0])}] | (map(.sha) | index($policy)) as $cutoff | if $cutoff == null then .[] else .[$cutoff + 1:][] end | .subject'
+          )
+
+          if (( ${#commits[@]} == 0 )); then
+            errors+=("The pull request must contain at least one commit.")
+          fi
+
+          for subject in "${commits[@]}"; do
+            if [[ "$subject" =~ ^(Merge|Revert)[[:space:]] ]]; then
+              continue
+            fi
+            if [[ ! "$subject" =~ ^[a-z]+(\([a-z0-9._/-]+\))?!?:[[:space:]].+ ]]; then
+              errors+=("Commit subject is not Conventional Commit formatted: $subject")
+            fi
+          done
+
+          if (( ${#errors[@]} > 0 )); then
+            printf '::error::%s\n' "${errors[@]}"
+            printf '\n## Release contract failed\n\n' >> "$GITHUB_STEP_SUMMARY"
+            printf -- '- %s\n' "${errors[@]}" >> "$GITHUB_STEP_SUMMARY"
+            printf '\nUse `fix: description`, `feat: description`, or `feat!: description`.\n' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          {
+            echo '## Release contract passed'
+            echo
+            echo "PR title: \`$PR_TITLE\`"
+            echo
+            echo 'All commit subjects follow the Conventional Commits format.'
+          } >> "$GITHUB_STEP_SUMMARY"

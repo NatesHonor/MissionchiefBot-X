@@ -7,6 +7,7 @@ getters remain for older integrations that still import this module.
 import os
 
 from core.settings import DEFAULT_ENV_PATH, get_settings
+from core.settings import DEFAULT_ENV_PATH, get_settings
 
 env_path = os.getenv("MISSIONCHIEF_ENV_FILE", str(DEFAULT_ENV_PATH))
 

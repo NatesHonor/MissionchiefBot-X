@@ -1,5 +1,9 @@
+# Runtime configuration and secrets
 .env
 .venv/
+config.ini
+
+# Python
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -11,6 +15,10 @@ htmlcov/
 build/
 dist/
 *.egg-info/
+.venv/
+venv/
+
+# Runtime output
 logs/
 .idea/
 data/
@@ -18,3 +26,17 @@ data/
 *.sqlite3-shm
 *.sqlite3-wal
 AGENTS.md
+*.log
+
+# Tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

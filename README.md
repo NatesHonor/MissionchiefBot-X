@@ -137,51 +137,16 @@ Copy-Item .env.example .env
 python setup_environment.py
 ```
 
-This creates `.venv` when needed, installs `requirements.txt`, installs the matching
-Playwright Chromium browser, and verifies that the executable is available. To validate
-an existing installation without changing it, run `python setup_environment.py --check`.
-
-The supported local entrypoint is `Main.py`. After setup, use `run.cmd` from Command
-Prompt or `./run.ps1` from PowerShell. Both
-wrappers resolve the project directory and always use `.venv\Scripts\python.exe`, so
-launching from another working directory does not change where configuration and regional
-data are read from. A missing environment reports a setup error instead of silently using
-another Python installation.
-
-### Mission ignore list
-
-To keep a mission type out of collection and dispatch, edit the region-specific file
-`regions/<region>/data/mission_ignore_list.json`.  Use mission IDs for one-off active
-missions, exact names for stable mission types, or `contains` for a name fragment:
-
-```json
-{
-  "mission_ids": [],
-  "mission_names": ["Mission name to skip"],
-  "contains": ["airport"]
-}
-```
-
-The list is read before detailed mission pages are scanned.  Mission names are matched
-without accents or punctuation, and an empty or missing file disables filtering.
-
-Mission collection includes alliance missions by default so existing configurations keep
-their current behavior.  Set `include_alliance_missions = false` under `[missions]`, or
-set `MISSIONCHIEF_INCLUDE_ALLIANCE_MISSIONS=false`, to collect and dispatch only your own
-missions.  This setting controls the marker feed before the ignore-list rules are applied.
-
----
+This creates `.venv`, installs the requirements and matching Playwright Chromium browser, and verifies the environment. Run the bot with `run.cmd` or `./run.ps1`.
 
 ## 🐳 Run with Docker
 
-The image includes Python, the project dependencies, and the Playwright Chromium browser.
-
 1. Copy `.env.example` to `.env` and set `MISSIONCHIEF_USERNAME` and `MISSIONCHIEF_PASSWORD`.
-2. Build and start the bot:
+2. Run:
 
-   ```bash
-   docker compose up --build
-   ```
+```bash
+docker compose up --build
+```
 
 The container runs headless by default, stores runtime logs in `./logs`, and builds the
 `missionchiefbotx:latest` image. To build or run it directly:
@@ -209,65 +174,4 @@ Prefer versioned source archives from the repository's [GitHub Releases](https:/
 
 ## 🆘 Support
 
-Need help? Visit our support page [here](https://support.natemarcellus.com).
-
----
-
-## 💬 Community
-
-Join our Discord server to connect with other players and get live updates:  
-[Join Discord](https://discord.gg/UrGZwfjxND)
-
----
-
-## 📜 Latest Changelog
-
-### 🆕 Update (v3.0.1x) - Bot Remake
-
-#### 🎉 New Features
-
-**🔧 Bot**
-- Improved performance and reliability  
-- Added auto installation  
-- Added logging  
-- Better integration with Launcher  
-- Fixed issues with credit gathering  
-- Fixed issue with bot only using 1 thread  
-- Added more customization  
-- Decreased resource usage  
-- Resource balancing to prevent over-dispatching  
-- Smart transport handling with hospital/prison rerouting  
-- Mission prioritization by severity  
-- Geographic clustering of units to reduce travel time  
-- Adaptive scaling of browser instances based on mission volume  
-- API hook support for faster dispatch  
-- Rate limiting safeguards for fair-use compliance  
-- Auto Updating  
-
-**🚀 Launcher**
-- Fixed console output issues  
-- Fixed launcher being unmovable  
-- Fixed logging problems  
-- Fixed launcher not stopping correctly  
-- Simplified codebase for smaller footprint  
-- Added auto-scroll toggle button  
-- Configurable profiles for different play styles  
-- Error recovery with automatic retry on failed dispatches  
-- Auto Updating  
-
-**🐞 Bug Fixes**
-- Included in features above  
-
-**📊 Logging & Analytics**
-- Mission outcomes and dispatch times stored for later review  
-- Transport durations tracked for optimization  
-- Alliance vs. solo mission contributions logged  
-
----
-
-## 🙌 Feedback
-
-Your feedback is important! It helps us improve Mission Helper and make the game better for everyone.  
-Please share your thoughts on our [support page](https://support.natemarcellus.com) or in the [Discord server](https://discord.gg/UrGZwfjxND).
-
----
+Visit the [support page](https://support.natemarcellus.com) or join the [Discord community](https://discord.gg/UrGZwfjxND).
