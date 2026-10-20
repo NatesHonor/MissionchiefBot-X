@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,12 +13,11 @@ from dotenv import dotenv_values
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ENV_PATH = PROJECT_ROOT / ".env"
+DEFAULT_ENV_PATH = PROJECT_ROOT / ".env"
 
 
 @dataclass(frozen=True)
 class TrainingPlan:
-    """One configured school course and its maximum simultaneous rooms."""
-
     school: str
     course: str
     rooms: int = 1
@@ -27,27 +27,27 @@ class TrainingPlan:
 class Settings:
     username: str
     password: str
-    region: str
-    headless: bool
-    browsers: int
-    browser_scaling: bool
-    dispatch_type: str
-    dispatch_by_distance: bool
-    dispatch_incomplete: bool
-    dynamic_missions: bool
-    include_alliance_missions: bool
-    max_missions: int
-    concurrent_missions: bool
-    auto_training: bool
-    auto_recruiting: bool
-    auto_special_resources: bool
-    auto_tasks: bool
-    dynamic_delays: bool
-    dynamic_delay_missions: bool
-    dynamic_delay_transport: bool
-    mission_delay: int
-    other_delay: int
-    dispatch_delay: int
+    region: str = "uk"
+    headless: bool = True
+    browsers: int = 3
+    browser_scaling: bool = False
+    dispatch_type: str = "alliance"
+    dispatch_by_distance: bool = True
+    dispatch_incomplete: bool = False
+    dynamic_missions: bool = False
+    include_alliance_missions: bool = True
+    max_missions: int = 500
+    concurrent_missions: bool = True
+    auto_training: bool = False
+    auto_recruiting: bool = False
+    auto_special_resources: bool = False
+    auto_tasks: bool = False
+    dynamic_delays: bool = False
+    dynamic_delay_missions: bool = False
+    dynamic_delay_transport: bool = False
+    mission_delay: int = 10
+    other_delay: int = 30
+    dispatch_delay: int = 0
     training_plans: tuple[TrainingPlan, ...] = ()
     recruiting_days: int = 1
     version: str = "dev"
@@ -90,26 +90,34 @@ def _value(
 def _required(value: str, environment_name: str) -> str:
     value = value.strip()
     if not value:
-        raise RuntimeError(f"{environment_name} must not be empty.")
+        raise RuntimeError(f"{name} must be set in .env or the process environment.")
     return value
 
 
-def _boolean(value: str, environment_name: str) -> bool:
+def _text(name: str, default: str) -> str:
+    return os.getenv(name, default).strip()
+
+
+def _boolean(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
     normalized = value.strip().lower()
     if normalized in {"1", "yes", "true", "on"}:
         return True
     if normalized in {"0", "no", "false", "off"}:
         return False
-    raise ValueError(f"Invalid boolean value for {environment_name}: {value!r}. Use true/false.")
+    raise ValueError(f"Invalid boolean for {name}: {value!r}. Use true or false.")
 
 
-def _integer(value: str, environment_name: str, minimum: int | None = None) -> int:
+def _integer(name: str, default: int, minimum: int = 0) -> int:
+    value = os.getenv(name, str(default))
     try:
-        parsed = int(value.strip())
+        parsed = int(value)
     except ValueError as error:
-        raise ValueError(f"Invalid integer value for {environment_name}: {value!r}.") from error
-    if minimum is not None and parsed < minimum:
-        raise ValueError(f"Invalid value for {environment_name}: {parsed}. It must be at least {minimum}.")
+        raise ValueError(f"Invalid integer for {name}: {value!r}.") from error
+    if parsed < minimum:
+        raise ValueError(f"{name} must be at least {minimum}.")
     return parsed
 
 
@@ -408,8 +416,6 @@ _settings: Settings | None = None
 
 
 def get_settings() -> Settings:
-    """Return the process-wide settings snapshot used by compatibility APIs."""
-
     global _settings
     if _settings is None:
         _settings = load_settings()
@@ -417,7 +423,5 @@ def get_settings() -> Settings:
 
 
 def reset_settings() -> None:
-    """Clear the compatibility snapshot (useful for tests and process reuse)."""
-
     global _settings
     _settings = None
