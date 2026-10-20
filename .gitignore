@@ -26,3 +26,5 @@ htmlcov/
 Thumbs.db
 
 .idea/
+
+data/*.sqlite3
