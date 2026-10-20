@@ -7,6 +7,8 @@ import re
 import time
 from pathlib import Path
 
+from .data_store import document_updated_at, load_document, save_document
+
 
 async def _fetch(page, base_url: str, endpoint: str, accept: str):
     return await page.evaluate(
@@ -266,19 +268,18 @@ async def refresh_mission_index(page, base_url: str, destination: Path, max_age:
     """Refresh a local mission index at most once per day and return its data."""
 
     try:
-        if destination.exists() and time.time() - destination.stat().st_mtime < max_age:
-            return json.loads(destination.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError, TypeError):
+        stored_at = document_updated_at(destination)
+        if stored_at is not None and time.time() - stored_at < max_age:
+            cached = load_document(destination, None)
+            if cached is not None:
+                return cached
+    except (OSError, TypeError):
         pass
     payload = await fetch_mission_index(page, base_url)
     if payload is None:
         return None
     try:
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-    except OSError:
+        save_document(destination, payload)
+    except Exception:
         pass
     return payload

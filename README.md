@@ -65,12 +65,27 @@ details.
 
 ## ✨ Features
 
-- **Credit Gathering**: Automatically solves missions to maximize income.
-- **Auto Dispatching**: Smart dispatch system with mission prioritization and geographic clustering.
-- **Mission Gathering**: Collects and organizes missions for efficient handling.
-- **Employee Training**: Automates staff training workflows.
-- **Transport Requests**: Handles hospital and prison rerouting with adaptive transport logic.
-- **Support & Auto Updating**: Built-in support hooks and seamless auto-update system.
+- **Credit Gathering**: Automatically solves missions to maximize income.  
+- **Auto Dispatching**: Smart dispatch system with mission prioritization and geographic clustering.  
+- **Mission Gathering**: Collects and organizes missions for efficient handling.  
+- **Employee Training**: Automates staff training workflows.  
+- **Transport Requests**: Handles hospital and prison rerouting with adaptive transport logic.  
+- **Support & Auto Updating**: Built-in support hooks and seamless auto-update system.  
+
+## Compatibility and support
+
+- **Python:** 3.11 is the primary development and CI version; 3.14 is also tested on Linux.
+- **Operating systems:** Windows and Linux are tested in CI. Docker images target `linux/amd64` and `linux/arm64`.
+- **Regions:** US, UK, Australia, Germany, the Netherlands, Sweden, Portugal, Denmark, Poland, and France.
+- **Support scope:** fixes target the latest release and `main`; older releases may require upgrading first.
+
+For responsible vulnerability reporting and local-data guidance, see [SECURITY.md](SECURITY.md). Contributors should read [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Data and privacy
+
+The application runs locally and signs in with credentials supplied through a `.env` file or `MISSIONCHIEF_*` process environment variables. Keep the WebUI bound to `127.0.0.1`; it has no authentication and is not intended for network or internet exposure. Logs may contain operational details, so redact them before sharing. Never share `.env` files, browser data, cookies, or account credentials.
+
+The repository does not collect telemetry or send credentials to the maintainers. Network requests required for operation go to the configured regional MissionChief service; optional support, download, community, and container links are only contacted when you choose to use them.
 
 ## Project layout
 
@@ -90,41 +105,169 @@ does not require copying the login, browser, parser, or dispatch loops.
   localized vehicle/requirement data.
 
 US, UK, Australia, Germany, the Netherlands, Sweden, Portugal, Denmark, Poland,
-and France are wired into the same automation runtime.
+and France are wired into the same automation runtime. Each region keeps its own
+vehicle aliases, requirement classification, localized labels, and cache
+directory, while browser/login/API, mission parsing, dispatching, transport, and
+background loops remain shared. The launcher resolves a region by its canonical
+key, common name, country code, or configured regional hostname.
+
+Regional support is intentionally data-driven: adding a service requires a real
+official hostname, a localized vehicle/requirement map, a mission-ignore file,
+and a compatibility entrypoint. The mapping audit and full test suite must pass
+before the region is considered supported; the runtime never silently redirects
+an unknown region to another country's service.
+
+To give units time to clear missions and return to their normal areas, set
+`MISSIONCHIEF_DISPATCH_DELAY` in `.env` (seconds). This pause is applied between
+missions on each dispatch worker; `MISSIONCHIEF_MISSION_DELAY` still controls the
+pause before the next mission-gathering cycle, and `MISSIONCHIEF_OTHER_DELAY`
+controls background work such as transport handling.
+
+The project does not invent a regional server for New Zealand.  A region must have a
+real MissionChief service URL and a verified set of game vehicle names before it can be
+enabled.  New Zealand remains explicitly unsupported until an official service is
+identified; the launcher rejects it instead of silently using another country's site.
 
 ### Run locally on Windows
 
+From the repository root, copy `.env.example` to `.env`, fill in your credentials and settings, then run the setup script with the Python version you intend to use:
+
 ```powershell
+Copy-Item .env.example .env
 python setup_environment.py
 ```
 
-This creates `.venv`, installs the requirements and matching Playwright Chromium browser, and verifies the environment. Run the bot with `run.cmd` or `./run.ps1`.
+This creates `.venv` when needed, installs `requirements.txt`, installs the matching
+Playwright Chromium browser, and verifies that the executable is available. To validate
+an existing installation without changing it, run `python setup_environment.py --check`.
+
+The supported local entrypoint is `Main.py`. After setup, use `run.cmd` from Command
+Prompt or `./run.ps1` from PowerShell. Both
+wrappers resolve the project directory and always use `.venv\Scripts\python.exe`, so
+launching from another working directory does not change where configuration and regional
+data are read from. A missing environment reports a setup error instead of silently using
+another Python installation.
+
+### Mission ignore list
+
+To keep a mission type out of collection and dispatch, edit the region-specific file
+`regions/<region>/data/mission_ignore_list.json`.  Use mission IDs for one-off active
+missions, exact names for stable mission types, or `contains` for a name fragment:
+
+```json
+{
+  "mission_ids": [],
+  "mission_names": ["Mission name to skip"],
+  "contains": ["airport"]
+}
+```
+
+The list is read before detailed mission pages are scanned.  Mission names are matched
+without accents or punctuation, and an empty or missing file disables filtering.
+
+Mission collection includes alliance missions by default so existing configurations keep
+their current behavior.  Set `include_alliance_missions = false` under `[missions]`, or
+set `MISSIONCHIEF_INCLUDE_ALLIANCE_MISSIONS=false`, to collect and dispatch only your own
+missions.  This setting controls the marker feed before the ignore-list rules are applied.
+
+---
 
 ## 🐳 Run with Docker
 
+The image includes Python, the project dependencies, and the Playwright Chromium browser.
+
 1. Copy `.env.example` to `.env` and set `MISSIONCHIEF_USERNAME` and `MISSIONCHIEF_PASSWORD`.
-2. Run:
+2. Build and start the bot:
+
+   ```bash
+   docker compose up --build
+   ```
+
+The container runs headless by default, stores runtime logs in `./logs`, and builds the
+`missionchiefbotx:latest` image. To build or run it directly:
 
 ```bash
-docker compose up --build
+docker build -t missionchiefbotx:latest .
+docker run --rm --name missionchiefbotx --env-file .env -v "${PWD}/logs:/app/logs" missionchiefbotx:latest
 ```
 
-Published images are available as `ghcr.io/nateshonor/missionchiefbot-x`.
+The repository's `.env` is intentionally excluded from the image. Docker settings are
+supplied from `.env` by Compose or with `docker run --env-file .env`; process environment
+variables can override values loaded from the file.
 
-## Releasing
+GitHub Actions builds the image for pull requests and publishes it to GitHub Container
+Registry for pushes to `main` and version tags. Published images are available as
+`ghcr.io/nateshonor/missionchiefbot-x`.
 
-Release Please maintains one release pull request containing all releasable changes merged to `main` since the previous release. Pull request titles must use Conventional Commit prefixes so the correct version is selected:
-
-- `fix:` creates a patch release.
-- `feat:` creates a minor release.
-- `feat!:` or a `BREAKING CHANGE:` footer creates a major release.
-
-Merging the Release Please pull request creates the `vMAJOR.MINOR.PATCH` git tag and publishes the corresponding GitHub Release. Normal feature and fix pull requests do not publish a release directly. Squash merges are recommended so the PR's Conventional Commit title is preserved as the release-producing commit.
+---
 
 ## 📥 Download
 
-Download Mission Helper from [GitHub Releases](https://github.com/NatesHonor/MissionchiefBot-X/releases).
+Prefer versioned source archives from the repository's [GitHub Releases](https://github.com/NatesHonor/MissionchiefBot-X/releases) or the published container image `ghcr.io/nateshonor/missionchiefbot-x`. A separately hosted convenience download is also available [here](https://files.natemarcellus.com/download/MissionchiefBot); verify its version against the matching GitHub release before use.
+
+---
 
 ## 🆘 Support
 
-Visit the [support page](https://support.natemarcellus.com) or join the [Discord community](https://discord.gg/UrGZwfjxND).
+Need help? Visit our support page [here](https://support.natemarcellus.com).
+
+---
+
+## 💬 Community
+
+Join our Discord server to connect with other players and get live updates:  
+[Join Discord](https://discord.gg/UrGZwfjxND)
+
+---
+
+## 📜 Latest Changelog
+
+### 🆕 Update (v3.0.1x) - Bot Remake
+
+#### 🎉 New Features
+
+**🔧 Bot**
+- Improved performance and reliability  
+- Added auto installation  
+- Added logging  
+- Better integration with Launcher  
+- Fixed issues with credit gathering  
+- Fixed issue with bot only using 1 thread  
+- Added more customization  
+- Decreased resource usage  
+- Resource balancing to prevent over-dispatching  
+- Smart transport handling with hospital/prison rerouting  
+- Mission prioritization by severity  
+- Geographic clustering of units to reduce travel time  
+- Adaptive scaling of browser instances based on mission volume  
+- API hook support for faster dispatch  
+- Rate limiting safeguards for fair-use compliance  
+- Auto Updating  
+
+**🚀 Launcher**
+- Fixed console output issues  
+- Fixed launcher being unmovable  
+- Fixed logging problems  
+- Fixed launcher not stopping correctly  
+- Simplified codebase for smaller footprint  
+- Added auto-scroll toggle button  
+- Configurable profiles for different play styles  
+- Error recovery with automatic retry on failed dispatches  
+- Auto Updating  
+
+**🐞 Bug Fixes**
+- Included in features above  
+
+**📊 Logging & Analytics**
+- Mission outcomes and dispatch times stored for later review  
+- Transport durations tracked for optimization  
+- Alliance vs. solo mission contributions logged  
+
+---
+
+## 🙌 Feedback
+
+Your feedback is important! It helps us improve Mission Helper and make the game better for everyone.  
+Please share your thoughts on our [support page](https://support.natemarcellus.com) or in the [Discord server](https://discord.gg/UrGZwfjxND).
+
+---

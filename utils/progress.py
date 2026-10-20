@@ -1,40 +1,52 @@
+"""Progress reporting that remains readable in terminals and captured consoles."""
+
 from __future__ import annotations
 
-from core.logging_config import display_progress, ensure_logging
+import sys
+from threading import Lock
+
+from .pretty_print import display_info
 
 
-class ProgressDisplay:
-    """Low-noise progress reporting through the centralized logging system."""
+class ProgressBar:
+    """Render aggregate progress without assuming an interactive terminal."""
 
-    def __init__(self, label: str, total: int, *, width: int = 20) -> None:
+    def __init__(self, label: str, total: int, width: int = 24):
         self.label = label
-        self.total = max(total, 1)
-        self.width = width
-        self.completed = 0
-        self._last_reported = -1
+        self.total = max(0, int(total))
+        self.width = max(8, int(width))
+        self.current = 0
+        self._lock = Lock()
+        self._interactive = bool(getattr(sys.stdout, "isatty", lambda: False)())
 
-    def start(self) -> ProgressDisplay:
-        """Start reporting and support the legacy ProgressBar lifecycle."""
-        ensure_logging().info("%s started", self.label)
-        return self
+    def _line(self, detail: str = "") -> str:
+        completed = min(max(self.current, 0), self.total)
+        percent = 100 if self.total == 0 else int(completed * 100 / self.total)
+        filled = self.width if self.total == 0 else int(self.width * completed / self.total)
+        bar = "#" * filled + "-" * (self.width - filled)
+        suffix = f" | {detail}" if detail else ""
+        return f"{self.label}: [{bar}] {completed}/{self.total} ({percent:3d}%){suffix}"
 
-    def update(self, completed: int, message: str | None = None) -> None:
-        self.completed = min(max(completed, 0), self.total)
-        percentage = round(self.completed * 100 / self.total)
-        milestone = percentage // 10
-        if milestone == self._last_reported and self.completed < self.total:
-            return
-        self._last_reported = milestone
-        display_progress(message or self.label, self.completed, self.total)
-
-    def finish(self, message: str | None = None) -> None:
-        self.update(self.total, message or f"{self.label} complete")
-
-    def __enter__(self) -> ProgressDisplay:
-        return self.start()
-
-    def __exit__(self, exc_type, exc, traceback) -> None:
-        if exc is None:
-            self.finish()
+    def _render_locked(self, detail: str = "") -> None:
+        line = self._line(detail)
+        if self._interactive:
+            print(f"\r{line}", end="", flush=True)
         else:
-            ensure_logging().error("%s failed: %s", self.label, exc)
+            display_info(line)
+
+    def start(self, detail: str = "starting") -> None:
+        with self._lock:
+            self._render_locked(detail)
+
+    def advance(self, detail: str = "") -> None:
+        with self._lock:
+            self.current = min(self.total, self.current + 1)
+            self._render_locked(detail)
+
+    def finish(self, detail: str = "complete") -> None:
+        with self._lock:
+            line = self._line(detail)
+            if self._interactive:
+                print(f"\r{line}", flush=True)
+            else:
+                display_info(line)

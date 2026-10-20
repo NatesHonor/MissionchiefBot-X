@@ -15,7 +15,9 @@ from utils.vehicle_data import gather_vehicle_data
 from .auth import login_all
 from .browser import BrowserPool
 from .buildings import gather_building_data
+from .data_store import load_document
 from .dispatching import navigate_and_dispatch
+from .logging_config import log_mapping
 from .mission_collector import check_and_grab_missions
 from .regions import RegionProfile, get_region_profile
 from .settings import Settings, load_settings
@@ -87,10 +89,8 @@ def _cache_has_records(path) -> bool:
     """Treat missing, empty, or corrupt regional caches as needing refresh."""
 
     try:
-        with path.open("r", encoding="utf-8") as stream:
-            value = json.load(stream)
-        return bool(value)
-    except (FileNotFoundError, OSError, json.JSONDecodeError, TypeError):
+        return bool(load_document(path, None))
+    except (OSError, TypeError):
         return False
 
 
@@ -237,15 +237,17 @@ async def run_bot(
                     running=True,
                 )
 
-            display_info("Pooled settings:")
-            display_info(f"Region: {profile.key.upper()}")
-            display_info(f"Headless browsers: {'enabled' if settings.headless else 'disabled'}.")
-            display_info(f"Browser count: {settings.browsers}")
-            display_info(f"Dispatch type: {settings.dispatch_type}.")
-            display_info(
-                f"Concurrent missions are currently {'enabled' if settings.concurrent_missions else 'disabled'}."
+            log_mapping(
+                "Runtime configuration",
+                {
+                    "Region": profile.key.upper(),
+                    "Headless browsers": "enabled" if settings.headless else "disabled",
+                    "Browser count": settings.browsers,
+                    "Dispatch type": settings.dispatch_type,
+                    "Concurrent missions": "enabled" if settings.concurrent_missions else "disabled",
+                    "Dispatch pacing": f"{settings.dispatch_delay}s",
+                },
             )
-            display_info(f"Dispatch pacing: {settings.dispatch_delay}s between missions.")
 
             other_context = contexts[0]
             grabbing_contexts = contexts[1:]
