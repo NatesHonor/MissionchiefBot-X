@@ -12,7 +12,7 @@ from .data_store import load_document, save_document
 from .missionchief_api import fetch_mission_markers, refresh_mission_index
 from .missionchief_api import fetch_mission_marker_records
 from .mission_ignore import filter_ignored_mission_ids, load_mission_ignore_rules
-from .pages import ensure_page
+from .browser import ensure_page
 from .regions import get_region_profile
 from .settings import get_settings
 from .vehicle_state import get_vehicle_state

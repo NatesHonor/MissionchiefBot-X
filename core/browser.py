@@ -65,6 +65,14 @@ BLOCKED_HOSTS: tuple[str, ...] = (
 VIEWPORT = {"width": 1280, "height": 800}
 
 
+async def ensure_page(context: Any) -> Any:
+    """Reuse a context's first page instead of opening extra tabs."""
+
+    if context.pages:
+        return context.pages[0]
+    return await context.new_page()
+
+
 async def _block_heavy_requests(route: Any) -> None:
     request = route.request
     if request.resource_type in BLOCKED_RESOURCES or any(host in request.url for host in BLOCKED_HOSTS):

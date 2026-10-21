@@ -9,7 +9,7 @@ from pathlib import Path
 from utils.pretty_print import display_error, display_info
 
 from .data_store import document_has_records, save_document
-from .pages import ensure_page
+from .browser import ensure_page
 from .regions import get_region_profile
 
 

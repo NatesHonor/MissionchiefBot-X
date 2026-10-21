@@ -1,21 +1,17 @@
-from __future__ import annotations
+"""Short logging helpers used across the bot."""
 
-import art
+from __future__ import annotations
 
 from core.logging_config import ensure_logging
 
 
-def display_message(message):
-    ensure_logging().info("\n%s", art.text2art(str(message)))
-
-
-def display_error(message):
+def display_error(message: object) -> None:
     ensure_logging().error(str(message))
 
 
-def display_warning(message):
+def display_warning(message: object) -> None:
     ensure_logging().warning(str(message))
 
 
-def display_info(message):
+def display_info(message: object) -> None:
     ensure_logging().info(str(message))
