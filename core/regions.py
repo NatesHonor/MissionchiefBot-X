@@ -77,12 +77,6 @@ class RegionProfile:
     def requirement_mapping_file(self) -> Path:
         return self.data_dir / "requirement_mapping.json"
 
-    @property
-    def entrypoint(self) -> str:
-        """Return the standardized compatibility entrypoint for this region."""
-
-        return f"regions.{self.key}.main_{self.key}:main"
-
     def ensure_data_dir(self) -> Path:
         """Seed this region's shipped defaults into SQLite.
 
@@ -215,61 +209,61 @@ _REGION_DEFINITIONS = {
     "us": {
         "display_name": "United States",
         "base_url": "https://www.missionchief.com/",
-        "vehicle_options_module": "utils.vehicle_options",
+        "vehicle_options_module": "regions.us",
         "language": "en",
     },
     "uk": {
         "display_name": "United Kingdom",
         "base_url": "https://www.missionchief.co.uk/",
-        "vehicle_options_module": "regions.uk.vehicle_options",
+        "vehicle_options_module": "regions.uk",
         "language": "en",
     },
     "aus": {
         "display_name": "Australia",
         "base_url": "https://www.missionchief-australia.com/",
-        "vehicle_options_module": "regions.aus.vehicle_options",
+        "vehicle_options_module": "regions.aus",
         "language": "en",
     },
     "ger": {
         "display_name": "Germany",
         "base_url": "https://www.leitstellenspiel.de/",
-        "vehicle_options_module": "regions.ger.vehicle_options",
+        "vehicle_options_module": "regions.ger",
         "language": "de",
     },
     "nld": {
         "display_name": "Netherlands",
         "base_url": "https://www.meldkamerspel.com/",
-        "vehicle_options_module": "regions.nld.vehicle_options",
+        "vehicle_options_module": "regions.nld",
         "language": "nl",
     },
     "swe": {
         "display_name": "Sweden",
         "base_url": "https://www.larmcentralen-spelet.se/",
-        "vehicle_options_module": "regions.swe.vehicle_options",
+        "vehicle_options_module": "regions.swe",
         "language": "sv",
     },
     "pt": {
         "display_name": "Portugal",
         "base_url": "https://www.jogo-operador112.com/",
-        "vehicle_options_module": "regions.pt.vehicle_options",
+        "vehicle_options_module": "regions.pt",
         "language": "pt",
     },
     "dk": {
         "display_name": "Denmark",
         "base_url": "https://www.alarmcentral-spil.dk/",
-        "vehicle_options_module": "regions.dk.vehicle_options",
+        "vehicle_options_module": "regions.dk",
         "language": "da",
     },
     "pl": {
         "display_name": "Poland",
         "base_url": "https://www.operatorratunkowy.pl/",
-        "vehicle_options_module": "regions.pl.vehicle_options",
+        "vehicle_options_module": "regions.pl",
         "language": "pl",
     },
     "fr": {
         "display_name": "France",
         "base_url": "https://www.operateur112.fr/",
-        "vehicle_options_module": "regions.fr.vehicle_options",
+        "vehicle_options_module": "regions.fr",
         "language": "fr",
     },
 }

@@ -8,7 +8,7 @@ from types import SimpleNamespace
 sys.modules.setdefault("art", SimpleNamespace())
 
 from core.dispatching.vehicles import find_vehicle_ids
-from utils.vehicle_options import get_vehicle_options
+from regions.us import get_vehicle_options
 
 
 class WreckerDispatchTests(unittest.TestCase):

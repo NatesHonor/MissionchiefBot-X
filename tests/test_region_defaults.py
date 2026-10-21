@@ -37,9 +37,10 @@ class _TempDatabase(unittest.TestCase):
 
 
 class ShippedFilesTests(unittest.TestCase):
-    def test_region_data_folders_are_gone(self):
+    def test_regions_are_single_modules_without_folders(self):
         for region in supported_regions():
-            self.assertFalse((PROJECT_ROOT / "regions" / region / "data").exists(), region)
+            self.assertTrue((PROJECT_ROOT / "regions" / f"{region}.py").is_file(), region)
+            self.assertFalse((PROJECT_ROOT / "regions" / region).exists(), region)
 
     def test_every_region_ships_every_default(self):
         for region in supported_regions():

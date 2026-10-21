@@ -3,7 +3,7 @@
 Every region document lives in SQLite (see :mod:`core.data_store`). There are
 two kinds:
 
-* **Defaults** ship with the bot in ``regions/<region>/defaults/*.json``:
+* **Defaults** ship with the bot in ``regions/defaults/<region>/*.json``:
   vehicle aliases, personnel aliases, requirement mappings and the mission
   ignore list. On startup they are seeded into the database and they persist
   there. A default never overwrites a document the bot or the user changed; it
@@ -13,9 +13,10 @@ two kinds:
   never shipped. When one is missing or empty in the database, the bot gathers
   it from the game and stores it.
 
-The ``regions/<region>/data/`` folders are no longer used. Document keys keep
-their historic ``regions/<region>/data/<file>.json`` form so existing databases
-keep working.
+Each region is a single module (``regions/<region>.py``) holding its vehicle
+option table; there are no per-region folders. Document keys keep their
+historic ``regions/<region>/data/<file>.json`` form so existing databases keep
+working.
 """
 
 from __future__ import annotations
@@ -55,11 +56,11 @@ _FALLBACKS: dict[str, Any] = {
 
 
 def defaults_dir(region_key: str) -> Path:
-    return PROJECT_ROOT / "regions" / region_key / "defaults"
+    return PROJECT_ROOT / "regions" / "defaults" / region_key
 
 
 def shipped_default(region_key: str, filename: str) -> Any:
-    """Read one shipped default straight from ``regions/<region>/defaults``."""
+    """Read one shipped default straight from ``regions/defaults/<region>``."""
 
     path = defaults_dir(region_key) / filename
     try:

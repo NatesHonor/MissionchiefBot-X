@@ -1,1 +1,0 @@
-"""German MissionChief region support."""
