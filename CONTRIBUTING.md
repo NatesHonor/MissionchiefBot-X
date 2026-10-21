@@ -29,7 +29,7 @@ Run these before submitting a pull request:
 ```bash
 python -m ruff check .
 python -m ruff format --check .
-python -m mypy core/ utils/ config/ regions/ Main.py
+python -m mypy core/ utils/ regions/ Main.py
 # Run when a tests/ directory is present.
 python -m pytest tests/
 ```
