@@ -148,7 +148,10 @@ def configure_logging(
 ) -> logging.Logger:
     global _configured, _visual_handler
     logger = get_logger()
-    logger.handlers.clear()
+    for old_handler in logger.handlers[:]:
+        logger.removeHandler(old_handler)
+        old_handler.close()
+    _visual_handler = None
     logger.setLevel(getattr(logging, level.upper(), logging.INFO))
     logger.propagate = False
 
