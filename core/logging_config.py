@@ -163,10 +163,16 @@ def configure_logging(
 
     if file_enabled:
         destination = Path(log_file).expanduser()
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        file_handler = RotatingFileHandler(destination, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8")
-        file_handler.setFormatter(logging.Formatter("%(asctime)s | %(levelname)-8s | %(name)s | %(message)s", "%Y-%m-%d %H:%M:%S"))
-        logger.addHandler(file_handler)
+        try:
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            file_handler = RotatingFileHandler(destination, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8")
+        except OSError as error:
+            # A read-only disk should not prevent the bot from starting. The
+            # console still reports the problem and continues without a file.
+            _console.print(f"[yellow]File logging unavailable:[/yellow] {error}")
+        else:
+            file_handler.setFormatter(logging.Formatter("%(asctime)s | %(levelname)-8s | %(name)s | %(message)s", "%Y-%m-%d %H:%M:%S"))
+            logger.addHandler(file_handler)
 
     if not logger.handlers:
         logger.addHandler(logging.NullHandler())
@@ -175,7 +181,17 @@ def configure_logging(
 
 
 def ensure_logging() -> logging.Logger:
-    return get_logger() if _configured else configure_logging()
+    """Return the configured logger without opening a file on first use.
+
+    The main application calls ``configure_logging`` with the user's settings.
+    During imports and tests, an incidental log message should not create a
+    rotating file handler (or fail because the log directory is read-only).
+    """
+
+    logger = get_logger()
+    if not _configured and not logger.handlers:
+        logger.addHandler(logging.NullHandler())
+    return logger
 
 
 def display_header(subtitle: str, details: Mapping[str, Any] | None = None) -> None:
