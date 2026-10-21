@@ -41,6 +41,32 @@ test('published release bodies are matched the same way', () => {
   assert.deepEqual(notify.releaseBodyLines(''), ['+']);
 });
 
+test('credits thank each human PR author once, skipping bots', () => {
+  const credits = new Map();
+  notify.addCredit(credits, {number: 79, user: {login: 'NatesHonor', type: 'User'}});
+  notify.addCredit(credits, {number: 75, user: {login: 'NatesHonor', type: 'User'}});
+  notify.addCredit(credits, {number: 75, user: {login: 'NatesHonor', type: 'User'}});
+  notify.addCredit(credits, {number: 74, user: {login: 'dependabot[bot]', type: 'Bot'}});
+  notify.addCredit(credits, {number: 70, user: {login: 'helper', type: 'User'}});
+  const section = notify.creditsSection(credits);
+  assert.match(section, /Thanks to @NatesHonor for #75, #79/);
+  assert.match(section, /Thanks to @helper for #70/);
+  assert.doesNotMatch(section, /dependabot/);
+  assert.equal(notify.creditsSection(new Map()), '');
+  assert.match(notify.creditsComment('v3.2.0', credits), /contributed to \*\*v3\.2\.0\*\*/);
+});
+
+test('credits block in a release body is replaced, not duplicated', () => {
+  const credits = new Map([['NatesHonor', [79]]]);
+  const once = notify.withCredits('### Bug Fixes\n\n* fix thing', credits);
+  const twice = notify.withCredits(once, credits);
+  assert.equal(once, twice);
+  assert.equal(once.split('### Credits').length, 2);
+  assert.match(once, /^### Bug Fixes/);
+  // The bot's own block never counts as release notes.
+  assert.ok(!notify.releaseBodyLines(once).some(line => line.includes('Thanks to')));
+});
+
 test('comments link the right release and version', () => {
   assert.match(notify.message('v3.2.0', pending), /#77 — Release v3\.2\.0/);
   assert.match(notify.message('v3.2.0', pending), /mission-auto-release-bot:pending-release/);

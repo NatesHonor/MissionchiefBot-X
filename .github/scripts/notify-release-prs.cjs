@@ -1,6 +1,7 @@
 'use strict';
 
 const MARKER = '<!-- mission-auto-release-bot:pending-release -->';
+const CREDITS_MARKER = '<!-- mission-auto-release-bot:credits -->';
 const PR_LINK = /\[#(\d+)\]\(https:\/\/github\.com\/[^/\s)]+\/[^/\s)]+\/(?:issues|pull)\/\1\)/g;
 const PENDING_HEADER = '**Merged successfully!**';
 
@@ -19,6 +20,41 @@ function releasedMessage(version, release) {
   return `${MARKER}\n**Released!**\nThis pull request was included in **${version}**.\n**Release:** [${version}](${release.html_url})\n_— MissionAutoReleaseBot_`;
 }
 
+// credits: Map of login -> sorted PR numbers. Returns markdown or '' if empty.
+function creditsSection(credits) {
+  const entries = [...credits.entries()].sort(([a], [b]) => a.localeCompare(b));
+  if (!entries.length) return '';
+  const lines = entries.map(([login, numbers]) =>
+    `* Thanks to @${login} for ${numbers.map(number => `#${number}`).join(', ')}`);
+  return `${CREDITS_MARKER}\n### Credits\n\n${lines.join('\n')}`;
+}
+
+function creditsComment(version, credits) {
+  const section = creditsSection(credits);
+  if (!section) return '';
+  return `${section}\n\nThank you to everyone who contributed to **${version}**!\n_— MissionAutoReleaseBot_`;
+}
+
+// Replace (or append) the credits block in a release body. Everything from the
+// marker onward belongs to the bot, so release notes above it are untouched.
+function withCredits(body, credits) {
+  const notes = (body || '').split(CREDITS_MARKER)[0].trimEnd();
+  const section = creditsSection(credits);
+  return section ? `${notes}\n\n${section}\n` : `${notes}\n`;
+}
+
+function isBot(user) {
+  return !user || user.type === 'Bot' || /\[bot\]$/i.test(user.login || '');
+}
+
+function addCredit(credits, pr) {
+  if (isBot(pr.user)) return;
+  const numbers = credits.get(pr.user.login) || [];
+  if (!numbers.includes(pr.number)) numbers.push(pr.number);
+  numbers.sort((a, b) => a - b);
+  credits.set(pr.user.login, numbers);
+}
+
 function releaseNotesFromDiff(diff, version) {
   const section = diff.split(/^diff --git /m)
     .find(part => part.startsWith('a/CHANGELOG.md b/CHANGELOG.md\n'));
@@ -32,9 +68,10 @@ function releaseNotesFromDiff(diff, version) {
 }
 
 // Published release bodies use the same entry format as CHANGELOG.md, without
-// diff markers. Prefix them so the same matching functions apply.
+// diff markers. Prefix them so the same matching functions apply. The bot's own
+// credits block is ignored so it never counts as release notes.
 function releaseBodyLines(body) {
-  return (body || '').split(/\r?\n/).map(line => `+${line}`);
+  return (body || '').split(CREDITS_MARKER)[0].split(/\r?\n/).map(line => `+${line}`);
 }
 
 function includedNumbers(lines, owner, repo, releaseNumber) {
@@ -64,11 +101,11 @@ function confirmsCommit(lines, number, sha, owner, repo) {
   });
 }
 
-async function findBotComment({github, owner, repo, number, botLogin}) {
+async function findBotComment({github, owner, repo, number, botLogin, marker = MARKER}) {
   const comments = await github.paginate(github.rest.issues.listComments,
     {owner, repo, issue_number: number, per_page: 100});
   return comments.find(comment => comment.user?.type === 'Bot' &&
-    comment.user.login.toLowerCase() === botLogin && comment.body?.includes(MARKER));
+    comment.user.login.toLowerCase() === botLogin && comment.body?.includes(marker));
 }
 
 async function upsertComment({github, owner, repo, number, existing, body}) {
@@ -77,18 +114,20 @@ async function upsertComment({github, owner, repo, number, existing, body}) {
   else await github.rest.issues.createComment({owner, repo, issue_number: number, body});
 }
 
-async function qualifies({github, owner, repo, number, base, lines}) {
+// Returns the merged PR when it is genuinely part of these release notes, else null.
+async function qualifyingPr({github, owner, repo, number, base, lines}) {
   const {data: pr} = await github.rest.pulls.get({owner, repo, pull_number: number});
   if (!pr.merged_at || pr.base.ref !== base ||
       (pr.head.repo?.full_name === `${owner}/${repo}` && pr.head.ref.startsWith('release-please--'))) {
-    return false;
+    return null;
   }
   // Squash, merge-commit and rebase PRs only qualify when GitHub's merge commit
   // SHA is linked alongside this PR in the release notes.
-  return confirmsCommit(lines, number, pr.merge_commit_sha, owner, repo);
+  return confirmsCommit(lines, number, pr.merge_commit_sha, owner, repo) ? pr : null;
 }
 
-// Comment on merged PRs listed in the pending Release Please PR.
+// Comment on merged PRs listed in the pending Release Please PR, and keep a
+// credits comment on the release PR itself.
 async function notifyPending({github, context, core, base, botLogin}) {
   const {owner, repo} = context.repo;
   const open = await github.paginate(github.rest.pulls.list,
@@ -115,20 +154,37 @@ async function notifyPending({github, context, core, base, botLogin}) {
   const lines = releaseNotesFromDiff(typeof response.data === 'string' ? response.data : '', version);
   if (!lines) { core.warning(`Could not verify ${version} release notes in PR #${release.number}.`); return; }
 
+  const credits = new Map();
   for (const number of includedNumbers(lines, owner, repo, release.number)) {
     try {
-      if (!await qualifies({github, owner, repo, number, base, lines})) continue;
+      const pr = await qualifyingPr({github, owner, repo, number, base, lines});
+      if (!pr) continue;
+      addCredit(credits, pr);
       const existing = await findBotComment({github, owner, repo, number, botLogin});
       await upsertComment({github, owner, repo, number, existing, body: message(version, release)});
     } catch (error) {
       core.warning(`Could not notify PR #${number}: ${error.message}`);
     }
   }
+
+  // The release PR body is regenerated by Release Please and parsed when the
+  // release is created, so credits live in a bot comment instead of the body.
+  try {
+    const body = creditsComment(version, credits);
+    if (body) {
+      const existing = await findBotComment({github, owner, repo, number: release.number,
+        botLogin, marker: CREDITS_MARKER});
+      await upsertComment({github, owner, repo, number: release.number, existing, body});
+    }
+  } catch (error) {
+    core.warning(`Could not update credits on release PR #${release.number}: ${error.message}`);
+  }
 }
 
-// Comment on merged PRs listed in already-published releases. Turns an
-// existing "scheduled" notice into a "released" one, and fills in PRs that were
-// never notified. Each PR keeps the newest release that lists it.
+// Comment on merged PRs listed in already-published releases and add a credits
+// section to each release. Turns an existing "scheduled" notice into a
+// "released" one, and fills in PRs that were never notified. Each PR keeps the
+// newest release that lists it.
 async function notifyReleased({github, context, core, base, botLogin}) {
   const {owner, repo} = context.repo;
   const releases = (await github.paginate(github.rest.repos.listReleases, {owner, repo, per_page: 100}))
@@ -137,17 +193,27 @@ async function notifyReleased({github, context, core, base, botLogin}) {
   const done = new Set();
   for (const release of releases) {
     const lines = releaseBodyLines(release.body);
+    const credits = new Map();
     for (const number of includedNumbers(lines, owner, repo, -1)) {
-      if (done.has(number)) continue;
-      done.add(number);
       try {
-        if (!await qualifies({github, owner, repo, number, base, lines})) continue;
+        const pr = await qualifyingPr({github, owner, repo, number, base, lines});
+        if (!pr) continue;
+        addCredit(credits, pr);
+        if (done.has(number)) continue;
+        done.add(number);
         const existing = await findBotComment({github, owner, repo, number, botLogin});
         await upsertComment({github, owner, repo, number, existing,
           body: releasedMessage(release.tag_name, release)});
       } catch (error) {
         core.warning(`Could not backfill PR #${number}: ${error.message}`);
       }
+    }
+    try {
+      if (!credits.size) continue;
+      const body = withCredits(release.body, credits);
+      if (body !== release.body) await github.rest.repos.updateRelease({owner, repo, release_id: release.id, body});
+    } catch (error) {
+      core.warning(`Could not add credits to ${release.tag_name}: ${error.message}`);
     }
   }
 }
@@ -174,3 +240,7 @@ module.exports.includedNumbers = includedNumbers;
 module.exports.confirmsCommit = confirmsCommit;
 module.exports.message = message;
 module.exports.releasedMessage = releasedMessage;
+module.exports.creditsSection = creditsSection;
+module.exports.creditsComment = creditsComment;
+module.exports.withCredits = withCredits;
+module.exports.addCredit = addCredit;

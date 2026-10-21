@@ -17,4 +17,9 @@ Release notes now list every Conventional Commit type (`feat`, `fix`, `perf`, `r
 
 The notifier runs after every Release Please run, not only when the release PR is created. When a release is published, or when you run the workflow manually with **backfill** checked, it also goes through every published release and comments **Released! … included in vX.Y.Z** on each merged PR listed there. An existing "scheduled" comment is edited into the "released" one rather than duplicated. A PR listed in several releases gets the newest one. Only releases whose notes link both the PR and its merge commit are matched, which is the Release Please format; older hand-written release notes (v3.0.1, v3.0.2) have no such links, so their PRs are not commented on.
 
+**Credits.** Each merged PR that qualifies for a release credits its author (bots such as Dependabot are skipped):
+
+- On the pending release PR, the bot keeps one **Credits** comment, e.g. `Thanks to @user for #75, #79`, and edits it as more PRs land. It's a comment rather than part of the PR body because Release Please rewrites the body on every run.
+- When a release is published (or on a backfill run), the bot appends a **Credits** section to the GitHub release notes. The section is replaced on later runs, never duplicated, and the notes above it are not touched.
+
 App-created release PRs can trigger normal pull-request checks; this workflow runs only for pushes to `main` and manual dispatch, not for changes to its own release PR. GitHub's policy checks for release PR titles may still need an explicit exemption for Release Please's `chore(main): release ...` titles; this change does not alter those unrelated policies.
