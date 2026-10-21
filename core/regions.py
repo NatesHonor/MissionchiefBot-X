@@ -84,14 +84,32 @@ class RegionProfile:
         return f"regions.{self.key}.main_{self.key}:main"
 
     def ensure_data_dir(self) -> Path:
-        self.data_dir.mkdir(parents=True, exist_ok=True)
+        """Seed this region's shipped defaults into SQLite.
+
+        ``data_dir`` is only the document-key namespace now; no folder is
+        created. Gathered documents (vehicles, buildings, missions) are not
+        seeded: the runner gathers them from the game when they are missing.
+        """
+
+        from .region_defaults import seed_region_defaults
+
+        seed_region_defaults(self.key, self.data_dir)
         return self.data_dir
 
     def load_json(self, filename: str, default: Any = None) -> Any:
         """Load one region data document from SQLite without letting a broken cache stop startup."""
 
+        from .region_defaults import DEFAULT_DOCUMENTS, seed_region_defaults, shipped_default
+
         fallback = {} if default is None else default
         value = load_document(self.data_dir / filename, None)
+        if value is None and filename in DEFAULT_DOCUMENTS:
+            # Defaults may be read before startup seeding ran (tools, tests).
+            seed_region_defaults(self.key, self.data_dir)
+            value = load_document(self.data_dir / filename, None)
+            if value is None:
+                # The database could not be opened: use the shipped file.
+                value = shipped_default(self.key, filename)
         return fallback if value is None else value
 
     def save_json(self, filename: str, value: Any) -> None:
@@ -114,12 +132,19 @@ class RegionProfile:
     def validate_data_contract(self) -> list[str]:
         """Return missing profile resources; useful for diagnostics and tests."""
 
+        from .region_defaults import defaults_dir
+
         required = (
             "vehicle_aliases.json",
             "personnel_aliases.json",
             "requirement_mapping.json",
         )
-        return [filename for filename in required if not document_exists(self.data_dir / filename)]
+        shipped = defaults_dir(self.key)
+        return [
+            filename
+            for filename in required
+            if not (shipped / filename).is_file() and not document_exists(self.data_dir / filename)
+        ]
 
     def validate_vehicle_mappings(self) -> list[str]:
         """Validate every regional alias, personnel, and requirement map."""
@@ -196,55 +221,55 @@ _REGION_DEFINITIONS = {
     "uk": {
         "display_name": "United Kingdom",
         "base_url": "https://www.missionchief.co.uk/",
-        "vehicle_options_module": "regions.uk.data.vehicle_options",
+        "vehicle_options_module": "regions.uk.vehicle_options",
         "language": "en",
     },
     "aus": {
         "display_name": "Australia",
         "base_url": "https://www.missionchief-australia.com/",
-        "vehicle_options_module": "regions.aus.data.vehicle_options",
+        "vehicle_options_module": "regions.aus.vehicle_options",
         "language": "en",
     },
     "ger": {
         "display_name": "Germany",
         "base_url": "https://www.leitstellenspiel.de/",
-        "vehicle_options_module": "regions.ger.data.vehicle_options",
+        "vehicle_options_module": "regions.ger.vehicle_options",
         "language": "de",
     },
     "nld": {
         "display_name": "Netherlands",
         "base_url": "https://www.meldkamerspel.com/",
-        "vehicle_options_module": "regions.nld.data.vehicle_options",
+        "vehicle_options_module": "regions.nld.vehicle_options",
         "language": "nl",
     },
     "swe": {
         "display_name": "Sweden",
         "base_url": "https://www.larmcentralen-spelet.se/",
-        "vehicle_options_module": "regions.swe.data.vehicle_options",
+        "vehicle_options_module": "regions.swe.vehicle_options",
         "language": "sv",
     },
     "pt": {
         "display_name": "Portugal",
         "base_url": "https://www.jogo-operador112.com/",
-        "vehicle_options_module": "regions.pt.data.vehicle_options",
+        "vehicle_options_module": "regions.pt.vehicle_options",
         "language": "pt",
     },
     "dk": {
         "display_name": "Denmark",
         "base_url": "https://www.alarmcentral-spil.dk/",
-        "vehicle_options_module": "regions.dk.data.vehicle_options",
+        "vehicle_options_module": "regions.dk.vehicle_options",
         "language": "da",
     },
     "pl": {
         "display_name": "Poland",
         "base_url": "https://www.operatorratunkowy.pl/",
-        "vehicle_options_module": "regions.pl.data.vehicle_options",
+        "vehicle_options_module": "regions.pl.vehicle_options",
         "language": "pl",
     },
     "fr": {
         "display_name": "France",
         "base_url": "https://www.operateur112.fr/",
-        "vehicle_options_module": "regions.fr.data.vehicle_options",
+        "vehicle_options_module": "regions.fr.vehicle_options",
         "language": "fr",
     },
 }

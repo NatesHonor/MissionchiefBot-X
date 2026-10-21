@@ -15,7 +15,7 @@ from utils.vehicle_data import gather_vehicle_data
 from .auth import login_all
 from .browser import BrowserPool
 from .buildings import gather_building_data
-from .data_store import load_document
+from .data_store import document_has_records
 from .dispatching import navigate_and_dispatch
 from .mission_collector import check_and_grab_missions
 from .regions import RegionProfile, get_region_profile
@@ -85,10 +85,15 @@ async def run_parallel_runtime_loops(loop_factories, stop_event: asyncio.Event) 
 
 
 def _cache_has_records(path) -> bool:
-    """Treat missing, empty, or corrupt regional caches as needing refresh."""
+    """Return True when a gathered document is stored in SQLite with records.
+
+    Missing, empty, or corrupt documents mean the data has never been gathered
+    for this player (or must be re-gathered), so the runner fetches it from the
+    game and inserts it into the database.
+    """
 
     try:
-        return bool(load_document(path, None))
+        return document_has_records(path)
     except (OSError, TypeError):
         return False
 

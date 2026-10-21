@@ -34,6 +34,12 @@ DEFAULT_DB_PATH = PROJECT_ROOT / "data" / "missionchief.sqlite3"
 
 SOURCE_FILE = "file"
 SOURCE_APP = "app"
+# Shipped defaults (aliases, mappings, ignore lists). They are written to the
+# database on startup and kept there. A default never overwrites a document the
+# bot or the user changed (SOURCE_APP); it is refreshed only when the shipped
+# default itself changes. Gathered data (vehicles, buildings, missions) is never
+# a default: when it is missing the bot gathers it from the game.
+SOURCE_DEFAULT = "default"
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS documents (
@@ -171,6 +177,56 @@ def save_document(path: str | os.PathLike[str], value: Any) -> str:
     return key
 
 
+def seed_document(path: str | os.PathLike[str], value: Any, version: str) -> bool:
+    """Store a shipped default unless the document is already owned by the bot.
+
+    ``version`` identifies the shipped default (for example a content hash).
+    Returns True when the database was written.
+    """
+
+    key = document_key(path)
+    try:
+        with _lock, connect() as connection:
+            row = connection.execute(
+                "SELECT source, source_mtime FROM documents WHERE key = ?",
+                (key,),
+            ).fetchone()
+            if row is not None:
+                source, stored_version = row
+                if source == SOURCE_APP:
+                    return False
+                if source == SOURCE_DEFAULT and stored_version == version:
+                    return False
+            connection.execute(
+                """
+                INSERT INTO documents (key, content, source, source_mtime, updated_at)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(key) DO UPDATE SET
+                    content = excluded.content,
+                    source = excluded.source,
+                    source_mtime = excluded.source_mtime,
+                    updated_at = excluded.updated_at
+                """,
+                (key, json.dumps(value, ensure_ascii=False, indent=2), SOURCE_DEFAULT, version, time.time()),
+            )
+            return True
+    except sqlite3.Error:
+        return False
+
+
+def document_has_records(path: str | os.PathLike[str]) -> bool:
+    """Return True when a stored document holds at least one record.
+
+    Missing, empty, or corrupt documents count as having no records, so callers
+    know the data still needs to be gathered.
+    """
+
+    value = load_document(path, None)
+    if isinstance(value, (dict, list)):
+        return len(value) > 0
+    return value is not None
+
+
 def document_exists(path: str | os.PathLike[str]) -> bool:
     """Return True when a document is stored or its legacy JSON file exists."""
 
@@ -263,6 +319,10 @@ def import_json_files(root: str | os.PathLike[str] | None = None) -> list[str]:
                 continue
             # Tooling config such as release-please manifests is not bot data.
             if not folders:
+                continue
+            # Shipped region defaults are seeded by core.region_defaults under
+            # their regions/<region>/data/ keys, not imported as files.
+            if "defaults" in folders:
                 continue
             found, value = _read_json_file(file_path)
             if not found:
