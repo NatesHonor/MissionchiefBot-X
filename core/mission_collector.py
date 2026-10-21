@@ -5,9 +5,10 @@ from __future__ import annotations
 import json
 
 from utils.pretty_print import display_error, display_info
-from utils.progress import ProgressBar
+from utils.progress import ProgressDisplay as ProgressBar
 
 from .concurrency import split_mission_ids_among_threads
+from .data_store import load_document, save_document
 from .missionchief_api import fetch_mission_markers, refresh_mission_index
 from .missionchief_api import fetch_mission_marker_records
 from .mission_ignore import filter_ignored_mission_ids, load_mission_ignore_rules
@@ -85,12 +86,9 @@ async def check_and_grab_missions(
                     ids.append(panel_id.split("_")[-1])
         ids = list(dict.fromkeys(ids))
         await scan_event_resources(page, url, settings.auto_special_resources)
-        cached_missions = {}
-        if profile.mission_file.exists():
-            try:
-                cached_missions = json.loads(profile.mission_file.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError, TypeError):
-                cached_missions = {}
+        cached_missions = load_document(profile.mission_file, {})
+        if not isinstance(cached_missions, dict):
+            cached_missions = {}
         rules = load_mission_ignore_rules(profile)
         ids, ignored = filter_ignored_mission_ids(
             ids,
@@ -112,7 +110,7 @@ async def check_and_grab_missions(
             if mission_id not in active_ids:
                 state.free_for_mission(mission_id)
         if not ids:
-            profile.mission_file.write_text("{}", encoding="utf-8")
+            save_document(profile.mission_file, {})
             display_info("No missions found, stored an empty mission snapshot.")
             return
         display_info(f"Found {len(ids)} mission IDs.")
@@ -132,8 +130,7 @@ async def check_and_grab_missions(
             collection_succeeded = True
         finally:
             progress.finish("complete" if collection_succeeded else "stopped")
-        with profile.mission_file.open("w", encoding="utf-8") as stream:
-            json.dump(data, stream, indent=4)
+        save_document(profile.mission_file, data)
         display_info(f"Mission config collection complete. Stored mission config in {profile.mission_file}.")
     except Exception as error:
         display_error(f"Error gathering mission config: {error}")

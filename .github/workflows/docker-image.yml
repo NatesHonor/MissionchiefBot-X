@@ -1,49 +1,27 @@
-name: Docker
+name: Build Docker image
 
 on:
   push:
-    branches: [main]
-    tags: ["v*.*.*"]
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
   pull_request:
-    branches: [main]
-    paths:
-      - Dockerfile
-      - .dockerignore
-      - compose.yaml
-      - requirements.txt
-      - "**/*.py"
-      - .github/workflows/docker-image.yml
+    branches:
+      - main
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
-concurrency:
-  group: docker-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  prepare:
-    name: Prepare image name
-    if: github.event_name != 'pull_request'
+  docker:
     runs-on: ubuntu-latest
-    outputs:
-      image: ${{ steps.image.outputs.name }}
-    steps:
-      - name: Normalize image name
-        id: image
-        env:
-          RAW_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-        run: echo "name=${RAW_IMAGE,,}" >> "$GITHUB_OUTPUT"
-
-  validate:
-    name: Validate image
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
     permissions:
       contents: read
+      packages: write
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -149,33 +127,20 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ needs.prepare.outputs.image }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
+            type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha
 
-      - name: Create and push manifest list
-        working-directory: ${{ runner.temp }}/digests
-        env:
-          IMAGE: ${{ needs.prepare.outputs.image }}
-          TAGS: ${{ steps.meta.outputs.tags }}
-        run: |
-          tag_args=()
-          while IFS= read -r tag; do
-            tag_args+=("--tag" "$tag")
-          done <<< "$TAGS"
-
-          digest_args=()
-          for digest in *; do
-            digest_args+=("${IMAGE}@sha256:${digest}")
-          done
-
-          docker buildx imagetools create "${tag_args[@]}" "${digest_args[@]}"
-
-      - name: Inspect published image
-        env:
-          IMAGE: ${{ needs.prepare.outputs.image }}
-          VERSION: ${{ steps.meta.outputs.version }}
-        run: docker buildx imagetools inspect "${IMAGE}:${VERSION}"
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
