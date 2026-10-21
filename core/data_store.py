@@ -1,8 +1,9 @@
 """SQLite-backed storage for the bot's JSON data documents.
 
-Every data file the bot used to read or write as JSON (region aliases,
-requirement maps, vehicle/building caches, mission data, tasks, ...) is stored
-as one row in a single SQLite database. Callers keep passing the same file
+Every data document (region aliases, requirement maps, vehicle/building
+caches, mission data, tasks, ...) is stored as one row in a single SQLite
+database. JSON is only used for the small shipped region defaults and
+human-readable import/export. Callers keep passing the same file
 paths they always used; each path is turned into a stable document key such as
 ``regions/us/data/vehicle_data.json``.
 
@@ -73,6 +74,9 @@ def connect(path: str | os.PathLike[str] | None = None) -> Iterator[sqlite3.Conn
     connection = sqlite3.connect(db_path, timeout=30)
     try:
         connection.execute("PRAGMA journal_mode=WAL")
+        connection.execute("PRAGMA synchronous=NORMAL")
+        connection.execute("PRAGMA temp_store=MEMORY")
+        connection.execute("PRAGMA cache_size=-2048")  # 2 MiB page cache, not the SQLite default.
         connection.executescript(_SCHEMA)
         yield connection
         connection.commit()
@@ -86,7 +90,8 @@ def connect(path: str | os.PathLike[str] | None = None) -> Iterator[sqlite3.Conn
 def document_key(path: str | os.PathLike[str]) -> str:
     """Turn a data file path into a stable, project-relative document key."""
 
-    resolved = Path(path).expanduser().resolve()
+    supplied = Path(path).expanduser()
+    resolved = supplied if supplied.is_absolute() else PROJECT_ROOT / supplied
     try:
         return resolved.relative_to(PROJECT_ROOT).as_posix()
     except ValueError:
@@ -126,7 +131,7 @@ def _write_row(connection: sqlite3.Connection, key: str, value: Any, source: str
             source_mtime = excluded.source_mtime,
             updated_at = excluded.updated_at
         """,
-        (key, json.dumps(value, ensure_ascii=False, indent=2), source, source_mtime, time.time()),
+        (key, json.dumps(value, ensure_ascii=False, separators=(",", ":")), source, source_mtime, time.time()),
     )
 
 
@@ -207,7 +212,7 @@ def seed_document(path: str | os.PathLike[str], value: Any, version: str) -> boo
                     source_mtime = excluded.source_mtime,
                     updated_at = excluded.updated_at
                 """,
-                (key, json.dumps(value, ensure_ascii=False, indent=2), SOURCE_DEFAULT, version, time.time()),
+                (key, json.dumps(value, ensure_ascii=False, separators=(",", ":")), SOURCE_DEFAULT, version, time.time()),
             )
             return True
     except sqlite3.Error:
