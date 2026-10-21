@@ -241,15 +241,12 @@ async def run_bot(
                     running=True,
                 )
 
-            display_info("Pooled settings:")
-            display_info(f"Region: {profile.key.upper()}")
-            display_info(f"Headless browsers: {'enabled' if settings.headless else 'disabled'}.")
-            display_info(f"Browser count: {settings.browsers}")
-            display_info(f"Dispatch type: {settings.dispatch_type}.")
             display_info(
-                f"Concurrent missions are currently {'enabled' if settings.concurrent_missions else 'disabled'}."
+                f"Ready · {profile.display_name} · 1 shared browser / {len(contexts)} isolated sessions · "
+                f"{settings.dispatch_type} dispatch · "
+                f"{'concurrent' if settings.concurrent_missions else 'sequential'} missions · "
+                f"{settings.dispatch_delay}s pacing"
             )
-            display_info(f"Dispatch pacing: {settings.dispatch_delay}s between missions.")
 
             other_context = contexts[0]
             grabbing_contexts = contexts[1:]
