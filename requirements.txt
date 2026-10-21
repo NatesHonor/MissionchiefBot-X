@@ -3,6 +3,6 @@
 art==6.5
 deep-translator==1.11.4
 playwright==1.64.0
-python-dotenv==1.1.1
-rich==14.2.0
+python-dotenv==1.2.4
+rich==15.0.0
 
