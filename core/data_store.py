@@ -2,8 +2,9 @@
 
 Every data document (region aliases, requirement maps, vehicle/building
 caches, mission data, tasks, ...) is stored as one row in a single SQLite
-database. JSON is only used for the small shipped region defaults and
-human-readable import/export. Callers keep passing the same file
+database. Shipped region defaults come from the read-only seed
+``assets/region_defaults.sqlite3``; JSON is only used for human-readable
+import/export. Callers keep passing the same file
 paths they always used; each path is turned into a stable document key such as
 ``regions/us/data/vehicle_data.json``.
 
@@ -324,10 +325,6 @@ def import_json_files(root: str | os.PathLike[str] | None = None) -> list[str]:
                 continue
             # Tooling config such as release-please manifests is not bot data.
             if not folders:
-                continue
-            # Shipped region defaults are seeded by core.region_defaults under
-            # their regions/<region>/data/ keys, not imported as files.
-            if "defaults" in folders:
                 continue
             found, value = _read_json_file(file_path)
             if not found:

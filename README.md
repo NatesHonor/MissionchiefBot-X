@@ -86,15 +86,17 @@ does not require copying the login, browser, parser, or dispatch loops.
 - `core.auth`, `core.browser`, and `core.vehicle_state` own shared resources.
 - `core.buildings`, `core.mission_*`, and `core.dispatching` contain the shared
   workflows.
-- `regions/<region>.py` holds that region's vehicle substitutions;
-  `regions/defaults/<region>/` holds the shipped alias and requirement mappings.
+- `regions/<region>.py` holds that region's vehicle substitutions.
+- `assets/region_defaults.sqlite3` is the read-only seed database with every
+  region's shipped alias and requirement mappings.
 
 All bot data lives in SQLite (`data/missionchief.sqlite3`):
 
-- **Defaults** (`regions/defaults/<region>/`): vehicle aliases, personnel
-  aliases, requirement mappings and the mission ignore list. They are seeded
-  into the database on startup and persist there. Your own edits are kept;
-  a default is only refreshed when the shipped version changes.
+- **Defaults** (from `assets/region_defaults.sqlite3`): vehicle aliases,
+  personnel aliases, requirement mappings and the mission ignore list. On
+  startup each default is copied row by row into your database and persists
+  there. The seed file is never copied over your database, your own edits are
+  kept, and a default is only refreshed when the shipped version changes.
 - **Gathered data**: vehicle IDs, building IDs, active missions and the
   mission index. These are never shipped. If the database has none for your
   region yet, the bot gathers them from the game and stores them.

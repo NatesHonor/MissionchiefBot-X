@@ -126,18 +126,17 @@ class RegionProfile:
     def validate_data_contract(self) -> list[str]:
         """Return missing profile resources; useful for diagnostics and tests."""
 
-        from .region_defaults import defaults_dir
+        from .region_defaults import has_shipped_default
 
         required = (
             "vehicle_aliases.json",
             "personnel_aliases.json",
             "requirement_mapping.json",
         )
-        shipped = defaults_dir(self.key)
         return [
             filename
             for filename in required
-            if not (shipped / filename).is_file() and not document_exists(self.data_dir / filename)
+            if not has_shipped_default(self.key, filename) and not document_exists(self.data_dir / filename)
         ]
 
     def validate_vehicle_mappings(self) -> list[str]:

@@ -11,11 +11,14 @@ import sys
 sys.modules.setdefault("art", SimpleNamespace())
 
 from core import data_store
+import sqlite3
+
 from core.region_defaults import (
     DEFAULT_DOCUMENTS,
     GATHERED_DOCUMENTS,
     PROJECT_ROOT,
-    defaults_dir,
+    SEED_DATABASE,
+    has_shipped_default,
     seed_region_defaults,
     shipped_default,
 )
@@ -42,15 +45,23 @@ class ShippedFilesTests(unittest.TestCase):
             self.assertTrue((PROJECT_ROOT / "regions" / f"{region}.py").is_file(), region)
             self.assertFalse((PROJECT_ROOT / "regions" / region).exists(), region)
 
+    def test_defaults_ship_in_one_seed_database_not_folders(self):
+        self.assertTrue(SEED_DATABASE.is_file())
+        self.assertFalse((PROJECT_ROOT / "regions" / "defaults").exists())
+
     def test_every_region_ships_every_default(self):
         for region in supported_regions():
             for filename in DEFAULT_DOCUMENTS:
-                self.assertTrue((defaults_dir(region) / filename).is_file(), f"{region}/{filename}")
+                self.assertTrue(has_shipped_default(region, filename), f"{region}/{filename}")
 
     def test_gathered_data_is_never_shipped(self):
-        for region in supported_regions():
-            for filename in GATHERED_DOCUMENTS:
-                self.assertFalse((defaults_dir(region) / filename).exists(), f"{region}/{filename}")
+        connection = sqlite3.connect(f"file:{SEED_DATABASE.as_posix()}?mode=ro", uri=True)
+        try:
+            documents = {row[0] for row in connection.execute("SELECT DISTINCT document FROM defaults")}
+        finally:
+            connection.close()
+        self.assertEqual(documents, set(DEFAULT_DOCUMENTS))
+        self.assertFalse(documents & set(GATHERED_DOCUMENTS))
 
 
 class SeedingTests(_TempDatabase):
@@ -65,6 +76,13 @@ class SeedingTests(_TempDatabase):
         profile = get_region_profile("us")
         seed_region_defaults(profile.key, profile.data_dir)
         self.assertEqual(seed_region_defaults(profile.key, profile.data_dir), [])
+
+    def test_seeding_never_replaces_the_user_database_file(self):
+        profile = get_region_profile("us")
+        data_store.save_document(profile.vehicle_file, {"Patrol Car": ["1001"]})
+        seed_region_defaults(profile.key, profile.data_dir)
+        self.assertEqual(data_store.load_document(profile.vehicle_file, None), {"Patrol Car": ["1001"]})
+        self.assertNotEqual(data_store.database_path().resolve(), SEED_DATABASE.resolve())
 
     def test_user_changes_survive_reseeding(self):
         profile = get_region_profile("us")
