@@ -121,6 +121,21 @@ jobs:
       - name: Run tests
         run: PYTHONPATH=. pytest tests/ -v
 
+  # ── Release notification script tests ─────────────────────────────
+  release-notify-test:
+    name: test (release notifications)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run release notification tests
+        run: node --test tests/test_release_notifications.js
+
   # ── Dependency vulnerability audit ─────────────────────────────────
   deps-audit:
     name: dependency-audit
@@ -182,7 +197,7 @@ jobs:
   pr-comment:
     name: pr-comment
     if: always() && github.event_name == 'pull_request'
-    needs: [compat, lint, typecheck, security, test, deps-audit, deps-freshness, secret-scan]
+    needs: [compat, lint, typecheck, security, test, release-notify-test, deps-audit, deps-freshness, secret-scan]
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -201,6 +216,7 @@ jobs:
               ('security (bandit)', '${{ needs.security.result }}'),
               ('secret-scan (gitleaks)', '${{ needs.secret-scan.result }}'),
               ('test (pytest)', '${{ needs.test.result }}'),
+              ('test (release notifications)', '${{ needs.release-notify-test.result }}'),
               ('dependency-audit', '${{ needs.deps-audit.result }}'),
               ('dependency-freshness', '${{ needs.deps-freshness.result }}'),
           ]

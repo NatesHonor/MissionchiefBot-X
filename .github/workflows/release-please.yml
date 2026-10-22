@@ -39,9 +39,6 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      - name: Test release notification association
-        run: node --test tests/test_release_notifications.js
-
       - name: Notify merged PRs included in pending release
         if: ${{ steps.release-please.outputs.pr != '' && steps.release-please.outputs.pr != 'null' }}
         uses: actions/github-script@v7
