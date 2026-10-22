@@ -9,7 +9,6 @@ import threading
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
@@ -21,7 +20,11 @@ from rich.text import Text
 
 
 LOGGER_NAME = "missionchiefbot"
-DEFAULT_LOG_FILE = Path(__file__).resolve().parents[1] / "logs" / "missionchiefbot.log"
+DEFAULT_LOG_DIR = Path(__file__).resolve().parents[1] / "logs"
+# The current run only. Replaced at the start of every run.
+DEFAULT_LOG_FILE = DEFAULT_LOG_DIR / "latest.log"
+DAILY_LOG_FORMAT = "%m-%d-%Y"
+_FILE_FORMAT = logging.Formatter("%(asctime)s | %(levelname)-8s | %(name)s | %(message)s", "%Y-%m-%d %H:%M:%S")
 _THREAD_MESSAGE = re.compile(r"^Thread (?P<thread>\d+):\s*(?P<message>.*)$")
 _console = Console()
 _configured = False
@@ -105,7 +108,7 @@ class VisualConsoleHandler(logging.Handler):
             label, style = _level_style(activity.level)
             message = activity.message + (f"  ×{activity.repeats}" if activity.repeats > 1 else "")
             table.add_row(f"#{worker}", Text(label, style=style), message, activity.updated_at.strftime("%H:%M:%S"))
-        footer = Text("Detailed history: logs/missionchiefbot.log", style="dim")
+        footer = Text("Detailed history: logs/latest.log", style="dim")
         _console.print(Panel(Group(table, footer), title=f"MissionChief Bot · {title}", border_style="bright_black"))
         self._updates = 0
 
@@ -142,10 +145,15 @@ def configure_logging(
     console_enabled: bool = True,
     file_enabled: bool = True,
     visual_console: bool = True,
-    log_file: str | Path = DEFAULT_LOG_FILE,
-    max_bytes: int = 5 * 1024 * 1024,
-    backup_count: int = 5,
+    log_dir: str | Path = DEFAULT_LOG_DIR,
 ) -> logging.Logger:
+    """Configure console output and the two log files.
+
+    ``logs/latest.log`` holds only the current run and is replaced every time
+    the bot starts. ``logs/MM-DD-YYYY.log`` collects every run of that day;
+    each run is appended under its own start banner.
+    """
+
     global _configured, _visual_handler
     logger = get_logger()
     for old_handler in logger.handlers[:]:
@@ -165,17 +173,23 @@ def configure_logging(
             logger.addHandler(handler)
 
     if file_enabled:
-        destination = Path(log_file).expanduser()
+        directory = Path(log_dir).expanduser()
+        started = datetime.now()
+        daily = directory / f"{started.strftime(DAILY_LOG_FORMAT)}.log"
         try:
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            file_handler = RotatingFileHandler(destination, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8")
+            directory.mkdir(parents=True, exist_ok=True)
+            latest_handler = logging.FileHandler(directory / DEFAULT_LOG_FILE.name, mode="w", encoding="utf-8")
+            daily_handler = logging.FileHandler(daily, mode="a", encoding="utf-8")
         except OSError as error:
             # A read-only disk should not prevent the bot from starting. The
             # console still reports the problem and continues without a file.
             _console.print(f"[yellow]File logging unavailable:[/yellow] {error}")
         else:
-            file_handler.setFormatter(logging.Formatter("%(asctime)s | %(levelname)-8s | %(name)s | %(message)s", "%Y-%m-%d %H:%M:%S"))
-            logger.addHandler(file_handler)
+            banner = f"===== Run started {started.strftime('%Y-%m-%d %H:%M:%S')} =====\n"
+            for handler in (latest_handler, daily_handler):
+                handler.stream.write(banner)
+                handler.setFormatter(_FILE_FORMAT)
+                logger.addHandler(handler)
 
     if not logger.handlers:
         logger.addHandler(logging.NullHandler())
@@ -187,14 +201,64 @@ def ensure_logging() -> logging.Logger:
     """Return the configured logger without opening a file on first use.
 
     The main application calls ``configure_logging`` with the user's settings.
-    During imports and tests, an incidental log message should not create a
-    rotating file handler (or fail because the log directory is read-only).
+    During imports, an incidental log message should not create log files (or
+    fail because the log directory is read-only).
     """
 
     logger = get_logger()
     if not _configured and not logger.handlers:
         logger.addHandler(logging.NullHandler())
     return logger
+
+
+WARNING_SIGN = r"""
+        /\
+       /  \
+      / || \
+     /  ||  \
+    /   ||   \
+   /    ..    \
+  /____________\
+""".strip("\n")
+
+
+def daily_log_file(log_dir: str | Path = DEFAULT_LOG_DIR) -> Path:
+    """Return today's log file, which collects every run of the day."""
+
+    return Path(log_dir).expanduser() / f"{datetime.now().strftime(DAILY_LOG_FORMAT)}.log"
+
+
+def display_exit(
+    reason: str,
+    *,
+    failed: bool = True,
+    log_dir: str | Path = DEFAULT_LOG_DIR,
+    support_url: str | None = None,
+) -> None:
+    """Print a clear exit panel pointing to the log files.
+
+    Failures get the warning sign and a red border. A clean stop still says
+    where the logs are, but without the alarm.
+    """
+
+    directory = Path(log_dir).expanduser()
+    style = "bold red" if failed else "yellow"
+    heading = "THE BOT HAS STOPPED" if failed else "THE BOT WAS STOPPED"
+    lines: list[Text] = []
+    if failed:
+        lines.append(Text(WARNING_SIGN, style=style))
+        lines.append(Text(""))
+    lines.append(Text(heading, style=style))
+    lines.append(Text(reason, style="white"))
+    lines.append(Text(""))
+    lines.append(Text("Check the logs for more information:", style="bold"))
+    lines.append(Text(f"  This run:  {directory / DEFAULT_LOG_FILE.name}", style="cyan"))
+    lines.append(Text(f"  Today:     {daily_log_file(directory)}", style="cyan"))
+    if support_url:
+        lines.append(Text(""))
+        lines.append(Text(f"Need help? Join us at {support_url}", style="dim"))
+    title = "MissionChief Bot · Error" if failed else "MissionChief Bot · Stopped"
+    _console.print(Panel(Group(*lines), title=title, border_style=style, padding=(1, 2)))
 
 
 def display_header(subtitle: str, details: Mapping[str, Any] | None = None) -> None:

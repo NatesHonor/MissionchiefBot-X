@@ -56,9 +56,8 @@ class Settings:
     log_console: bool = True
     log_file_enabled: bool = True
     log_rich_console: bool = True
-    log_file: str = "logs/missionchiefbot.log"
-    log_max_bytes: int = 5 * 1024 * 1024
-    log_backup_count: int = 5
+    # Folder for latest.log (this run) and MM-DD-YYYY.log (every run that day).
+    log_dir: str = "logs"
 
 
 def _required(name: str) -> str:
@@ -149,9 +148,7 @@ def load_settings(path: str | os.PathLike[str] | None = None) -> Settings:
         log_console=_boolean("MISSIONCHIEF_LOG_CONSOLE", True),
         log_file_enabled=_boolean("MISSIONCHIEF_LOG_FILE_ENABLED", True),
         log_rich_console=_boolean("MISSIONCHIEF_LOG_RICH_CONSOLE", True),
-        log_file=_text("MISSIONCHIEF_LOG_FILE", "logs/missionchiefbot.log"),
-        log_max_bytes=_integer("MISSIONCHIEF_LOG_MAX_BYTES", 5 * 1024 * 1024, 1024),
-        log_backup_count=_integer("MISSIONCHIEF_LOG_BACKUP_COUNT", 5),
+        log_dir=_text("MISSIONCHIEF_LOG_DIR", "logs"),
     )
 
 
