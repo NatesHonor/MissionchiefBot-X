@@ -23,7 +23,11 @@ LOGGER_NAME = "missionchiefbot"
 DEFAULT_LOG_DIR = Path(__file__).resolve().parents[1] / "logs"
 # The current run only. Replaced at the start of every run.
 DEFAULT_LOG_FILE = DEFAULT_LOG_DIR / "latest.log"
+# Every run also gets its own file inside a folder for that day:
+# logs/MM-DD-YYYY/HH-MM-SS.log
 DAILY_LOG_FORMAT = "%m-%d-%Y"
+RUN_LOG_FORMAT = "%H-%M-%S"
+_run_log_file: Path | None = None
 _FILE_FORMAT = logging.Formatter("%(asctime)s | %(levelname)-8s | %(name)s | %(message)s", "%Y-%m-%d %H:%M:%S")
 _THREAD_MESSAGE = re.compile(r"^Thread (?P<thread>\d+):\s*(?P<message>.*)$")
 _console = Console()
@@ -150,11 +154,11 @@ def configure_logging(
     """Configure console output and the two log files.
 
     ``logs/latest.log`` holds only the current run and is replaced every time
-    the bot starts. ``logs/MM-DD-YYYY.log`` collects every run of that day;
-    each run is appended under its own start banner.
+    the bot starts. The same run is also written to its own file in a folder
+    for the day, ``logs/MM-DD-YYYY/HH-MM-SS.log``, so every run is kept.
     """
 
-    global _configured, _visual_handler
+    global _configured, _visual_handler, _run_log_file
     logger = get_logger()
     for old_handler in logger.handlers[:]:
         logger.removeHandler(old_handler)
@@ -175,19 +179,19 @@ def configure_logging(
     if file_enabled:
         directory = Path(log_dir).expanduser()
         started = datetime.now()
-        daily = directory / f"{started.strftime(DAILY_LOG_FORMAT)}.log"
+        day_folder = directory / started.strftime(DAILY_LOG_FORMAT)
+        run_file = _unique_run_file(day_folder, started)
         try:
-            directory.mkdir(parents=True, exist_ok=True)
+            day_folder.mkdir(parents=True, exist_ok=True)
             latest_handler = logging.FileHandler(directory / DEFAULT_LOG_FILE.name, mode="w", encoding="utf-8")
-            daily_handler = logging.FileHandler(daily, mode="a", encoding="utf-8")
+            run_handler = logging.FileHandler(run_file, mode="w", encoding="utf-8")
         except OSError as error:
             # A read-only disk should not prevent the bot from starting. The
             # console still reports the problem and continues without a file.
             _console.print(f"[yellow]File logging unavailable:[/yellow] {error}")
         else:
-            banner = f"===== Run started {started.strftime('%Y-%m-%d %H:%M:%S')} =====\n"
-            for handler in (latest_handler, daily_handler):
-                handler.stream.write(banner)
+            _run_log_file = run_file
+            for handler in (latest_handler, run_handler):
                 handler.setFormatter(_FILE_FORMAT)
                 logger.addHandler(handler)
 
@@ -222,10 +226,22 @@ WARNING_SIGN = r"""
 """.strip("\n")
 
 
-def daily_log_file(log_dir: str | Path = DEFAULT_LOG_DIR) -> Path:
-    """Return today's log file, which collects every run of the day."""
+def _unique_run_file(day_folder: Path, started: datetime) -> Path:
+    """Name a run's file after its start time; add -2, -3... if that second is taken."""
 
-    return Path(log_dir).expanduser() / f"{datetime.now().strftime(DAILY_LOG_FORMAT)}.log"
+    stem = started.strftime(RUN_LOG_FORMAT)
+    candidate = day_folder / f"{stem}.log"
+    number = 2
+    while candidate.exists():
+        candidate = day_folder / f"{stem}-{number}.log"
+        number += 1
+    return candidate
+
+
+def run_log_file() -> Path | None:
+    """Return this run's file in the day folder, if file logging started."""
+
+    return _run_log_file
 
 
 def display_exit(
@@ -252,8 +268,8 @@ def display_exit(
     lines.append(Text(reason, style="white"))
     lines.append(Text(""))
     lines.append(Text("Check the logs for more information:", style="bold"))
-    lines.append(Text(f"  This run:  {directory / DEFAULT_LOG_FILE.name}", style="cyan"))
-    lines.append(Text(f"  Today:     {daily_log_file(directory)}", style="cyan"))
+    lines.append(Text(f"  Latest:   {directory / DEFAULT_LOG_FILE.name}", style="cyan"))
+    lines.append(Text(f"  This run: {_run_log_file or directory / datetime.now().strftime(DAILY_LOG_FORMAT)}", style="cyan"))
     if support_url:
         lines.append(Text(""))
         lines.append(Text(f"Need help? Join us at {support_url}", style="dim"))

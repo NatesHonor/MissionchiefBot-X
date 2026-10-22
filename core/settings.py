@@ -56,7 +56,7 @@ class Settings:
     log_console: bool = True
     log_file_enabled: bool = True
     log_rich_console: bool = True
-    # Folder for latest.log (this run) and MM-DD-YYYY.log (every run that day).
+    # Folder for latest.log and the per-day run folders (MM-DD-YYYY/HH-MM-SS.log).
     log_dir: str = "logs"
 
 
