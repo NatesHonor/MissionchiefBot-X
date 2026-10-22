@@ -164,16 +164,22 @@ def configure_logging(
         logger.removeHandler(old_handler)
         old_handler.close()
     _visual_handler = None
-    logger.setLevel(getattr(logging, level.upper(), logging.INFO))
+    console_level = getattr(logging, level.upper(), logging.INFO)
+    # The logger passes everything through and each handler applies its own
+    # level: the console stays at the configured level, while the log files
+    # always keep DEBUG detail so a run can be traced afterwards.
+    logger.setLevel(logging.DEBUG)
     logger.propagate = False
 
     if console_enabled:
         if visual_console:
             _visual_handler = VisualConsoleHandler()
+            _visual_handler.setLevel(console_level)
             logger.addHandler(_visual_handler)
         else:
             handler = RichHandler(console=_console, show_path=False, rich_tracebacks=True, markup=False)
             handler.setFormatter(logging.Formatter("%(message)s"))
+            handler.setLevel(console_level)
             logger.addHandler(handler)
 
     if file_enabled:
@@ -193,6 +199,7 @@ def configure_logging(
             _run_log_file = run_file
             for handler in (latest_handler, run_handler):
                 handler.setFormatter(_FILE_FORMAT)
+                handler.setLevel(logging.DEBUG)
                 logger.addHandler(handler)
 
     if not logger.handlers:
