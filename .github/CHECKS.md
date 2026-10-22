@@ -8,7 +8,7 @@ This repository uses GitHub Actions for continuous integration. Here's what runs
 - **lint (ruff)** - Code style and formatting
 - **type-check (mypy)** - Type annotations
 - **security (bandit)** - Security scanning
-- **test (pytest)** - Unit tests
+- **test (release notifications)** - Checks the release bot's PR comment logic
 - **dependency-check** - Outdated dependency detection
 - **CodeQL** - GitHub's built-in security analysis
 

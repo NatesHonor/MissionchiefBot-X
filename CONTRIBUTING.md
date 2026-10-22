@@ -15,8 +15,8 @@ Python 3.11 is the primary CI version. From the repository root:
 
 ```bash
 python -m venv .venv
-# Windows: .venv\Scripts\python -m pip install -r requirements.txt ruff mypy bandit pytest pytest-asyncio
-# Linux/macOS: .venv/bin/python -m pip install -r requirements.txt ruff mypy bandit pytest pytest-asyncio
+# Windows: .venv\Scripts\python -m pip install -r requirements.txt ruff mypy bandit
+# Linux/macOS: .venv/bin/python -m pip install -r requirements.txt ruff mypy bandit
 python -m playwright install chromium
 ```
 
@@ -30,8 +30,7 @@ Run these before submitting a pull request:
 python -m ruff check .
 python -m ruff format --check .
 python -m mypy core/ utils/ regions/ Main.py
-# Run when a tests/ directory is present.
-python -m pytest tests/
+node --test tests/test_release_notifications.js
 ```
 
 Changes to Docker files should also pass:
