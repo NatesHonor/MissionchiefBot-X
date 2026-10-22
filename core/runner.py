@@ -25,8 +25,10 @@ from .vehicle_state import get_vehicle_state
 from .webui import BotWebUI
 
 
-# How often the player's vehicle list is re-gathered while the bot runs.
+# How often the player's vehicles and buildings are re-gathered while the bot
+# runs. Buildings change less often than vehicles.
 VEHICLE_REFRESH_SECONDS = 15 * 60
+BUILDING_REFRESH_SECONDS = 60 * 60
 
 
 async def _sleep_or_stop(seconds: int, stop_event: asyncio.Event) -> None:
@@ -133,6 +135,7 @@ async def run_mission_loop(
 ):
     display_info("Starting mission logic.")
     vehicles_gathered_at = 0.0
+    buildings_gathered_at = 0.0
     while not stop_event.is_set():
         try:
             # Vehicles change as the player buys, sells, or moves them, so the
@@ -151,13 +154,17 @@ async def run_mission_loop(
                     vehicles_gathered_at = time.monotonic()
                     # The dispatcher reads a cached copy; reload it from SQLite.
                     state.refresh()
-            if not _cache_has_records(profile.building_file):
-                await gather_building_data(
+            if (
+                not _cache_has_records(profile.building_file)
+                or time.monotonic() - buildings_gathered_at >= BUILDING_REFRESH_SECONDS
+            ):
+                if await gather_building_data(
                     grabbing_contexts,
                     len(grabbing_contexts),
                     profile.base_url,
                     profile=profile,
-                )
+                ):
+                    buildings_gathered_at = time.monotonic()
             await check_and_grab_missions(
                 grabbing_contexts,
                 len(grabbing_contexts),

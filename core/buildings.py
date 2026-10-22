@@ -50,11 +50,20 @@ async def gather_building_data_single(context, thread_id, url):
         return {}
 
 
-async def gather_building_data(contexts, thread_count, url, save_path=None, profile=None):
+async def gather_building_data(contexts, thread_count, url, save_path=None, profile=None) -> bool:
+    """Gather the player's buildings and store them in SQLite.
+
+    Returns True when buildings were stored. Nothing is written when every
+    worker fails or finds nothing, so existing data is kept and the runner
+    retries on its next loop.
+    """
+
     profile = profile or get_region_profile()
     contexts = contexts if isinstance(contexts, list) else [contexts]
     if not contexts:
-        return
+        display_error("Building collection skipped: no logged-in browser session is available.")
+        return False
+    display_info("Gathering buildings from the game...")
     results = await asyncio.gather(
         *(
             gather_building_data_single(context, index + 1, url)
@@ -70,9 +79,13 @@ async def gather_building_data(contexts, thread_count, url, save_path=None, prof
         for name, ids in result.items():
             values = merged.setdefault(name, [])
             values.extend(item for item in ids if item not in values)
-    destination = Path(save_path or profile.building_file)
-    save_document(destination, merged)
-    display_info(f"Saved building config to {destination} with {len(merged)} categories.")
+    if not merged:
+        display_error("Building collection found no buildings. It will be retried on the next loop.")
+        return False
+    save_document(Path(save_path or profile.building_file), merged)
+    total = sum(len(ids) for ids in merged.values())
+    display_info(f"Stored {total} buildings in {len(merged)} categories in the database.")
+    return True
 
 
 async def ensure_building_data(contexts, thread_count, url, profile=None):
