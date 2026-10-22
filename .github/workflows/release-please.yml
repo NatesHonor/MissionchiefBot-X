@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      backfill:
+        description: 'Also comment on merged PRs in already-published releases'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -39,11 +45,22 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      - name: Notify merged PRs included in pending release
-        if: ${{ steps.release-please.outputs.pr != '' && steps.release-please.outputs.pr != 'null' }}
+      # The notification script's tests run in CI on every pull request.
+      # This step runs on every push and dispatch so updates to an existing
+      # release PR, and releases being published, are picked up. The script
+      # exits quietly when there is nothing to do and never edits a comment
+      # that is current.
+      - name: Notify merged PRs about their release
         uses: actions/github-script@v7
+        env:
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          BACKFILL: ${{ github.event_name == 'workflow_dispatch' && inputs.backfill || steps.release-please.outputs.releases_created == 'true' }}
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
             const notify = require('./.github/scripts/notify-release-prs.cjs');
-            await notify({github, context, core});
+            await notify({
+              github, context, core,
+              appSlug: process.env.APP_SLUG,
+              backfill: process.env.BACKFILL === 'true',
+            });
