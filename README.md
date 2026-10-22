@@ -82,16 +82,16 @@ does not require copying the login, browser, parser, or dispatch loops.
 - `core.settings` loads one validated configuration snapshot and applies Docker
   environment overrides.
 - `core.regions` owns region URLs, language catalogs, aliases, requirement maps,
-  data paths, and standardized region entrypoints.
+  data paths, and region profiles.
 - `core.auth`, `core.browser`, and `core.vehicle_state` own shared resources.
 - `core.buildings`, `core.mission_*`, and `core.dispatching` contain the shared
   workflows.
-- `regions/<region>` keeps a thin compatibility entrypoint, the region's
-  `vehicle_options.py`, and its shipped defaults in `defaults/`.
+- `regions/<region>.py` holds that region's vehicle substitutions;
+  `regions/defaults/<region>/` holds the shipped alias and requirement mappings.
 
 All bot data lives in SQLite (`data/missionchief.sqlite3`):
 
-- **Defaults** (`regions/<region>/defaults/`): vehicle aliases, personnel
+- **Defaults** (`regions/defaults/<region>/`): vehicle aliases, personnel
   aliases, requirement mappings and the mission ignore list. They are seeded
   into the database on startup and persist there. Your own edits are kept;
   a default is only refreshed when the shipped version changes.
