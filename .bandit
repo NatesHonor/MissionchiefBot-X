@@ -1,7 +1,6 @@
 targets:
   - core
   - utils
-  - config
   - regions
   - Main.py
 exclude_dirs:

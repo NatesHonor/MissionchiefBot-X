@@ -1,8 +1,10 @@
 """SQLite-backed storage for the bot's JSON data documents.
 
-Every data file the bot used to read or write as JSON (region aliases,
-requirement maps, vehicle/building caches, mission data, tasks, ...) is stored
-as one row in a single SQLite database. Callers keep passing the same file
+Every data document (region aliases, requirement maps, vehicle/building
+caches, mission data, tasks, ...) is stored as one row in a single SQLite
+database. Shipped region defaults come from the read-only seed
+``assets/region_defaults.sqlite3``; JSON is only used for human-readable
+import/export. Callers keep passing the same file
 paths they always used; each path is turned into a stable document key such as
 ``regions/us/data/vehicle_data.json``.
 
@@ -34,6 +36,12 @@ DEFAULT_DB_PATH = PROJECT_ROOT / "data" / "missionchief.sqlite3"
 
 SOURCE_FILE = "file"
 SOURCE_APP = "app"
+# Shipped defaults (aliases, mappings, ignore lists). They are written to the
+# database on startup and kept there. A default never overwrites a document the
+# bot or the user changed (SOURCE_APP); it is refreshed only when the shipped
+# default itself changes. Gathered data (vehicles, buildings, missions) is never
+# a default: when it is missing the bot gathers it from the game.
+SOURCE_DEFAULT = "default"
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS documents (
@@ -67,6 +75,9 @@ def connect(path: str | os.PathLike[str] | None = None) -> Iterator[sqlite3.Conn
     connection = sqlite3.connect(db_path, timeout=30)
     try:
         connection.execute("PRAGMA journal_mode=WAL")
+        connection.execute("PRAGMA synchronous=NORMAL")
+        connection.execute("PRAGMA temp_store=MEMORY")
+        connection.execute("PRAGMA cache_size=-2048")  # 2 MiB page cache, not the SQLite default.
         connection.executescript(_SCHEMA)
         yield connection
         connection.commit()
@@ -80,7 +91,8 @@ def connect(path: str | os.PathLike[str] | None = None) -> Iterator[sqlite3.Conn
 def document_key(path: str | os.PathLike[str]) -> str:
     """Turn a data file path into a stable, project-relative document key."""
 
-    resolved = Path(path).expanduser().resolve()
+    supplied = Path(path).expanduser()
+    resolved = supplied if supplied.is_absolute() else PROJECT_ROOT / supplied
     try:
         return resolved.relative_to(PROJECT_ROOT).as_posix()
     except ValueError:
@@ -120,7 +132,7 @@ def _write_row(connection: sqlite3.Connection, key: str, value: Any, source: str
             source_mtime = excluded.source_mtime,
             updated_at = excluded.updated_at
         """,
-        (key, json.dumps(value, ensure_ascii=False, indent=2), source, source_mtime, time.time()),
+        (key, json.dumps(value, ensure_ascii=False, separators=(",", ":")), source, source_mtime, time.time()),
     )
 
 
@@ -169,6 +181,56 @@ def save_document(path: str | os.PathLike[str], value: Any) -> str:
     with _lock, connect() as connection:
         _write_row(connection, key, value, SOURCE_APP, None)
     return key
+
+
+def seed_document(path: str | os.PathLike[str], value: Any, version: str) -> bool:
+    """Store a shipped default unless the document is already owned by the bot.
+
+    ``version`` identifies the shipped default (for example a content hash).
+    Returns True when the database was written.
+    """
+
+    key = document_key(path)
+    try:
+        with _lock, connect() as connection:
+            row = connection.execute(
+                "SELECT source, source_mtime FROM documents WHERE key = ?",
+                (key,),
+            ).fetchone()
+            if row is not None:
+                source, stored_version = row
+                if source == SOURCE_APP:
+                    return False
+                if source == SOURCE_DEFAULT and stored_version == version:
+                    return False
+            connection.execute(
+                """
+                INSERT INTO documents (key, content, source, source_mtime, updated_at)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(key) DO UPDATE SET
+                    content = excluded.content,
+                    source = excluded.source,
+                    source_mtime = excluded.source_mtime,
+                    updated_at = excluded.updated_at
+                """,
+                (key, json.dumps(value, ensure_ascii=False, separators=(",", ":")), SOURCE_DEFAULT, version, time.time()),
+            )
+            return True
+    except sqlite3.Error:
+        return False
+
+
+def document_has_records(path: str | os.PathLike[str]) -> bool:
+    """Return True when a stored document holds at least one record.
+
+    Missing, empty, or corrupt documents count as having no records, so callers
+    know the data still needs to be gathered.
+    """
+
+    value = load_document(path, None)
+    if isinstance(value, (dict, list)):
+        return len(value) > 0
+    return value is not None
 
 
 def document_exists(path: str | os.PathLike[str]) -> bool:

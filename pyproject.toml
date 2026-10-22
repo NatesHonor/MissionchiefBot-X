@@ -22,10 +22,6 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = [
-    "S101",    # assert used
-    "ANN201",  # missing return type annotation
-]
 "setup_environment.py" = [
     "S603",    # subprocess without shell=True
 ]

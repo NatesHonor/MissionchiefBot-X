@@ -8,8 +8,8 @@ from pathlib import Path
 
 from utils.pretty_print import display_error, display_info
 
-from .data_store import save_document
-from .pages import ensure_page
+from .data_store import document_has_records, save_document
+from .browser import ensure_page
 from .regions import get_region_profile
 
 
@@ -77,5 +77,6 @@ async def gather_building_data(contexts, thread_count, url, save_path=None, prof
 
 async def ensure_building_data(contexts, thread_count, url, profile=None):
     profile = profile or get_region_profile()
-    if not profile.building_file.exists():
+    # Building IDs live in SQLite; gather them when nothing is stored yet.
+    if not document_has_records(profile.building_file):
         await gather_building_data(contexts, thread_count, url, profile=profile)

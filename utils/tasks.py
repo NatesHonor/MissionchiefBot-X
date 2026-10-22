@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 
 from core.data_store import save_document
-from core.pages import ensure_page
+from core.browser import ensure_page
 from core.settings import PROJECT_ROOT
 from utils.pretty_print import display_info, display_error
 

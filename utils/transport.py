@@ -7,7 +7,7 @@ import unicodedata
 
 from core.localization import contains_localized_term
 from core.missionchief_api import fetch_vehicle_records
-from core.pages import ensure_page
+from core.browser import ensure_page
 from core.regions import get_region_profile
 from utils.pretty_print import display_error, display_info
 

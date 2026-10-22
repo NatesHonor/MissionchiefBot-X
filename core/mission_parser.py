@@ -10,7 +10,7 @@ from .mission_helpers import get_val, normalize_name
 from .localization import contains_localized_term, get_localized_terms
 from .mission_prisoners import handle_prisoner_transport
 from .mission_requirements import gather_requirements
-from .pages import ensure_page
+from .browser import ensure_page
 from .regions import get_region_profile
 from .vehicle_state import get_vehicle_state
 from .vehicle_mapping import matching_vehicle_alias_group, normalize_vehicle_name

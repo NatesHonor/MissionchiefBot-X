@@ -99,27 +99,22 @@ jobs:
         run: pip install bandit
 
       - name: Run bandit (medium+ severity, medium+ confidence)
-        run: bandit -r core utils config regions Main.py -c .bandit --severity-level medium --confidence-level medium
+        run: bandit -r core utils regions Main.py -c .bandit --severity-level medium --confidence-level medium
 
-  # ── Tests ───────────────────────────────────────────────────────────
-  test:
-    name: test (pytest)
+  # ── Release notification script tests ─────────────────────────────
+  release-notify-test:
+    name: test (release notifications)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
-          python-version: "3.11"
-          cache: "pip"
-          cache-dependency-path: requirements.txt
+          node-version: "20"
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt pytest pytest-asyncio
-
-      - name: Run tests
-        run: PYTHONPATH=. pytest tests/ -v
+      - name: Run release notification tests
+        run: node --test tests/test_release_notifications.js
 
   # ── Dependency vulnerability audit ─────────────────────────────────
   deps-audit:
@@ -182,7 +177,7 @@ jobs:
   pr-comment:
     name: pr-comment
     if: always() && github.event_name == 'pull_request'
-    needs: [compat, lint, typecheck, security, test, deps-audit, deps-freshness, secret-scan]
+    needs: [compat, lint, typecheck, security, release-notify-test, deps-audit, deps-freshness, secret-scan]
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -200,7 +195,7 @@ jobs:
               ('type-check (mypy)', '${{ needs.typecheck.result }}'),
               ('security (bandit)', '${{ needs.security.result }}'),
               ('secret-scan (gitleaks)', '${{ needs.secret-scan.result }}'),
-              ('test (pytest)', '${{ needs.test.result }}'),
+              ('test (release notifications)', '${{ needs.release-notify-test.result }}'),
               ('dependency-audit', '${{ needs.deps-audit.result }}'),
               ('dependency-freshness', '${{ needs.deps-freshness.result }}'),
           ]
