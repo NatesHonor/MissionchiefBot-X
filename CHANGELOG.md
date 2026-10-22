@@ -1,5 +1,27 @@
 # Changelog
 
+## [3.2.0](https://github.com/NatesHonor/MissionchiefBot-X/compare/v3.1.0...v3.2.0) (2026-10-22)
+
+
+### Features
+
+* **config:** migrate runtime configuration to environment ([1cee03d](https://github.com/NatesHonor/MissionchiefBot-X/commit/1cee03dc92e55d604ac271e603fe38e8428e1c1f))
+* list all commit types in release notes and backfill release comments ([#81](https://github.com/NatesHonor/MissionchiefBot-X/issues/81)) ([1a2bfb6](https://github.com/NatesHonor/MissionchiefBot-X/commit/1a2bfb67424e69f415b1ec8e4a90f86fadf17093))
+* migrate regional data to SQLite and streamline runtime ([#82](https://github.com/NatesHonor/MissionchiefBot-X/issues/82)) ([507dee9](https://github.com/NatesHonor/MissionchiefBot-X/commit/507dee94a870576aafa7ca680656c6fd00961b43))
+* **release:** use MissionAutoReleaseBot and notify included PRs ([#80](https://github.com/NatesHonor/MissionchiefBot-X/issues/80)) ([a558d85](https://github.com/NatesHonor/MissionchiefBot-X/commit/a558d8580d78ea73a248d81129aa1395099334d8))
+
+
+### Bug Fixes
+
+* **ci:** align checks with environment migration ([394cfaf](https://github.com/NatesHonor/MissionchiefBot-X/commit/394cfaf91411f5a924211e1f08bfb5ffa343468b))
+* restore release please and features removed in [#65](https://github.com/NatesHonor/MissionchiefBot-X/issues/65) ([#75](https://github.com/NatesHonor/MissionchiefBot-X/issues/75)) ([b4b2380](https://github.com/NatesHonor/MissionchiefBot-X/commit/b4b23805a184dbbf282f808b7ef395abc7494c45))
+* update dependencies and read WebUI settings from .env in compose ([#79](https://github.com/NatesHonor/MissionchiefBot-X/issues/79)) ([e155a24](https://github.com/NatesHonor/MissionchiefBot-X/commit/e155a249fe8f077b8fc0d3d52b66371d31b66cd2))
+
+
+### Build System
+
+* **docker:** update Docker workflow actions and Playwright to latest versions ([#78](https://github.com/NatesHonor/MissionchiefBot-X/issues/78)) ([0c150b4](https://github.com/NatesHonor/MissionchiefBot-X/commit/0c150b47dcf82a7ccaf7a1ae0169da20f96fd6e3))
+
 ## [3.2.0](https://github.com/NatesHonor/MissionchiefBot-X/compare/v3.1.0...v3.2.0) (2026-10-21)
 
 
