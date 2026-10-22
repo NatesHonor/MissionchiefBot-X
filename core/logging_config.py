@@ -298,10 +298,22 @@ def display_progress(label: str, completed: int, total: int) -> None:
     ensure_logging().info("%s %s", label, bar)
 
 
+_summary_shown = False
+
+
 def flush_visual_summary() -> None:
-    if _visual_handler:
-        _visual_handler.snapshot(title="Final worker state")
-        _visual_handler.session_summary()
+    """Print the final worker state and session summary once per process.
+
+    Main.py calls this before its exit panel; the atexit hook below is only a
+    fallback for other exits, so the summary is never printed twice.
+    """
+
+    global _summary_shown
+    if _summary_shown or not _visual_handler:
+        return
+    _summary_shown = True
+    _visual_handler.snapshot(title="Final worker state")
+    _visual_handler.session_summary()
 
 
 atexit.register(flush_visual_summary)
