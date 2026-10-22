@@ -9,7 +9,6 @@ import threading
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
@@ -21,7 +20,15 @@ from rich.text import Text
 
 
 LOGGER_NAME = "missionchiefbot"
-DEFAULT_LOG_FILE = Path(__file__).resolve().parents[1] / "logs" / "missionchiefbot.log"
+DEFAULT_LOG_DIR = Path(__file__).resolve().parents[1] / "logs"
+# The current run only. Replaced at the start of every run.
+DEFAULT_LOG_FILE = DEFAULT_LOG_DIR / "latest.log"
+# Every run also gets its own file inside a folder for that day:
+# logs/MM-DD-YYYY/HH-MM-SS.log
+DAILY_LOG_FORMAT = "%m-%d-%Y"
+RUN_LOG_FORMAT = "%H-%M-%S"
+_run_log_file: Path | None = None
+_FILE_FORMAT = logging.Formatter("%(asctime)s | %(levelname)-8s | %(name)s | %(message)s", "%Y-%m-%d %H:%M:%S")
 _THREAD_MESSAGE = re.compile(r"^Thread (?P<thread>\d+):\s*(?P<message>.*)$")
 _console = Console()
 _configured = False
@@ -105,7 +112,7 @@ class VisualConsoleHandler(logging.Handler):
             label, style = _level_style(activity.level)
             message = activity.message + (f"  ×{activity.repeats}" if activity.repeats > 1 else "")
             table.add_row(f"#{worker}", Text(label, style=style), message, activity.updated_at.strftime("%H:%M:%S"))
-        footer = Text("Detailed history: logs/missionchiefbot.log", style="dim")
+        footer = Text("Detailed history: logs/latest.log", style="dim")
         _console.print(Panel(Group(table, footer), title=f"MissionChief Bot · {title}", border_style="bright_black"))
         self._updates = 0
 
@@ -142,11 +149,16 @@ def configure_logging(
     console_enabled: bool = True,
     file_enabled: bool = True,
     visual_console: bool = True,
-    log_file: str | Path = DEFAULT_LOG_FILE,
-    max_bytes: int = 5 * 1024 * 1024,
-    backup_count: int = 5,
+    log_dir: str | Path = DEFAULT_LOG_DIR,
 ) -> logging.Logger:
-    global _configured, _visual_handler
+    """Configure console output and the two log files.
+
+    ``logs/latest.log`` holds only the current run and is replaced every time
+    the bot starts. The same run is also written to its own file in a folder
+    for the day, ``logs/MM-DD-YYYY/HH-MM-SS.log``, so every run is kept.
+    """
+
+    global _configured, _visual_handler, _run_log_file
     logger = get_logger()
     for old_handler in logger.handlers[:]:
         logger.removeHandler(old_handler)
@@ -165,17 +177,23 @@ def configure_logging(
             logger.addHandler(handler)
 
     if file_enabled:
-        destination = Path(log_file).expanduser()
+        directory = Path(log_dir).expanduser()
+        started = datetime.now()
+        day_folder = directory / started.strftime(DAILY_LOG_FORMAT)
+        run_file = _unique_run_file(day_folder, started)
         try:
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            file_handler = RotatingFileHandler(destination, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8")
+            day_folder.mkdir(parents=True, exist_ok=True)
+            latest_handler = logging.FileHandler(directory / DEFAULT_LOG_FILE.name, mode="w", encoding="utf-8")
+            run_handler = logging.FileHandler(run_file, mode="w", encoding="utf-8")
         except OSError as error:
             # A read-only disk should not prevent the bot from starting. The
             # console still reports the problem and continues without a file.
             _console.print(f"[yellow]File logging unavailable:[/yellow] {error}")
         else:
-            file_handler.setFormatter(logging.Formatter("%(asctime)s | %(levelname)-8s | %(name)s | %(message)s", "%Y-%m-%d %H:%M:%S"))
-            logger.addHandler(file_handler)
+            _run_log_file = run_file
+            for handler in (latest_handler, run_handler):
+                handler.setFormatter(_FILE_FORMAT)
+                logger.addHandler(handler)
 
     if not logger.handlers:
         logger.addHandler(logging.NullHandler())
@@ -187,14 +205,76 @@ def ensure_logging() -> logging.Logger:
     """Return the configured logger without opening a file on first use.
 
     The main application calls ``configure_logging`` with the user's settings.
-    During imports and tests, an incidental log message should not create a
-    rotating file handler (or fail because the log directory is read-only).
+    During imports, an incidental log message should not create log files (or
+    fail because the log directory is read-only).
     """
 
     logger = get_logger()
     if not _configured and not logger.handlers:
         logger.addHandler(logging.NullHandler())
     return logger
+
+
+WARNING_SIGN = r"""
+        /\
+       /  \
+      / || \
+     /  ||  \
+    /   ||   \
+   /    ..    \
+  /____________\
+""".strip("\n")
+
+
+def _unique_run_file(day_folder: Path, started: datetime) -> Path:
+    """Name a run's file after its start time; add -2, -3... if that second is taken."""
+
+    stem = started.strftime(RUN_LOG_FORMAT)
+    candidate = day_folder / f"{stem}.log"
+    number = 2
+    while candidate.exists():
+        candidate = day_folder / f"{stem}-{number}.log"
+        number += 1
+    return candidate
+
+
+def run_log_file() -> Path | None:
+    """Return this run's file in the day folder, if file logging started."""
+
+    return _run_log_file
+
+
+def display_exit(
+    reason: str,
+    *,
+    failed: bool = True,
+    log_dir: str | Path = DEFAULT_LOG_DIR,
+    support_url: str | None = None,
+) -> None:
+    """Print a clear exit panel pointing to the log files.
+
+    Failures get the warning sign and a red border. A clean stop still says
+    where the logs are, but without the alarm.
+    """
+
+    directory = Path(log_dir).expanduser()
+    style = "bold red" if failed else "yellow"
+    heading = "THE BOT HAS STOPPED" if failed else "THE BOT WAS STOPPED"
+    lines: list[Text] = []
+    if failed:
+        lines.append(Text(WARNING_SIGN, style=style))
+        lines.append(Text(""))
+    lines.append(Text(heading, style=style))
+    lines.append(Text(reason, style="white"))
+    lines.append(Text(""))
+    lines.append(Text("Check the logs for more information:", style="bold"))
+    lines.append(Text(f"  Latest:   {directory / DEFAULT_LOG_FILE.name}", style="cyan"))
+    lines.append(Text(f"  This run: {_run_log_file or directory / datetime.now().strftime(DAILY_LOG_FORMAT)}", style="cyan"))
+    if support_url:
+        lines.append(Text(""))
+        lines.append(Text(f"Need help? Join us at {support_url}", style="dim"))
+    title = "MissionChief Bot · Error" if failed else "MissionChief Bot · Stopped"
+    _console.print(Panel(Group(*lines), title=title, border_style=style, padding=(1, 2)))
 
 
 def display_header(subtitle: str, details: Mapping[str, Any] | None = None) -> None:
@@ -234,10 +314,22 @@ def display_progress(label: str, completed: int, total: int) -> None:
     ensure_logging().info("%s %s", label, bar)
 
 
+_summary_shown = False
+
+
 def flush_visual_summary() -> None:
-    if _visual_handler:
-        _visual_handler.snapshot(title="Final worker state")
-        _visual_handler.session_summary()
+    """Print the final worker state and session summary once per process.
+
+    Main.py calls this before its exit panel; the atexit hook below is only a
+    fallback for other exits, so the summary is never printed twice.
+    """
+
+    global _summary_shown
+    if _summary_shown or not _visual_handler:
+        return
+    _summary_shown = True
+    _visual_handler.snapshot(title="Final worker state")
+    _visual_handler.session_summary()
 
 
 atexit.register(flush_visual_summary)
