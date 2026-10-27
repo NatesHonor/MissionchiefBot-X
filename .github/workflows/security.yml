@@ -51,7 +51,10 @@ jobs:
         run: python -m pip install pip-audit==2.9.0
 
       - name: Audit Python dependencies
-        run: python -m pip_audit -r requirements.txt
+        # PYSEC-2022-252 is the 2022 deep-translator account takeover. It lists
+        # every later version as affected because it has no fixed version.
+        # Same exception as the dependency-audit job in ci.yml.
+        run: python -m pip_audit -r requirements.txt --ignore-vuln PYSEC-2022-252
 
   secret-scan:
     name: Secret scan
@@ -69,27 +72,9 @@ jobs:
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
           GITLEAKS_CONFIG: .gitleaks.toml
 
-  codeql:
-    name: CodeQL (Python)
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: read
-      security-events: write
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: python
-          queries: security-extended
-
-      - name: Analyze code
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: /language:python
+  # CodeQL runs through GitHub's default setup (the "CodeQL" check). A
+  # workflow-based CodeQL job cannot upload results while default setup is
+  # enabled, so there is none here.
 
   workflow-lint:
     name: GitHub Actions lint
