@@ -10,8 +10,8 @@ Or use a command directly:
     python manage_data.py show <key>          Print one document as JSON
     python manage_data.py edit <key> <file>   Replace a document with a JSON file
     python manage_data.py delete <key>        Delete one document
-    python manage_data.py import              Import every JSON data file in the project
     python manage_data.py export <folder>     Export every document to JSON files
+    python manage_data.py import <folder>     Restore documents from an export folder
     python manage_data.py backup [file]       Copy the database to a backup file
     python manage_data.py info                Show database location and totals
 
@@ -49,7 +49,7 @@ def _format_size(size: int | None) -> str:
 def cmd_list(prefix: str = "") -> int:
     documents = data_store.list_documents(prefix)
     if not documents:
-        print("No documents stored yet. Run 'import' to load the existing JSON files.")
+        print("No documents stored yet. The bot stores data here the first time it runs.")
         return 0
     width = max(len(item["key"]) for item in documents)
     print(f"{'KEY'.ljust(width)}  {'SOURCE':6}  {'SIZE':>9}  UPDATED")
@@ -95,9 +95,13 @@ def cmd_delete(key: str, confirm: bool = True) -> int:
     return 1
 
 
-def cmd_import() -> int:
-    imported = data_store.import_json_files()
-    print(f"Imported {len(imported)} JSON file(s) into {data_store.database_path()}.")
+def cmd_import(folder: str) -> int:
+    try:
+        imported = data_store.import_json_files(folder)
+    except FileNotFoundError as error:
+        print(error, file=sys.stderr)
+        return 1
+    print(f"Imported {len(imported)} document(s) from {Path(folder).resolve()} into {data_store.database_path()}.")
     return 0
 
 
@@ -145,7 +149,7 @@ def interactive() -> int:
         "  2) Show a document\n"
         "  3) Replace a document from a JSON file\n"
         "  4) Delete a document\n"
-        "  5) Import existing JSON files\n"
+        "  5) Import documents from an export folder\n"
         "  6) Export everything to JSON\n"
         "  7) Back up the database\n"
         "  8) Database info\n"
@@ -165,7 +169,7 @@ def interactive() -> int:
         elif choice == "4":
             cmd_delete(input("Document key: ").strip())
         elif choice == "5":
-            cmd_import()
+            cmd_import(input("Folder to import from: ").strip())
         elif choice == "6":
             cmd_export(input("Export folder [data/export]: ").strip() or "data/export")
         elif choice == "7":
@@ -185,7 +189,7 @@ def main(argv: list[str]) -> int:
         "show": (cmd_show, 1, 1),
         "edit": (cmd_edit, 2, 2),
         "delete": (cmd_delete, 1, 1),
-        "import": (cmd_import, 0, 0),
+        "import": (cmd_import, 1, 1),
         "export": (cmd_export, 1, 1),
         "backup": (cmd_backup, 0, 1),
         "info": (cmd_info, 0, 0),

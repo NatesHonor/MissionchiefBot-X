@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import time
 
 from utils.pretty_print import display_error, display_info
 from utils.tasks import grab_tasks
@@ -22,6 +23,12 @@ from .regions import RegionProfile, get_region_profile
 from .settings import Settings, load_settings
 from .vehicle_state import get_vehicle_state
 from .webui import BotWebUI
+
+
+# How often the player's vehicles and buildings are re-gathered while the bot
+# runs. Buildings change less often than vehicles.
+VEHICLE_REFRESH_SECONDS = 15 * 60
+BUILDING_REFRESH_SECONDS = 60 * 60
 
 
 async def _sleep_or_stop(seconds: int, stop_event: asyncio.Event) -> None:
@@ -127,22 +134,37 @@ async def run_mission_loop(
     stop_event,
 ):
     display_info("Starting mission logic.")
+    vehicles_gathered_at = 0.0
+    buildings_gathered_at = 0.0
     while not stop_event.is_set():
         try:
-            if not _cache_has_records(profile.vehicle_file):
-                await gather_vehicle_data(
+            # Vehicles change as the player buys, sells, or moves them, so the
+            # list is gathered at startup and then refreshed on an interval,
+            # not only when the database has none stored.
+            if (
+                not _cache_has_records(profile.vehicle_file)
+                or time.monotonic() - vehicles_gathered_at >= VEHICLE_REFRESH_SECONDS
+            ):
+                if await gather_vehicle_data(
                     grabbing_contexts,
                     len(grabbing_contexts),
                     profile.base_url,
                     profile.vehicle_file,
-                )
-            if not _cache_has_records(profile.building_file):
-                await gather_building_data(
+                ):
+                    vehicles_gathered_at = time.monotonic()
+                    # The dispatcher reads a cached copy; reload it from SQLite.
+                    state.refresh()
+            if (
+                not _cache_has_records(profile.building_file)
+                or time.monotonic() - buildings_gathered_at >= BUILDING_REFRESH_SECONDS
+            ):
+                if await gather_building_data(
                     grabbing_contexts,
                     len(grabbing_contexts),
                     profile.base_url,
                     profile=profile,
-                )
+                ):
+                    buildings_gathered_at = time.monotonic()
             await check_and_grab_missions(
                 grabbing_contexts,
                 len(grabbing_contexts),
