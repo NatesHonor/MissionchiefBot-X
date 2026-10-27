@@ -11,6 +11,11 @@ permissions:
 jobs:
   validate:
     name: Release contract
+    # Release Please PRs use `chore(main): release x.y.z` by design, and
+    # Dependabot PRs are titled from dependabot.yml; neither is hand-written.
+    if: >-
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      !startsWith(github.event.pull_request.head.ref, 'release-please--')
     runs-on: ubuntu-latest
     steps:
       - name: Validate PR title and commits
@@ -32,13 +37,18 @@ jobs:
 
           # Validate commits created after Conventional Commit enforcement was
           # introduced. Earlier history predates this repository policy.
+          # `gh api --jq` takes a single filter and no jq --arg options, so
+          # the cutoff SHA is written into the filter itself.
           policy_commit='b0f2bdaf437eb86e3b7f3916b96eaa940e47ef4c'
+          filter="[.[] | {sha, subject: (.commit.message | split(\"\\n\")[0])}]
+            | (map(.sha) | index(\"${policy_commit}\")) as \$cutoff
+            | if \$cutoff == null then .[] else .[\$cutoff + 1:][] end
+            | .subject"
           mapfile -t commits < <(
             gh api --paginate \
               -H 'Accept: application/vnd.github+json' \
               "/repos/${REPOSITORY}/pulls/${PR_NUMBER}/commits" \
-              --jq --arg policy "$policy_commit" \
-              '[.[] | {sha, subject: (.commit.message | split("\n")[0])}] | (map(.sha) | index($policy)) as $cutoff | if $cutoff == null then .[] else .[$cutoff + 1:][] end | .subject'
+              --jq "$filter"
           )
 
           if (( ${#commits[@]} == 0 )); then
@@ -56,16 +66,18 @@ jobs:
 
           if (( ${#errors[@]} > 0 )); then
             printf '::error::%s\n' "${errors[@]}"
-            printf '\n## Release contract failed\n\n' >> "$GITHUB_STEP_SUMMARY"
-            printf -- '- %s\n' "${errors[@]}" >> "$GITHUB_STEP_SUMMARY"
-            printf '\nUse `fix: description`, `feat: description`, or `feat!: description`.\n' >> "$GITHUB_STEP_SUMMARY"
+            {
+              printf '\n## Release contract failed\n\n'
+              printf -- '- %s\n' "${errors[@]}"
+              printf '\nUse fix: description, feat: description, or feat!: description.\n'
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
 
           {
             echo '## Release contract passed'
             echo
-            echo "PR title: \`$PR_TITLE\`"
+            echo "PR title: $PR_TITLE"
             echo
             echo 'All commit subjects follow the Conventional Commits format.'
           } >> "$GITHUB_STEP_SUMMARY"

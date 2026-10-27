@@ -10,6 +10,11 @@ permissions:
 jobs:
   validate-title:
     name: Validate semantic PR title
+    # Release Please titles its PRs `chore(main): release x.y.z` and
+    # Dependabot titles come from dependabot.yml.
+    if: >-
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      !startsWith(github.event.pull_request.head.ref, 'release-please--')
     runs-on: ubuntu-latest
     steps:
       - name: Validate pull request title

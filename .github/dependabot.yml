@@ -7,8 +7,9 @@ updates:
       day: monday
     open-pull-requests-limit: 5
     labels: [dependencies, python]
+    # fix: so dependency updates produce a Release Please patch release.
     commit-message:
-      prefix: chore
+      prefix: fix
       include: scope
 
   - package-ecosystem: github-actions
@@ -19,7 +20,7 @@ updates:
     open-pull-requests-limit: 5
     labels: [dependencies, github-actions]
     commit-message:
-      prefix: ci
+      prefix: fix
       include: scope
 
   - package-ecosystem: docker
@@ -30,5 +31,5 @@ updates:
     open-pull-requests-limit: 3
     labels: [dependencies, docker]
     commit-message:
-      prefix: build
+      prefix: fix
       include: scope
