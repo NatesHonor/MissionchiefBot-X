@@ -56,8 +56,8 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
 
       # Rerun the latest CI run for the PR's head branch. A rerun keeps the
-      # original `pull_request` event, so the pr-comment job runs again and
-      # posts updated results to the PR.
+      # original `pull_request` event, so PR Check Summary runs again when it
+      # finishes and updates the CI Results comment on the PR.
       - name: Rerun latest CI run for the PR branch
         run: |
           CI_FILE="ci.yml"
