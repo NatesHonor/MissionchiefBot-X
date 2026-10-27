@@ -11,6 +11,10 @@ on:
       - main
   workflow_dispatch:
 
+# Read-only by default; jobs that publish images grant packages: write.
+permissions:
+  contents: read
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -44,6 +48,8 @@ jobs:
     name: Prepare image name
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    # Only formats a string, so the token gets no access.
+    permissions: {}
     outputs:
       image: ${{ steps.name.outputs.image }}
     steps:
