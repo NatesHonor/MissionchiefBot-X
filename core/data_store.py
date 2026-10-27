@@ -333,30 +333,25 @@ def set_document(key: str, value: Any) -> None:
     save_document(key_path(key), value)
 
 
-def import_json_files(root: str | os.PathLike[str] | None = None) -> list[str]:
-    """Import every JSON data file under the project into the database."""
+def import_json_files(folder: str | os.PathLike[str]) -> list[str]:
+    """Restore documents from a folder made by ``manage_data.py export``.
 
-    base = Path(root) if root else PROJECT_ROOT
+    Each JSON file's path inside the folder is its document key, so
+    ``<folder>/regions/us/data/vehicle_data.json`` restores that document.
+    Imported documents are stored as the user's own data and replace what is
+    stored under the same key.
+    """
+
+    base = Path(folder).expanduser()
+    if not base.is_dir():
+        raise FileNotFoundError(f"Import folder not found: {base}")
     imported: list[str] = []
-    skipped_parts = {".git", ".venv", "venv", "node_modules", "__pycache__", ".idea", "logs", ".github"}
     with _lock, connect() as connection:
         for file_path in sorted(base.rglob("*.json")):
-            folders = file_path.relative_to(base).parts[:-1]
-            if skipped_parts.intersection(folders):
-                continue
-            # The top-level data/ folder holds the database and exports, not source data.
-            if folders and folders[0] == "data":
-                continue
-            # Tooling config such as release-please manifests is not bot data.
-            if not folders:
-                continue
             found, value = _read_json_file(file_path)
             if not found:
                 continue
-            key = document_key(file_path)
-            existing = connection.execute("SELECT source FROM documents WHERE key = ?", (key,)).fetchone()
-            if existing is not None and existing[0] == SOURCE_APP:
-                continue
-            _write_row(connection, key, value, SOURCE_FILE, _file_mtime(file_path))
+            key = file_path.relative_to(base).as_posix()
+            _write_row(connection, key, value, SOURCE_APP, None)
             imported.append(key)
     return imported
