@@ -23,12 +23,16 @@ function subjectOf(message) {
 
 // Squash commits end with " (#123)"; the PR link is added separately.
 function stripPrSuffix(subject, number) {
-  return number ? subject.replace(new RegExp(`\\s*\\(#${number}\\)$`), '') : subject;
+  return number ? subject.replace(new RegExp(`\\s*\\(#${escapeRegExp(String(number))}\\)$`), '') : subject;
 }
 
 // Keep commit subjects from breaking links or being read as HTML.
 function escapeMarkdown(text) {
   return text.replace(/([\\[\]<>])/g, '\\$1');
+}
+
+function escapeRegExp(text) {
+  return text.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
 }
 
 function commitLink(owner, repo, sha) {
@@ -81,7 +85,7 @@ function detailsBlock({owner, repo, prs, missed}) {
 // Line range [start, end) of the version's section. The section ends at the
 // next version heading or at Release Please's PR body footer ("---").
 function sectionRange(lines, version) {
-  const number = version.replace(/^v/, '').replace(/[.]/g, '\\.');
+  const number = escapeRegExp(version.replace(/^v/, ''));
   const heading = new RegExp(`^#{2,3} \\[v?${number}\\]`);
   const start = lines.findIndex(line => heading.test(line));
   if (start < 0) return null;
