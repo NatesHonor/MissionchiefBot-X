@@ -114,7 +114,7 @@ jobs:
           node-version: "20"
 
       - name: Run release notification tests
-        run: node --test tests/test_release_notifications.js
+        run: node --test tests/test_release_notifications.js tests/test_release_details.js
 
   # ── Dependency vulnerability audit ─────────────────────────────────
   deps-audit:
