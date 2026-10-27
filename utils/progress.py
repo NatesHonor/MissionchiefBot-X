@@ -27,6 +27,11 @@ class ProgressDisplay:
         self._last_reported = milestone
         display_progress(message or self.label, self.completed, self.total)
 
+    def advance(self, message: str | None = None, step: int = 1) -> None:
+        """Count one more finished item. Safe to call from several workers."""
+
+        self.update(self.completed + step, message)
+
     def finish(self, message: str | None = None) -> None:
         self.update(self.total, message or f"{self.label} complete")
 
