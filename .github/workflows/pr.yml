@@ -14,6 +14,10 @@ concurrency:
 jobs:
   pr-description:
     name: Validate PR description
+    # Dependabot and Release Please write their own PR descriptions.
+    if: >-
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      !startsWith(github.event.pull_request.head.ref, 'release-please--')
     runs-on: ubuntu-latest
     steps:
       - name: Check required description sections
@@ -26,7 +30,9 @@ jobs:
             const section = (names) => {
               const heading = names.join('|');
               const match = content.match(new RegExp(
-                `^#{1,6}\\s+(?:${heading})\\b[^\\n]*\\n([\\s\\S]*?)(?=^#{1,6}\\s|$)`,
+                // `$` would match at every line end under the m flag and capture
+                // nothing, so stop at the next heading or the end of the text.
+                `^#{1,6}\\s+(?:${heading})\\b[^\\n]*\\n([\\s\\S]*?)(?=^#{1,6}\\s|(?![\\s\\S]))`,
                 'im'
               ));
               return match?.[1].replace(/^\s*[-*]\s*\[[ xX]\].*$/gm, '').trim() || '';
@@ -66,9 +72,10 @@ jobs:
   apply-type-label:
     name: Apply conventional-type label
     runs-on: ubuntu-latest
+    # Adding a label to a pull request needs pull-requests: write.
     permissions:
       issues: write
-      pull-requests: read
+      pull-requests: write
     steps:
       - name: Synchronize type label
         uses: actions/github-script@v7
