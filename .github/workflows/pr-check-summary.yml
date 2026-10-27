@@ -45,7 +45,7 @@ jobs:
           sparse-checkout: .github/scripts
 
       - name: Summarize checks and explain failures
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const summarize = require('./.github/scripts/summarize-pr-checks.cjs');
