@@ -51,7 +51,7 @@ jobs:
       # CHANGELOG.md. Runs before the notifier so PRs listed under
       # "Other Changes" are notified too.
       - name: Add PR commits and missed changes to release notes
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
@@ -64,7 +64,7 @@ jobs:
       # exits quietly when there is nothing to do and never edits a comment
       # that is current.
       - name: Notify merged PRs about their release
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
           BACKFILL: ${{ github.event_name == 'workflow_dispatch' && inputs.backfill || steps.release-please.outputs.releases_created == 'true' }}
