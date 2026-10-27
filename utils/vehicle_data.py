@@ -5,7 +5,16 @@ from pathlib import Path
 from utils.pretty_print import display_info, display_error
 
 from core.data_store import save_document
+from core.logging_config import get_logger
 from core.missionchief_api import fetch_vehicle_records, vehicle_inventory_from_records
+
+
+def _log_inventory(inventory: dict) -> None:
+    """Record which vehicle labels were stored so lookups can be traced."""
+
+    logger = get_logger("vehicles")
+    for label, ids in sorted(inventory.items(), key=lambda item: str(item[0]).casefold()):
+        logger.debug("  %s: %d vehicle(s)", label, len(ids))
 
 
 async def gather_vehicle_data(contexts, num_threads, url, save_path) -> bool:
@@ -27,10 +36,12 @@ async def gather_vehicle_data(contexts, num_threads, url, save_path) -> bool:
     try:
         page = contexts[0].pages[0]
         api_records = await fetch_vehicle_records(page, url)
+        get_logger("vehicles").debug("Vehicle API returned %d record(s).", len(api_records))
         api_vehicle_data = vehicle_inventory_from_records(api_records)
         if api_vehicle_data:
             save_document(Path(save_path), api_vehicle_data)
             display_info(f"Stored {len(api_records)} vehicles in the database.")
+            _log_inventory(api_vehicle_data)
             return True
         display_info("Vehicle API returned nothing; reading the dispatch page instead.")
         await page.goto(url + "leitstellenansicht", wait_until="domcontentloaded")
@@ -50,6 +61,7 @@ async def gather_vehicle_data(contexts, num_threads, url, save_path) -> bool:
             return False
         save_document(Path(save_path), vehicle_data)
         display_info(f"Stored {len(vehicle_ids)} vehicles in the database.")
+        _log_inventory(vehicle_data)
         return True
     except Exception as e:
         display_error(f"Vehicle collection failed ({type(e).__name__}: {e}). It will be retried on the next loop.")

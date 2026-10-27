@@ -23,6 +23,7 @@ existing user databases keep working.
 from __future__ import annotations
 
 import json
+import logging
 import sqlite3
 from functools import lru_cache
 from pathlib import Path
@@ -32,6 +33,7 @@ from .data_store import seed_document
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SEED_DATABASE = PROJECT_ROOT / "assets" / "region_defaults.sqlite3"
+_log = logging.getLogger("missionchiefbot.data")
 
 # Shipped with the bot and kept in the database.
 DEFAULT_DOCUMENTS: tuple[str, ...] = (
@@ -64,7 +66,8 @@ def _seed_rows() -> dict[tuple[str, str], tuple[Any, str]]:
 
     try:
         connection = sqlite3.connect(f"file:{SEED_DATABASE.as_posix()}?mode=ro", uri=True)
-    except sqlite3.Error:
+    except sqlite3.Error as error:
+        _log.error("Could not open region defaults %s: %s", SEED_DATABASE, error)
         return {}
     try:
         return {
@@ -73,7 +76,8 @@ def _seed_rows() -> dict[tuple[str, str], tuple[Any, str]]:
                 "SELECT region, document, content, version FROM defaults"
             )
         }
-    except (sqlite3.Error, json.JSONDecodeError):
+    except (sqlite3.Error, json.JSONDecodeError) as error:
+        _log.error("Could not read region defaults %s: %s", SEED_DATABASE, error)
         return {}
     finally:
         connection.close()
@@ -99,11 +103,19 @@ def seed_region_defaults(region_key: str, data_dir: Path) -> list[str]:
     """
 
     written: list[str] = []
+    missing: list[str] = []
     for filename in DEFAULT_DOCUMENTS:
         row = _seed_rows().get((region_key, filename))
         if row is None:
+            missing.append(filename)
             continue
         value, version = row
         if seed_document(data_dir / filename, value, version):
             written.append(filename)
+    if missing:
+        _log.warning("No shipped defaults for region %s: %s", region_key.upper(), ", ".join(missing))
+    if written:
+        _log.info("Added %d default mapping(s) for region %s: %s", len(written), region_key.upper(), ", ".join(written))
+    else:
+        _log.debug("Default mappings for region %s are up to date", region_key.upper())
     return written

@@ -5,7 +5,7 @@ import os
 import webbrowser
 from pathlib import Path
 
-from core.logging_config import configure_logging, display_header, flush_visual_summary, get_logger
+from core.logging_config import configure_logging, display_exit, display_header, flush_visual_summary, get_logger
 from core.runner import run_bot
 from core.settings import Settings, load_settings
 from core.webui import BotWebUI
@@ -15,19 +15,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 SUPPORT_URL = "https://discord.gg/AujkpRZj7D"
 
 
-def display_failure_help(log_file: str) -> None:
-    """Tell users where to find diagnostics and community support."""
-    log_path = Path(log_file)
-    if not log_path.is_absolute():
-        log_path = PROJECT_ROOT / log_path
-    print(f"Check the logs for more information: {log_path}")
-    print("       __      __")
-    print("    .-'  `----'  `-.")
-    print("   /   .--.  .--.   \\")
-    print("  |   (    \\/    )   |  DISCORD SUPPORT")
-    print("   \\   `--'  `--'   /")
-    print("    `-._  /\\  _.-'")
-    print(f"Need help? Join us at {SUPPORT_URL}")
+def _log_dir(settings: Settings | None) -> Path:
+    configured = Path(settings.log_dir if settings else "logs").expanduser()
+    return configured if configured.is_absolute() else PROJECT_ROOT / configured
 
 
 async def run_application(settings: Settings) -> None:
@@ -74,9 +64,16 @@ async def run_application(settings: Settings) -> None:
 
 def main() -> int:
     os.chdir(PROJECT_ROOT)
+    settings: Settings | None = None
     try:
         settings = load_settings()
-        configure_logging()
+        configure_logging(
+            level=settings.log_level,
+            console_enabled=settings.log_console,
+            file_enabled=settings.log_file_enabled,
+            visual_console=settings.log_rich_console,
+            log_dir=_log_dir(settings),
+        )
         display_header("Automation control runtime", {"Region": settings.region.upper(), "Workers": settings.browsers, "Mode": "Headless" if settings.headless else "Visible"})
         if settings.webui_enabled:
             asyncio.run(run_application(settings))
@@ -84,15 +81,21 @@ def main() -> int:
             asyncio.run(run_bot(settings=settings))
     except KeyboardInterrupt:
         get_logger("startup").info("Stopped by operator")
-        return 130
-    except (FileNotFoundError, ValueError) as error:
-        get_logger("startup").error("Configuration error: %s", error)
-        return 2
-    except Exception:
-        get_logger("startup").exception("MissionChief Bot stopped unexpectedly")
-        return 1
-    finally:
         flush_visual_summary()
+        display_exit("Stopped from the keyboard (Ctrl+C).", failed=False, log_dir=_log_dir(settings))
+        return 130
+    except (FileNotFoundError, ValueError, RuntimeError) as error:
+        get_logger("startup").error("Configuration error: %s", error)
+        flush_visual_summary()
+        display_exit(f"Configuration error: {error}", log_dir=_log_dir(settings), support_url=SUPPORT_URL)
+        return 2
+    except Exception as error:
+        get_logger("startup").exception("MissionChief Bot stopped unexpectedly")
+        flush_visual_summary()
+        display_exit(f"{type(error).__name__}: {error}", log_dir=_log_dir(settings), support_url=SUPPORT_URL)
+        return 1
+    flush_visual_summary()
+    display_exit("The bot finished and exited normally.", failed=False, log_dir=_log_dir(settings))
     return 0
 
 

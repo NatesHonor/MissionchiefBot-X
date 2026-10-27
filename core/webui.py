@@ -40,7 +40,7 @@ LOGGER.addHandler(logging.NullHandler())
 LOGGER.propagate = False
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
-DEFAULT_LOG_FILE = Path(__file__).resolve().parents[1] / "logs" / "missionchiefbot.log"
+DEFAULT_LOG_DIR = Path(__file__).resolve().parents[1] / "logs"
 
 
 @dataclass
@@ -293,8 +293,13 @@ def save_config(content: Any, path: str | os.PathLike[str] | None = None) -> dic
 
 
 def _log_path() -> Path:
-    configured = os.getenv("MISSIONCHIEF_LOG_FILE")
-    return Path(configured).expanduser() if configured else DEFAULT_LOG_FILE
+    """The console tab shows the current run, which is always logs/latest.log."""
+
+    configured = os.getenv("MISSIONCHIEF_LOG_DIR")
+    directory = Path(configured).expanduser() if configured else DEFAULT_LOG_DIR
+    if not directory.is_absolute():
+        directory = Path(__file__).resolve().parents[1] / directory
+    return directory / "latest.log"
 
 
 def read_log_tail(limit: int = 200) -> list[str]:
