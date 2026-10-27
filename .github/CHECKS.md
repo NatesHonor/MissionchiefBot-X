@@ -12,6 +12,15 @@ This repository uses GitHub Actions for continuous integration. Here's what runs
 - **dependency-check** - Outdated dependency detection
 - **CodeQL** - GitHub's built-in security analysis
 
+## CI Results comment
+
+After each PR workflow finishes, the **PR Check Summary** workflow (`.github/workflows/pr-check-summary.yml`) updates one **CI Results** comment on the pull request. The comment covers:
+
+- **Every check** on the PR's latest commit, from every workflow (CI, PR, PR Artifacts, Security, Semantic PR Title, release-contract, Docker) plus CodeQL. It is not limited to the CI jobs. If a check was re-run, only its newest result counts.
+- **Why checks failed**: for each failed check, the step that failed, the error annotations, the error lines from the job log, and how to fix that kind of failure.
+
+The comment fills in as checks finish, and a newer push replaces the results. The workflow runs from the default branch and never runs code from the pull request.
+
 ## Re-running Checks
 
 If you need to re-run the CI checks, you have several options:

@@ -23,7 +23,7 @@ jobs:
     name: Maintain release pull request
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
@@ -39,11 +39,24 @@ jobs:
 
       - name: Run release-please
         id: release-please
-        uses: googleapis/release-please-action@v4
+        uses: googleapis/release-please-action@v5
         with:
           token: ${{ steps.app-token.outputs.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      # Release Please only lists PR titles and the commits it can parse.
+      # Add each merged PR's own commits, plus any commits since the last
+      # release that the generated notes missed, to the release PR body and
+      # CHANGELOG.md. Runs before the notifier so PRs listed under
+      # "Other Changes" are notified too.
+      - name: Add PR commits and missed changes to release notes
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const enrich = require('./.github/scripts/enrich-release-notes.cjs');
+            await enrich({github, context, core});
 
       # The notification script's tests run in CI on every pull request.
       # This step runs on every push and dispatch so updates to an existing
@@ -51,7 +64,7 @@ jobs:
       # exits quietly when there is nothing to do and never edits a comment
       # that is current.
       - name: Notify merged PRs about their release
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
           BACKFILL: ${{ github.event_name == 'workflow_dispatch' && inputs.backfill || steps.release-please.outputs.releases_created == 'true' }}

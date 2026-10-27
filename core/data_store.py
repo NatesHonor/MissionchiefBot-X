@@ -23,6 +23,7 @@ The database lives at ``data/missionchief.sqlite3`` by default. Set
 from __future__ import annotations
 
 import json
+import logging
 import os
 import sqlite3
 import threading
@@ -54,6 +55,20 @@ CREATE TABLE IF NOT EXISTS documents (
 """
 
 _lock = threading.RLock()
+# Plain stdlib logger under the bot's namespace; avoids importing the console
+# layer into the storage module.
+_log = logging.getLogger("missionchiefbot.data")
+_announced_paths: set[Path] = set()
+
+
+def _describe(value: object) -> str:
+    """Short size summary of a stored value for log lines."""
+
+    if isinstance(value, dict):
+        return f"{len(value)} entries"
+    if isinstance(value, list):
+        return f"{len(value)} items"
+    return type(value).__name__
 
 
 def database_path() -> Path:
@@ -71,6 +86,12 @@ def connect(path: str | os.PathLike[str] | None = None) -> Iterator[sqlite3.Conn
     """Open the database, create the schema if needed, and commit on success."""
 
     db_path = Path(path) if path else database_path()
+    if db_path not in _announced_paths:
+        _announced_paths.add(db_path)
+        if db_path.exists():
+            _log.info("Using database %s", db_path)
+        else:
+            _log.info("Creating new database %s", db_path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(db_path, timeout=30)
     try:
@@ -180,6 +201,7 @@ def save_document(path: str | os.PathLike[str], value: Any) -> str:
     key = document_key(path)
     with _lock, connect() as connection:
         _write_row(connection, key, value, SOURCE_APP, None)
+    _log.debug("Saved %s (%s)", key, _describe(value))
     return key
 
 
@@ -215,8 +237,10 @@ def seed_document(path: str | os.PathLike[str], value: Any, version: str) -> boo
                 """,
                 (key, json.dumps(value, ensure_ascii=False, separators=(",", ":")), SOURCE_DEFAULT, version, time.time()),
             )
+            _log.debug("%s default %s", "Updated" if row is not None else "Added", key)
             return True
-    except sqlite3.Error:
+    except sqlite3.Error as error:
+        _log.error("Could not store default %s: %s", key, error)
         return False
 
 
@@ -309,30 +333,25 @@ def set_document(key: str, value: Any) -> None:
     save_document(key_path(key), value)
 
 
-def import_json_files(root: str | os.PathLike[str] | None = None) -> list[str]:
-    """Import every JSON data file under the project into the database."""
+def import_json_files(folder: str | os.PathLike[str]) -> list[str]:
+    """Restore documents from a folder made by ``manage_data.py export``.
 
-    base = Path(root) if root else PROJECT_ROOT
+    Each JSON file's path inside the folder is its document key, so
+    ``<folder>/regions/us/data/vehicle_data.json`` restores that document.
+    Imported documents are stored as the user's own data and replace what is
+    stored under the same key.
+    """
+
+    base = Path(folder).expanduser()
+    if not base.is_dir():
+        raise FileNotFoundError(f"Import folder not found: {base}")
     imported: list[str] = []
-    skipped_parts = {".git", ".venv", "venv", "node_modules", "__pycache__", ".idea", "logs", ".github"}
     with _lock, connect() as connection:
         for file_path in sorted(base.rglob("*.json")):
-            folders = file_path.relative_to(base).parts[:-1]
-            if skipped_parts.intersection(folders):
-                continue
-            # The top-level data/ folder holds the database and exports, not source data.
-            if folders and folders[0] == "data":
-                continue
-            # Tooling config such as release-please manifests is not bot data.
-            if not folders:
-                continue
             found, value = _read_json_file(file_path)
             if not found:
                 continue
-            key = document_key(file_path)
-            existing = connection.execute("SELECT source FROM documents WHERE key = ?", (key,)).fetchone()
-            if existing is not None and existing[0] == SOURCE_APP:
-                continue
-            _write_row(connection, key, value, SOURCE_FILE, _file_mtime(file_path))
+            key = file_path.relative_to(base).as_posix()
+            _write_row(connection, key, value, SOURCE_APP, None)
             imported.append(key)
     return imported

@@ -5,6 +5,7 @@ from pathlib import Path
 from utils.pretty_print import display_info, display_error
 
 from core.data_store import save_document
+from core.logging_config import get_logger
 from core.missionchief_api import fetch_vehicle_records, vehicle_inventory_from_records
 
 
@@ -43,17 +44,34 @@ async def _resolve_type_names(page, url, records) -> dict[str, str]:
     return {type_id: _type_names[type_id] for type_id in samples if type_id in _type_names}
 
 
-async def gather_vehicle_data(contexts, num_threads, url, save_path):
+def _log_inventory(inventory: dict) -> None:
+    """Record which vehicle labels were stored so lookups can be traced."""
+
+    logger = get_logger("vehicles")
+    for label, ids in sorted(inventory.items(), key=lambda item: str(item[0]).casefold()):
+        logger.debug("  %s: %d vehicle(s)", label, len(ids))
+
+
+async def gather_vehicle_data(contexts, num_threads, url, save_path) -> bool:
+    """Gather the player's vehicles and store them in SQLite.
+
+    Returns True when vehicles were stored. Nothing is written on failure, so
+    the runner retries on its next loop instead of dispatching with no data.
+    """
+
     if not isinstance(contexts, list):
         contexts = [contexts]
     if not contexts:
-        return
+        display_error("Vehicle collection skipped: no logged-in browser session is available.")
+        return False
     if not contexts[0].pages:
         await contexts[0].new_page()
 
+    display_info("Gathering vehicles from the game...")
     try:
         page = contexts[0].pages[0]
         api_records = await fetch_vehicle_records(page, url)
+        get_logger("vehicles").debug("Vehicle API returned %d record(s).", len(api_records))
         type_names = await _resolve_type_names(page, url, api_records)
         for record in api_records:
             name = type_names.get(str(record.get("vehicle_type", "")).strip())
@@ -61,10 +79,11 @@ async def gather_vehicle_data(contexts, num_threads, url, save_path):
                 record["vehicle_type_name"] = name
         api_vehicle_data = vehicle_inventory_from_records(api_records)
         if api_vehicle_data:
-            save_path = Path(save_path)
-            save_document(save_path, api_vehicle_data)
-            display_info(f"Vehicle API collection complete. Stored {len(api_records)} vehicles in {save_path}.")
-            return
+            save_document(Path(save_path), api_vehicle_data)
+            display_info(f"Stored {len(api_records)} vehicles in the database.")
+            _log_inventory(api_vehicle_data)
+            return True
+        display_info("Vehicle API returned nothing; reading the dispatch page instead.")
         await page.goto(url + "leitstellenansicht", wait_until="domcontentloaded")
         await page.wait_for_selector(".list-group")
 
@@ -77,12 +96,16 @@ async def gather_vehicle_data(contexts, num_threads, url, save_path):
         threads = min(num_threads, len(contexts)) if num_threads else len(contexts)
         vehicle_data = await split_vehicle_ids_among_threads(vehicle_ids, contexts, threads, url)
 
-        save_path = Path(save_path)
-        save_document(save_path, vehicle_data)
-
-        display_info(f"Vehicle config collection complete. Stored vehicle config in {save_path}.")
+        if not vehicle_data:
+            display_error("Vehicle collection found no vehicles. It will be retried on the next loop.")
+            return False
+        save_document(Path(save_path), vehicle_data)
+        display_info(f"Stored {len(vehicle_ids)} vehicles in the database.")
+        _log_inventory(vehicle_data)
+        return True
     except Exception as e:
-        display_error(f"Error gathering vehicle config: {e}")
+        display_error(f"Vehicle collection failed ({type(e).__name__}: {e}). It will be retried on the next loop.")
+        return False
 
 
 async def gather_vehicle_info(vehicle_ids, context, thread_id, url):
