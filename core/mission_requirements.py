@@ -7,7 +7,7 @@ import re
 
 from .data_store import load_document
 from .mission_helpers import normalize_name
-from .localization import contains_localized_term, get_localized_terms
+from .localization import contains_localized_term, get_localized_terms, split_alternatives
 from .regions import get_region_profile
 from .vehicle_mapping import normalize_vehicle_name, vehicle_name_variants
 
@@ -51,7 +51,15 @@ def resolve_personnel(name: str, profile=None) -> str:
 
 
 def normalize_cached_requirements(data: dict, profile=None) -> dict:
-    """Repair pre-migration caches that stored personnel as vehicle options."""
+    """Repair older cached requirements.
+
+    * Personnel that was stored as a vehicle option is moved to personnel.
+    * An option that is really several alternatives in the page's language
+      ("loschfahrzeuge oder rustwagen") is split, so missions cached before
+      the split existed still dispatch.
+    """
+
+    from .mission_parser import resolve_vehicle_name
 
     profile = profile or get_region_profile()
     vehicles = []
@@ -60,6 +68,16 @@ def normalize_cached_requirements(data: dict, profile=None) -> dict:
         options = requirement.get("options", [])
         if isinstance(options, str):
             options = [options]
+        split = []
+        for option in options:
+            parts = split_alternatives(option, profile.language)
+            if len(parts) > 1:
+                split.extend(resolve_vehicle_name(normalize_name(part, profile.language), profile) for part in parts)
+            else:
+                split.append(option)
+        if split != list(options):
+            options = list(dict.fromkeys(split))
+            requirement = {**requirement, "options": options}
         resolved_people = [resolve_personnel(option, profile) for option in options]
         if "swat personnel" in {normalize_vehicle_name(person) for person in resolved_people}:
             personnel.append(
