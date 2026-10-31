@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.3.0](https://github.com/NatesHonor/MissionchiefBot-X/compare/v3.2.0...v3.3.0) (2026-10-31)
+
+
+### Features
+
+* **release:** credit authors and PR credits on each release note entry ([c6bc6c4](https://github.com/NatesHonor/MissionchiefBot-X/commit/c6bc6c4db816b3fb5c16b6e86d13e390eaeac5b6)) @NatesHonor
+
+
+### Bug Fixes
+
+* **ci:** restrict token permissions in the Docker workflow ([#94](https://github.com/NatesHonor/MissionchiefBot-X/issues/94)) ([2d9d6c5](https://github.com/NatesHonor/MissionchiefBot-X/commit/2d9d6c5a79fb63cd860e5294d8d6d0e38281f0bc)) @NatesHonor
+* stop mission worker crashes and fix building and vehicle collection ([#95](https://github.com/NatesHonor/MissionchiefBot-X/issues/95)) ([ad5fb7f](https://github.com/NatesHonor/MissionchiefBot-X/commit/ad5fb7f80832568835ba3ade4452375ac7056a2b)) @NatesHonor
+
 ## [3.2.0](https://github.com/NatesHonor/MissionchiefBot-X/compare/v3.1.0...v3.2.0) (2026-10-27)
 
 
