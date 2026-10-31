@@ -13,34 +13,16 @@ from .browser import ensure_page
 from .regions import get_region_profile
 
 
-# Building type -> English name, shared by every worker and run. MissionChief
-# has a few dozen building types but a player can own hundreds of buildings,
-# so each type is translated once instead of once per building. Translating per
-# building hit Google's rate limit and made the whole collection fail.
-_translated_names: dict[str, str] = {}
-
-
 def _building_name(raw_key: str) -> str:
-    """Return a readable English name for a building image key.
+    """Return a readable name for a building image key.
 
-    Uses the cache first, then Google Translate. If translation fails (rate
-    limit, offline), the untranslated key is used so collection never fails
-    because of it; the next run will try translating it again.
+    The key comes from the marker image file name (``building_fire.png`` ->
+    ``fire``), which is English in every region, so it only needs tidying.
+    It used to go through Google Translate, which hit Google's rate limit
+    ("You made too many requests") and broke building collection.
     """
 
-    if raw_key in _translated_names:
-        return _translated_names[raw_key]
-    fallback = raw_key.replace("_", " ").strip().title().replace(" ", "_")
-    try:
-        from deep_translator import GoogleTranslator
-
-        translated = GoogleTranslator(source="auto", target="en").translate(raw_key.replace("_", " "))
-    except Exception as error:
-        display_info(f"Could not translate building type {raw_key!r} ({type(error).__name__}); using it as-is.")
-        return fallback
-    name = (translated or "").strip().title().replace(" ", "_") or fallback
-    _translated_names[raw_key] = name
-    return name
+    return raw_key.replace("_", " ").strip().title().replace(" ", "_") or raw_key
 
 
 async def gather_building_data_single(context, thread_id, url):
