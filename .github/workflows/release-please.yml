@@ -46,11 +46,11 @@ jobs:
           manifest-file: .release-please-manifest.json
 
       # Release Please only lists PR titles and the commits it can parse.
-      # Add each merged PR's own commits, plus any commits since the last
-      # release that the generated notes missed, to the release PR body and
-      # CHANGELOG.md. Runs before the notifier so PRs listed under
-      # "Other Changes" are notified too.
-      - name: Add PR commits and missed changes to release notes
+      # End each entry with its author and any names from the PR's Credits
+      # section, and list commits since the last release that the generated
+      # notes missed, in the release PR body and CHANGELOG.md. Runs before the
+      # notifier so PRs listed under "Other Changes" are notified too.
+      - name: Add authors, credits and missed changes to release notes
         uses: actions/github-script@v9
         with:
           github-token: ${{ steps.app-token.outputs.token }}

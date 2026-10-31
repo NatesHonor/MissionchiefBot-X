@@ -17,12 +17,13 @@ Release notes now list every Conventional Commit type (`feat`, `fix`, `perf`, `r
 
 The notifier runs after every Release Please run, not only when the release PR is created. When a release is published, or when you run the workflow manually with **backfill** checked, it also goes through every published release and comments **Released! … included in vX.Y.Z** on each merged PR listed there. An existing "scheduled" comment is edited into the "released" one rather than duplicated. A PR listed in several releases gets the newest one. Only releases whose notes link both the PR and its merge commit are matched, which is the Release Please format; older hand-written release notes (v3.0.1, v3.0.2) have no such links, so their PRs are not commented on.
 
-**PR commits and missed changes.** Release Please lists one line per squash-merged PR (its title) and skips commits it cannot parse. After every Release Please run, `.github/scripts/enrich-release-notes.cjs` adds a block to the end of the pending version's section in both the release PR body and `CHANGELOG.md` on the release branch. The GitHub release is created from the PR body, so the block ends up in the published release too.
+**Authors, credits and missed changes.** Release Please lists one line per squash-merged PR (its title) and skips commits it cannot parse. After every Release Please run, `.github/scripts/enrich-release-notes.cjs` updates the pending version's section in both the release PR body and `CHANGELOG.md` on the release branch. The GitHub release is created from the PR body, so the changes end up in the published release too.
 
-- **Pull Request Commits** lists each PR merged since the last published release, with every commit it contained.
-- **Other Changes** lists commits on `main` since the last published release that the generated notes don't link, linked to their PR when there is one. Examples: a merged PR whose title wasn't a Conventional Commit, or a commit pushed straight to `main`.
+- Every entry ends with the PR author's `@username`, or the commit author's for a commit pushed straight to `main`. For example: `* stop mission worker crashes (#95) (ad5fb7f) @NatesHonor`.
+- If the PR description has a **Credits** section, those names are added after the author: `@NatesHonor (credit: Bob from Discord)`. Use this to credit people without a GitHub account. Write one name per line under a `## Credits` heading, or a single line such as `Credits: Bob, Alice`. HTML comments and `None` are ignored.
+- **Other Changes** lists commits on `main` since the last published release that the generated notes don't link, in the same format. Examples: a merged PR whose title wasn't a Conventional Commit, or a commit pushed straight to `main`.
 
-Release commits (`chore: release ...`) and merge commits are left out. The block sits between `release-details` markers and is replaced on each run, never duplicated. If the version section can't be found, nothing is changed.
+Release commits (`chore: release ...`) and merge commits are left out. Running again replaces the attribution and the Other Changes block instead of adding them twice. If the version section can't be found, nothing is changed.
 
 **Credits.** Each merged PR that qualifies for a release credits its author (bots such as Dependabot are skipped):
 
