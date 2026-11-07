@@ -7,7 +7,7 @@ import re
 from utils.pretty_print import display_error
 
 from .mission_helpers import get_val, normalize_name
-from .localization import contains_localized_term, get_localized_terms
+from .localization import contains_localized_term, get_localized_terms, split_alternatives
 from .mission_prisoners import handle_prisoner_transport
 from .mission_requirements import gather_requirements
 from .browser import ensure_page
@@ -38,8 +38,7 @@ def resolve_vehicle_name(name: str, profile=None) -> str:
 
 def resolve_vehicle_entry(raw_name: str, count: int, profile=None):
     profile = profile or get_region_profile()
-    normalized = str(raw_name or "").casefold().replace(",", " or ")
-    parts = [part.strip() for part in normalized.split(" or ") if part.strip()]
+    parts = split_alternatives(raw_name, profile.language)
     options = [resolve_vehicle_name(normalize_name(part, profile.language), profile) for part in parts]
     return {"options": options, "count": count}
 

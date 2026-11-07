@@ -1,6 +1,5 @@
 # Runtime dependencies are exact pins so local, CI, and container installs resolve
 # the same package versions. Dependabot keeps these pins current.
-deep-translator==1.11.4
 playwright==1.64.1
 python-dotenv==1.2.4
 rich==15.0.0

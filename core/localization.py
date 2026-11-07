@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import unicodedata
 
 
@@ -23,6 +24,7 @@ _TERMS = {
         "other_information": ("other information",),
         "selected": ("selected",),
         "distance": ("distance",),
+        "or": ("or",),
     },
     "de": {
         "required": ("benötigt", "benötigte", "erforderlich", "notwendig"),
@@ -49,6 +51,7 @@ _TERMS = {
         "other_information": ("sonstige informationen", "weitere informationen"),
         "selected": ("ausgewählt", "gewählt"),
         "distance": ("entfernung",),
+        "or": ("oder",),
     },
     "sv": {
         "required": ("kräver", "behövs", "nödvändigt", "erforderligt"),
@@ -206,3 +209,20 @@ def _fold(value: str) -> str:
 def contains_localized_term(value: str, language: str, category: str) -> bool:
     normalized = _fold(value)
     return any(_fold(term) in normalized for term in get_localized_terms(language, category))
+
+
+def split_alternatives(value: str, language: str) -> list[str]:
+    """Split "A, B or C" (in the page's language) into its alternatives.
+
+    German pages say "Löschfahrzeuge oder Rüstwagen", so splitting only on the
+    English "or" left the whole phrase as one vehicle name nothing matched.
+    """
+
+    words = sorted({term.casefold() for term in get_localized_terms(language, "or")}, key=len, reverse=True)
+    joiner = r"\s(?:" + "|".join(re.escape(word) for word in words) + r")\s"
+    parts = []
+    for chunk in str(value or "").casefold().split(","):
+        # "A, or B": the word after the comma starts the next alternative.
+        chunk = re.sub(r"^\s*(?:" + "|".join(re.escape(word) for word in words) + r")\s+", "", chunk)
+        parts.extend(re.split(joiner, f" {chunk} "))
+    return [part.strip() for part in parts if part.strip()]
