@@ -8,6 +8,7 @@ import re
 from .data_store import load_document
 from .mission_helpers import normalize_name
 from .localization import contains_localized_term, get_localized_terms, split_alternatives
+from .personnel_roles import detect_personnel_role
 from .regions import get_region_profile
 from .vehicle_mapping import normalize_vehicle_name, vehicle_name_variants
 
@@ -118,6 +119,11 @@ async def gather_requirements(page, profile=None):
             if "probability" in _normalize(name):
                 continue
             kind = requirement_map.get(_normalize(name), "vehicles")
+            # "Minimum firefighters" / "Mindestens Feuerwehrleute" name people,
+            # not vehicles. Region maps marked them "pass", which dropped the
+            # requirement entirely.
+            if kind in {"vehicles", "pass"} and detect_personnel_role(name):
+                kind = "personnel"
             if kind in {"pass", "info", "tow_vehicle"}:
                 continue
             count = parse_requirement_count(await count_element.text_content())
