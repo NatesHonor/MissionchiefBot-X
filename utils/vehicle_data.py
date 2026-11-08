@@ -7,6 +7,7 @@ from utils.pretty_print import display_info, display_error
 from core.data_store import save_document
 from core.logging_config import get_logger
 from core.missionchief_api import fetch_vehicle_records, vehicle_inventory_from_records
+from core.personnel_roles import CREW_DOCUMENT, crew_from_records
 
 
 # vehicle_type ID -> in-game type name, e.g. "2" -> "Patrol car". Kept for the
@@ -80,6 +81,9 @@ async def gather_vehicle_data(contexts, num_threads, url, save_path) -> bool:
         api_vehicle_data = vehicle_inventory_from_records(api_records)
         if api_vehicle_data:
             save_document(Path(save_path), api_vehicle_data)
+            # Real crew per vehicle, so personnel requirements are filled with
+            # the right number of vehicles in every region.
+            save_document(Path(save_path).with_name(CREW_DOCUMENT), crew_from_records(api_records))
             display_info(f"Stored {len(api_records)} vehicles in the database.")
             _log_inventory(api_vehicle_data)
             return True
