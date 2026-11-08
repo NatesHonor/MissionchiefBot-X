@@ -8,18 +8,16 @@ import re
 from .data_store import load_document
 from .mission_helpers import normalize_name
 from .localization import contains_localized_term, get_localized_terms, split_alternatives
+from .personnel_roles import detect_personnel_role
 from .regions import get_region_profile
 from .vehicle_mapping import normalize_vehicle_name, vehicle_name_variants
-
 
 def _load_json(path):
     value = load_document(path, {})
     return {} if value is None else value
 
-
 def _normalize(value: str) -> str:
     return normalize_vehicle_name(value)
-
 
 def parse_requirement_count(value: str | None) -> int | None:
     """Return a numeric requirement count, ignoring informational values.
@@ -36,7 +34,6 @@ def parse_requirement_count(value: str | None) -> int | None:
     digits = re.sub(r"[^0-9]", "", match.group(1))
     return int(digits) if digits else None
 
-
 def resolve_personnel(name: str, profile=None) -> str:
     profile = profile or get_region_profile()
     normalized = _normalize(name)
@@ -48,7 +45,6 @@ def resolve_personnel(name: str, profile=None) -> str:
         if normalized in alias_keys or vehicle_name_variants(name) & alias_keys:
             return canonical
     return name
-
 
 def normalize_cached_requirements(data: dict, profile=None) -> dict:
     """Repair older cached requirements.
@@ -92,7 +88,6 @@ def normalize_cached_requirements(data: dict, profile=None) -> dict:
     data["personnel"] = personnel
     return data
 
-
 async def gather_requirements(page, profile=None):
     profile = profile or get_region_profile()
     requirement_map = {_normalize(key): value for key, value in profile.requirement_mapping().items()}
@@ -118,6 +113,11 @@ async def gather_requirements(page, profile=None):
             if "probability" in _normalize(name):
                 continue
             kind = requirement_map.get(_normalize(name), "vehicles")
+            # "Minimum firefighters" / "Mindestens Feuerwehrleute" name people,
+            # not vehicles. Region maps marked them "pass", which dropped the
+            # requirement entirely.
+            if kind in {"vehicles", "pass"} and detect_personnel_role(name):
+                kind = "personnel"
             if kind in {"pass", "info", "tow_vehicle"}:
                 continue
             count = parse_requirement_count(await count_element.text_content())
