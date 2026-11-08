@@ -12,12 +12,15 @@ from .personnel_roles import detect_personnel_role
 from .regions import get_region_profile
 from .vehicle_mapping import normalize_vehicle_name, vehicle_name_variants
 
+
 def _load_json(path):
     value = load_document(path, {})
     return {} if value is None else value
 
+
 def _normalize(value: str) -> str:
     return normalize_vehicle_name(value)
+
 
 def parse_requirement_count(value: str | None) -> int | None:
     """Return a numeric requirement count, ignoring informational values.
@@ -34,6 +37,7 @@ def parse_requirement_count(value: str | None) -> int | None:
     digits = re.sub(r"[^0-9]", "", match.group(1))
     return int(digits) if digits else None
 
+
 def resolve_personnel(name: str, profile=None) -> str:
     profile = profile or get_region_profile()
     normalized = _normalize(name)
@@ -45,6 +49,7 @@ def resolve_personnel(name: str, profile=None) -> str:
         if normalized in alias_keys or vehicle_name_variants(name) & alias_keys:
             return canonical
     return name
+
 
 def normalize_cached_requirements(data: dict, profile=None) -> dict:
     """Repair older cached requirements.
@@ -87,6 +92,7 @@ def normalize_cached_requirements(data: dict, profile=None) -> dict:
     data["vehicles"] = vehicles
     data["personnel"] = personnel
     return data
+
 
 async def gather_requirements(page, profile=None):
     profile = profile or get_region_profile()
