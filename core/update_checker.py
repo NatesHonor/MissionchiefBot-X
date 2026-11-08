@@ -1,0 +1,158 @@
+"""Startup update check.
+
+Before the bot starts, compare the installed version with the latest GitHub
+release. When a newer release exists, show a notice with a link and a short
+summary of the changes, wait a few seconds, then carry on as normal.
+
+The check never stops the bot: no network, a GitHub error, or an unreadable
+version just skips the notice. Set ``MISSIONCHIEF_UPDATE_CHECK=false`` to turn
+it off.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import time
+import urllib.request
+from collections.abc import Callable
+from pathlib import Path
+
+REPOSITORY = "NatesHonor/MissionchiefBot-X"
+LATEST_RELEASE_URL = f"https://api.github.com/repos/{REPOSITORY}/releases/latest"
+RELEASES_URL = f"https://github.com/{REPOSITORY}/releases"
+MANIFEST = Path(__file__).resolve().parent.parent / ".release-please-manifest.json"
+NOTICE_SECONDS = 5
+MAX_SUMMARY_LINES = 8
+_FALSE = {"0", "false", "no", "off"}
+
+
+def parse_version(value: object) -> tuple[int, int, int] | None:
+    """Turn ``"v3.3.1"`` or ``"3.3.1"`` into ``(3, 3, 1)``."""
+
+    match = re.search(r"(\d+)\.(\d+)\.(\d+)", str(value or ""))
+    if not match:
+        return None
+    major, minor, patch = match.groups()
+    return int(major), int(minor), int(patch)
+
+
+def current_version(manifest: Path = MANIFEST) -> str | None:
+    """The installed version, from Release Please's manifest."""
+
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    version = data.get(".") if isinstance(data, dict) else None
+    return str(version) if version else None
+
+
+def fetch_latest_release(timeout: float = 4.0) -> dict | None:
+    """The latest published GitHub release, or ``None`` if it can't be read."""
+
+    request = urllib.request.Request(
+        LATEST_RELEASE_URL,
+        headers={"Accept": "application/vnd.github+json", "User-Agent": "MissionchiefBot-X-update-check"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            release = json.load(response)
+    except Exception:
+        return None
+    return release if isinstance(release, dict) else None
+
+
+def summarize_changes(body: object, limit: int = MAX_SUMMARY_LINES) -> list[str]:
+    """Pull the change bullets out of a Release Please changelog.
+
+    Commit hashes, issue links and Markdown are removed so each line reads
+    as plain text.
+    """
+
+    lines = []
+    for raw in str(body or "").splitlines():
+        line = raw.strip()
+        if not re.match(r"^[*-]\s+", line):
+            continue
+        line = re.sub(r"^[*-]\s+", "", line)
+        line = re.sub(r"\s*\(\[[0-9a-f]{7,40}\]\([^)]*\)\)", "", line)
+        line = re.sub(r"\s*\(\[#\d+\]\([^)]*\)\)", "", line)
+        line = re.sub(r",?\s*closes\s+\[#\d+\]\([^)]*\)", "", line, flags=re.I)
+        line = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", line)
+        line = line.replace("**", "").strip()
+        if line:
+            lines.append(line)
+    if len(lines) > limit:
+        hidden = len(lines) - limit
+        lines = [*lines[:limit], f"...and {hidden} more"]
+    return lines
+
+
+def newer_release(installed: object, release: dict | None) -> dict | None:
+    """Return the release when it is newer than the installed version."""
+
+    if not release or release.get("draft") or release.get("prerelease"):
+        return None
+    installed_version = parse_version(installed)
+    latest_version = parse_version(release.get("tag_name"))
+    if not installed_version or not latest_version or latest_version <= installed_version:
+        return None
+    return release
+
+
+def _show_notice(installed: str, release: dict) -> None:
+    latest = str(release.get("tag_name") or "").lstrip("v")
+    url = release.get("html_url") or RELEASES_URL
+    changes = summarize_changes(release.get("body"))
+    try:
+        from rich.console import Console
+        from rich.panel import Panel
+        from rich.text import Text
+
+        text = Text()
+        text.append("A new version of MissionchiefBot-X is available!\n\n", style="bold")
+        text.append(f"  {installed}", style="red")
+        text.append("  ->  ")
+        text.append(f"{latest}\n\n", style="bold green")
+        if changes:
+            text.append("What's new:\n", style="bold")
+            for change in changes:
+                text.append(f"  • {change}\n")
+            text.append("\n")
+        text.append("Download: ", style="bold")
+        text.append(url, style=f"underline cyan link {url}")
+        text.append(f"\n\nStarting in {NOTICE_SECONDS} seconds...", style="dim")
+        Console().print(Panel(text, title="Update available", border_style="yellow", padding=(1, 2)))
+    except Exception:
+        print(f"\n=== Update available: {installed} -> {latest} ===")
+        for change in changes:
+            print(f"  - {change}")
+        print(f"Download: {url}")
+        print(f"Starting in {NOTICE_SECONDS} seconds...\n")
+
+
+def check_for_updates(wait: float = NOTICE_SECONDS, sleep: Callable[[float], object] = time.sleep) -> bool:
+    """Show the update notice if a newer release exists. Returns True if shown."""
+
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv()
+    except Exception:
+        pass
+    if os.environ.get("MISSIONCHIEF_UPDATE_CHECK", "true").strip().lower() in _FALSE:
+        return False
+    try:
+        installed = current_version()
+        if not installed:
+            return False
+        release = newer_release(installed, fetch_latest_release())
+        if not release:
+            return False
+        _show_notice(installed, release)
+        sleep(wait)
+        return True
+    except Exception:
+        return False

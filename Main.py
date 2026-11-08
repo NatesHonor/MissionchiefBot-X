@@ -8,6 +8,7 @@ from pathlib import Path
 from core.logging_config import configure_logging, display_exit, display_header, flush_visual_summary, get_logger
 from core.runner import run_bot
 from core.settings import Settings, load_settings
+from core.update_checker import check_for_updates
 from core.webui import BotWebUI
 
 
@@ -64,6 +65,7 @@ async def run_application(settings: Settings) -> None:
 
 def main() -> int:
     os.chdir(PROJECT_ROOT)
+    check_for_updates()
     settings: Settings | None = None
     try:
         settings = load_settings()
