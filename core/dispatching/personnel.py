@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-import re
-
-from ..regions import get_region_profile
 from ..mission_requirements import parse_requirement_count, resolve_personnel
+from ..personnel_roles import crew_groups, personnel_vehicle_options, vehicle_crew
+from ..regions import get_region_profile
 from ..settings import get_settings
-from utils.personnel_options import get_personnel_options
-
 from .utils import canonical_personnel, normalize_key
 from .vehicles import find_vehicle_ids, select_vehicles
 
@@ -66,6 +63,7 @@ async def handle_personnel(page, data, missing, mission_id, profile=None, state=
     profile = profile or get_region_profile()
     settings = settings or get_settings()
     skip_roles = {"technical rescuer", "usar", "sharpshooter"}
+    crew = vehicle_crew(profile)
     for person in data.get("personnel", []):
         original = person["name"]
         resolved = resolve_personnel(original, profile)
@@ -74,17 +72,7 @@ async def handle_personnel(page, data, missing, mission_id, profile=None, state=
             continue
         if normalize_key(original) in skip_roles:
             continue
-        stripped = re.sub(r"\([^)]*\)", "", original)
-        mapping = {}
-        for key in (
-            resolved,
-            canonical_personnel(original),
-            normalize_key(original),
-            normalize_key(stripped),
-        ):
-            mapping = get_personnel_options(key)
-            if mapping:
-                break
+        _role, mapping = personnel_vehicle_options(original, profile, (resolved, canonical_personnel(original)))
         candidate_data = {}
         exact_lookup = normalize_key(resolved) == "swat personnel"
         for vehicle_type, per_vehicle in mapping.items():
@@ -93,16 +81,26 @@ async def handle_personnel(page, data, missing, mission_id, profile=None, state=
             if ids:
                 candidate_data[vehicle_type] = (per_vehicle, ids)
 
-        plan = plan_personnel_vehicles(
-            needed,
-            [(vehicle_type, per_vehicle, len(ids)) for vehicle_type, (per_vehicle, ids) in candidate_data.items()],
+        # Plan with each vehicle's real crew rather than a fixed per-type guess,
+        # and count people already on vehicles selected for this mission.
+        locks = dict(getattr(state, "_locked", {}) or {}) if state is not None else {}
+        this_mission = str(mission_id)
+        groups, covered = crew_groups(
+            candidate_data,
+            crew,
+            locked_ids=[vehicle_id for vehicle_id, owner in locks.items() if str(owner) != this_mission],
+            mission_locked_ids=[vehicle_id for vehicle_id, owner in locks.items() if str(owner) == this_mission],
         )
-        selected = 0
-        for vehicle_type, needed_vehicles in plan:
-            per_vehicle, ids = candidate_data[vehicle_type]
+        plan = plan_personnel_vehicles(
+            max(0, needed - covered),
+            [(group, group[1], len(ids)) for group, ids in groups.items()],
+        )
+        selected = covered
+        for group, needed_vehicles in plan:
+            vehicle_type, per_vehicle = group
             used = await select_vehicles(
                 page,
-                ids,
+                groups[group],
                 needed_vehicles,
                 vehicle_type,
                 mission_id,
