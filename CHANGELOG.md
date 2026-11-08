@@ -1,5 +1,24 @@
 # Changelog
 
+## [3.3.0](https://github.com/NatesHonor/MissionchiefBot-X/compare/v3.2.0...v3.3.0) (2026-11-08)
+
+
+### Features
+
+* **release:** credit authors and PR credits on each release note entry ([c6bc6c4](https://github.com/NatesHonor/MissionchiefBot-X/commit/c6bc6c4db816b3fb5c16b6e86d13e390eaeac5b6))
+* show an update notice on startup when a newer release exists ([#102](https://github.com/NatesHonor/MissionchiefBot-X/issues/102)) ([2dcc586](https://github.com/NatesHonor/MissionchiefBot-X/commit/2dcc586538194f8cf794de46ae27e533ead56bdf))
+
+
+### Bug Fixes
+
+* **ci:** restrict token permissions in the Docker workflow ([#94](https://github.com/NatesHonor/MissionchiefBot-X/issues/94)) ([2d9d6c5](https://github.com/NatesHonor/MissionchiefBot-X/commit/2d9d6c5a79fb63cd860e5294d8d6d0e38281f0bc))
+* **deps:** bump actions/create-github-app-token from 2 to 3 ([#97](https://github.com/NatesHonor/MissionchiefBot-X/issues/97)) ([cef408b](https://github.com/NatesHonor/MissionchiefBot-X/commit/cef408bd7b31e37457020c743acc8ae16fda9b58))
+* **deps:** bump actions/setup-python from 5 to 7 ([#98](https://github.com/NatesHonor/MissionchiefBot-X/issues/98)) ([ce79dbf](https://github.com/NatesHonor/MissionchiefBot-X/commit/ce79dbf92a08bd2b990c9e103cf92434dde86c92))
+* dispatch localized personnel requirements by vehicle crew ([#100](https://github.com/NatesHonor/MissionchiefBot-X/issues/100)) ([616e0d1](https://github.com/NatesHonor/MissionchiefBot-X/commit/616e0d14332a27d71a6b426c7c3885cc84b88ed2))
+* get the bot dispatching on the German server ([#99](https://github.com/NatesHonor/MissionchiefBot-X/issues/99)) ([303e9e6](https://github.com/NatesHonor/MissionchiefBot-X/commit/303e9e6f4595ecaef2564a6192be94bdb02c7dab))
+* quote empty password in env example ([#101](https://github.com/NatesHonor/MissionchiefBot-X/issues/101)) ([f1bdcbc](https://github.com/NatesHonor/MissionchiefBot-X/commit/f1bdcbc17a67f9df7db0d556082636fd0d0b6087))
+* stop mission worker crashes and fix building and vehicle collection ([#95](https://github.com/NatesHonor/MissionchiefBot-X/issues/95)) ([ad5fb7f](https://github.com/NatesHonor/MissionchiefBot-X/commit/ad5fb7f80832568835ba3ade4452375ac7056a2b))
+
 ## [3.2.0](https://github.com/NatesHonor/MissionchiefBot-X/compare/v3.1.0...v3.2.0) (2026-10-27)
 
 
