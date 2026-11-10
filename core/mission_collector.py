@@ -61,10 +61,14 @@ async def check_and_grab_missions(
     if not contexts:
         return
     profile.ensure_data_dir()
+    # Loading the map and mission list can take a while on big accounts; say
+    # so up front so the console doesn't look frozen before "Found N missions".
+    display_info("Gathering missions from the game...")
     try:
         page = await ensure_page(contexts[0])
         await page.goto(url)
         await page.wait_for_load_state("networkidle")
+        display_info("Game loaded, reading the mission list...")
         mission_index = await refresh_mission_index(page, url, profile.mission_index_file)
         marker_records = await fetch_mission_marker_records(
             page,
@@ -85,6 +89,8 @@ async def check_and_grab_missions(
                 if panel_id:
                     ids.append(panel_id.split("_")[-1])
         ids = list(dict.fromkeys(ids))
+        if settings.auto_special_resources:
+            display_info("Scanning for event resources...")
         await scan_event_resources(page, url, settings.auto_special_resources)
         cached_missions = load_document(profile.mission_file, {})
         if not isinstance(cached_missions, dict):
