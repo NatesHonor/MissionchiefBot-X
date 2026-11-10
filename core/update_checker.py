@@ -1,31 +1,44 @@
 """Startup update check.
 
 Before the bot starts, compare the installed version with the latest GitHub
-release. When a newer release exists, show a notice with a link and a short
-summary of the changes, wait a few seconds, then carry on as normal.
+release. When a newer release exists, show a notice with a short summary of
+the changes and ask whether to update now:
 
-The check never stops the bot: no network, a GitHub error, or an unreadable
-version just skips the notice. Set ``MISSIONCHIEF_UPDATE_CHECK=false`` to turn
-it off.
+* ``y`` downloads the release, installs it over this copy, migrates the
+  ``.env`` settings to the new version, updates dependencies and restarts.
+* ``n`` (or just Enter) starts the current version as normal.
+
+If nobody can answer (no terminal attached, e.g. the launcher or a service),
+the notice is shown and the bot starts without asking. Set
+``MISSIONCHIEF_AUTO_UPDATE=true`` to install updates without a prompt.
+
+The check never stops the bot: no network, a GitHub error, an unreadable
+version or a failed update just carries on with the installed version. Set
+``MISSIONCHIEF_UPDATE_CHECK=false`` to turn it off.
 """
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import re
-import time
+import sys
 import urllib.request
 from collections.abc import Callable
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+from core.auto_updater import UpdateError, can_self_update, perform_update
 
 REPOSITORY = "NatesHonor/MissionchiefBot-X"
 LATEST_RELEASE_URL = f"https://api.github.com/repos/{REPOSITORY}/releases/latest"
 RELEASES_URL = f"https://github.com/{REPOSITORY}/releases"
 MANIFEST = Path(__file__).resolve().parent.parent / ".release-please-manifest.json"
-NOTICE_SECONDS = 5
 MAX_SUMMARY_LINES = 8
 _FALSE = {"0", "false", "no", "off"}
+_TRUE = {"1", "true", "yes", "on"}
 
 
 def parse_version(value: object) -> tuple[int, int, int] | None:
@@ -57,7 +70,7 @@ def fetch_latest_release(timeout: float = 4.0) -> dict | None:
         headers={"Accept": "application/vnd.github+json", "User-Agent": "MissionchiefBot-X-update-check"},
     )
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        with urllib.request.urlopen(request, timeout=timeout) as response:  # nosec B310 - fixed HTTPS URL
             release = json.load(response)
     except Exception:
         return None
@@ -102,7 +115,7 @@ def newer_release(installed: object, release: dict | None) -> dict | None:
     return release
 
 
-def _show_notice(installed: str, release: dict) -> None:
+def _show_notice(installed: str, release: dict, footer: str) -> None:
     latest = str(release.get("tag_name") or "").lstrip("v")
     url = release.get("html_url") or RELEASES_URL
     changes = summarize_changes(release.get("body"))
@@ -121,27 +134,58 @@ def _show_notice(installed: str, release: dict) -> None:
             for change in changes:
                 text.append(f"  • {change}\n")
             text.append("\n")
-        text.append("Download: ", style="bold")
+        text.append("Release notes: ", style="bold")
         text.append(url, style=f"underline cyan link {url}")
-        text.append(f"\n\nStarting in {NOTICE_SECONDS} seconds...", style="dim")
+        if footer:
+            text.append(f"\n\n{footer}", style="dim")
         Console().print(Panel(text, title="Update available", border_style="yellow", padding=(1, 2)))
     except Exception:
         print(f"\n=== Update available: {installed} -> {latest} ===")
         for change in changes:
             print(f"  - {change}")
-        print(f"Download: {url}")
-        print(f"Starting in {NOTICE_SECONDS} seconds...\n")
+        print(f"Release notes: {url}")
+        if footer:
+            print(footer)
+        print()
 
 
-def check_for_updates(wait: float = NOTICE_SECONDS, sleep: Callable[[float], object] = time.sleep) -> bool:
-    """Show the update notice if a newer release exists. Returns True if shown."""
-
+def _interactive() -> bool:
     try:
-        from dotenv import load_dotenv
+        return sys.stdin is not None and sys.stdin.isatty()
+    except (AttributeError, ValueError):
+        return False
 
+
+def ask_yes_no(question: str, read: Callable[[str], str] = input) -> bool:
+    """Ask a y/n question; anything but yes (including Enter or Ctrl+D) is no."""
+
+    while True:
+        try:
+            answer = read(f"{question} [y/N]: ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return False
+        if answer in {"y", "yes"}:
+            return True
+        if answer in {"", "n", "no"}:
+            return False
+        print("Please answer y or n.")
+
+
+def check_for_updates(
+    read: Callable[[str], str] = input,
+    interactive: Callable[[], bool] = _interactive,
+    update: Callable[..., None] = perform_update,
+) -> bool:
+    """Offer to install a newer release.
+
+    Returns ``True`` only when an update was installed, so the caller should
+    restart into the new version. Every other outcome returns ``False`` and
+    the current version keeps running.
+    """
+
+    with contextlib.suppress(Exception):
         load_dotenv()
-    except Exception:
-        pass
     if os.environ.get("MISSIONCHIEF_UPDATE_CHECK", "true").strip().lower() in _FALSE:
         return False
     try:
@@ -151,8 +195,32 @@ def check_for_updates(wait: float = NOTICE_SECONDS, sleep: Callable[[float], obj
         release = newer_release(installed, fetch_latest_release())
         if not release:
             return False
-        _show_notice(installed, release)
-        sleep(wait)
-        return True
+
+        blocked = can_self_update()
+        automatic = os.environ.get("MISSIONCHIEF_AUTO_UPDATE", "false").strip().lower() in _TRUE
+        if blocked:
+            _show_notice(installed, release, f"Automatic update unavailable: {blocked}\nStarting the current version...")
+            return False
+        if automatic:
+            _show_notice(installed, release, "MISSIONCHIEF_AUTO_UPDATE is on, installing the update...")
+        elif interactive():
+            _show_notice(installed, release, "")
+            if not ask_yes_no("Update now? Your settings (.env) will be carried over.", read):
+                print("Skipping the update. Starting the current version...\n")
+                return False
+        else:
+            _show_notice(installed, release, "Starting the current version...")
+            return False
     except Exception:
         return False
+
+    try:
+        update(release, installed)
+    except UpdateError as error:
+        print(f"\nUpdate failed: {error}\nStarting the current version...\n")
+        return False
+    except Exception as error:
+        print(f"\nUpdate failed unexpectedly: {error}\nStarting the current version...\n")
+        return False
+    print("\nUpdate complete. Restarting...\n")
+    return True

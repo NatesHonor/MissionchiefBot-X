@@ -5,6 +5,7 @@ import os
 import webbrowser
 from pathlib import Path
 
+from core.auto_updater import restart
 from core.logging_config import configure_logging, display_exit, display_header, flush_visual_summary, get_logger
 from core.runner import run_bot
 from core.settings import Settings, load_settings
@@ -65,7 +66,10 @@ async def run_application(settings: Settings) -> None:
 
 def main() -> int:
     os.chdir(PROJECT_ROOT)
-    check_for_updates()
+    if check_for_updates():
+        # The new code is on disk but the old modules are still loaded, so
+        # run the updated bot in a fresh process.
+        return restart()
     settings: Settings | None = None
     try:
         settings = load_settings()
