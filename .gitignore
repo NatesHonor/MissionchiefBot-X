@@ -27,3 +27,6 @@ Thumbs.db
 .idea/
 
 data/*.sqlite3
+
+# Backups made by the auto-updater
+.update-backup/
