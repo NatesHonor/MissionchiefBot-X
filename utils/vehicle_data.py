@@ -15,33 +15,41 @@ from core.personnel_roles import CREW_DOCUMENT, crew_from_records
 _type_names: dict[str, str] = {}
 
 
-async def _resolve_type_names(page, url, records) -> dict[str, str]:
+async def _resolve_type_names(pages, url, records) -> dict[str, str]:
     """Map the API's numeric vehicle_type IDs to their in-game type names.
 
     The vehicle API gives each vehicle's type as a number and its name as the
     player's own caption (for example "Unit 12"). Requirement matching needs
     the real type name ("Patrol car"), so it is read from one vehicle page per
-    type: a few dozen pages instead of one page per vehicle.
+    type: a few dozen pages instead of one page per vehicle. The lookups are
+    shared across every browser page passed in, so all threads work at once.
     """
 
+    pages = pages if isinstance(pages, list) else [pages]
     samples: dict[str, str] = {}
     for record in records:
         type_id = str(record.get("vehicle_type", "")).strip()
         if type_id.isdigit() and record.get("id") is not None:
             samples.setdefault(type_id, str(record["id"]))
     missing = [type_id for type_id in samples if type_id not in _type_names]
+    workers = max(1, min(len(pages), len(missing)))
     if missing:
-        display_info(f"Looking up names for {len(missing)} vehicle type(s)...")
-    for type_id in missing:
-        try:
-            await page.goto(url + f"vehicles/{samples[type_id]}", wait_until="domcontentloaded")
-            element = await page.wait_for_selector("#vehicle-attr-type a", timeout=5000)
-            name = (await element.inner_text()).strip() if element else ""
-        except Exception as error:
-            display_error(f"Could not read the name of vehicle type {type_id}: {error}")
-            continue
-        if name:
-            _type_names[type_id] = name
+        display_info(f"Looking up names for {len(missing)} vehicle type(s) using {workers} thread(s)...")
+
+    async def lookup(page, type_ids):
+        for type_id in type_ids:
+            try:
+                await page.goto(url + f"vehicles/{samples[type_id]}", wait_until="domcontentloaded")
+                element = await page.wait_for_selector("#vehicle-attr-type a", timeout=5000)
+                name = (await element.inner_text()).strip() if element else ""
+            except Exception as error:
+                display_error(f"Could not read the name of vehicle type {type_id}: {error}")
+                continue
+            if name:
+                _type_names[type_id] = name
+
+    # Each page takes every Nth type, so the work is split evenly.
+    await asyncio.gather(*(lookup(pages[i], missing[i::workers]) for i in range(workers)))
     return {type_id: _type_names[type_id] for type_id in samples if type_id in _type_names}
 
 
@@ -65,15 +73,19 @@ async def gather_vehicle_data(contexts, num_threads, url, save_path) -> bool:
     if not contexts:
         display_error("Vehicle collection skipped: no logged-in browser session is available.")
         return False
-    if not contexts[0].pages:
-        await contexts[0].new_page()
+    threads = min(num_threads, len(contexts)) if num_threads else len(contexts)
+    threads = max(threads, 1)
+    for ctx in contexts[:threads]:
+        if not ctx.pages:
+            await ctx.new_page()
 
     display_info("Gathering vehicles from the game...")
     try:
         page = contexts[0].pages[0]
         api_records = await fetch_vehicle_records(page, url)
         get_logger("vehicles").debug("Vehicle API returned %d record(s).", len(api_records))
-        type_names = await _resolve_type_names(page, url, api_records)
+        worker_pages = [ctx.pages[0] for ctx in contexts[:threads]]
+        type_names = await _resolve_type_names(worker_pages, url, api_records)
         for record in api_records:
             name = type_names.get(str(record.get("vehicle_type", "")).strip())
             if name:
@@ -97,7 +109,6 @@ async def gather_vehicle_data(contexts, num_threads, url, save_path) -> bool:
 
         display_info(f"Found {len(vehicle_ids)} vehicle IDs.")
 
-        threads = min(num_threads, len(contexts)) if num_threads else len(contexts)
         vehicle_data = await split_vehicle_ids_among_threads(vehicle_ids, contexts, threads, url)
 
         if not vehicle_data:
