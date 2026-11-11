@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 
 from utils.pretty_print import display_error, display_info
@@ -9,8 +11,15 @@ async def load_mission_page(page, mission_id, name, url):
         try:
             display_info(f"Navigating: {mission_url} (Attempt {attempt + 1})")
             await page.goto(mission_url, wait_until="domcontentloaded", timeout=15000)
+            current_url = page.url.rstrip("/")
+            if current_url != mission_url.rstrip("/"):
+                raise RuntimeError(f"navigation ended at {current_url!r}, expected {mission_url!r}")
             await page.wait_for_selector("#missionH1", timeout=15000)
             await page.wait_for_selector("#alert_btn", timeout=10000)
+            # The title and dispatch button can exist on a stale/non-mission
+            # page. Do not let dispatching continue until the vehicle list is
+            # actually present on this mission page.
+            await page.wait_for_selector("input.vehicle_checkbox", timeout=10000)
             display_info(f"Loaded mission {name} ({mission_id})")
             return True
         except Exception as error:
