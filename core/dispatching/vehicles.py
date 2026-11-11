@@ -110,6 +110,42 @@ async def click_vehicle(page, checkbox, vehicle_id, label, distance, mission_id,
     return True
 
 
+async def has_load_more_vehicles(page) -> bool:
+    """Return True when the game is hiding part of the fleet behind "load more"."""
+
+    try:
+        return bool(
+            await page.evaluate(
+                r"""() => !!document.querySelector('.missing_vehicles_load, #missing_vehicles_load') ||
+                    [...document.querySelectorAll('a, button')].some(
+                        (el) => /load more vehicles/i.test(el.innerText || '')
+                    )"""
+            )
+        )
+    except Exception:
+        return False
+
+
+async def log_no_selectable_vehicles(page, ids, checkbox_map, label, mission_id, state):
+    """Explain why a requirement selected nothing, so the cause shows in the logs.
+
+    Separates the possible causes: the dispatch list being empty (not loaded),
+    saved IDs not appearing on the page (stale fleet data or a truncated list),
+    or every matching vehicle already being locked by another mission.
+    """
+
+    saved = [str(vehicle_id) for vehicle_id in ids]
+    on_page = [vehicle_id for vehicle_id in saved if vehicle_id in checkbox_map]
+    locked = sum(1 for vehicle_id in on_page if state.is_locked(vehicle_id))
+    load_more = await has_load_more_vehicles(page)
+    display_error(
+        f"Mission {mission_id}: 0 selectable for '{label}' - "
+        f"page checkboxes={len(checkbox_map)}, saved ids={len(saved)}, "
+        f"saved ids on page={len(on_page)}, locked={locked}, "
+        f"load-more button={'yes' if load_more else 'no'}"
+    )
+
+
 async def select_vehicles(
     page,
     ids,
@@ -137,6 +173,7 @@ async def select_vehicles(
                 pass
             await asyncio.sleep(0.25 * (attempt + 1))
     if not valid_ids:
+        await log_no_selectable_vehicles(page, ids, checkbox_map, label, mission_id, state)
         return 0
     distance_map = await get_all_vehicle_distances(page, valid_ids)
     vehicles = [
