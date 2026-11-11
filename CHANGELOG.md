@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.4.1](https://github.com/NatesHonor/MissionchiefBot-X/compare/v3.4.0...v3.4.1) (2026-11-11)
+
+
+### Bug Fixes
+
+* reuse fresh vehicle/building data on startup ([#107](https://github.com/NatesHonor/MissionchiefBot-X/issues/107)) ([0f19302](https://github.com/NatesHonor/MissionchiefBot-X/commit/0f19302c7819b7b2348d6d9c31b0522a2204450a))
+
 ## [3.4.0](https://github.com/NatesHonor/MissionchiefBot-X/compare/v3.3.0...v3.4.0) (2026-11-11)
 
 
