@@ -5,9 +5,15 @@
 
 ### Features
 
-* log why a vehicle requirement selected nothing ([#106](https://github.com/NatesHonor/MissionchiefBot-X/issues/106)) ([4d332ec](https://github.com/NatesHonor/MissionchiefBot-X/commit/4d332ec9abd8a6ae0e08996e35f98235edc41162))
-* prompt to install updates and migrate .env settings automatically ([#103](https://github.com/NatesHonor/MissionchiefBot-X/issues/103)) ([a6176e7](https://github.com/NatesHonor/MissionchiefBot-X/commit/a6176e73f6a8222042687b2e1694cf592f09c277))
-* show status messages while mission gathering starts ([#105](https://github.com/NatesHonor/MissionchiefBot-X/issues/105)) ([482800b](https://github.com/NatesHonor/MissionchiefBot-X/commit/482800bbc5858f642429a5fa7f423adac4dea705))
+* log why a vehicle requirement selected nothing ([#106](https://github.com/NatesHonor/MissionchiefBot-X/issues/106)) ([4d332ec](https://github.com/NatesHonor/MissionchiefBot-X/commit/4d332ec9abd8a6ae0e08996e35f98235edc41162)) @NatesHonor
+* prompt to install updates and migrate .env settings automatically ([#103](https://github.com/NatesHonor/MissionchiefBot-X/issues/103)) ([a6176e7](https://github.com/NatesHonor/MissionchiefBot-X/commit/a6176e73f6a8222042687b2e1694cf592f09c277)) @NatesHonor
+* show status messages while mission gathering starts ([#105](https://github.com/NatesHonor/MissionchiefBot-X/issues/105)) ([482800b](https://github.com/NatesHonor/MissionchiefBot-X/commit/482800bbc5858f642429a5fa7f423adac4dea705)) @NatesHonor
+
+<!-- mission-auto-release-bot:release-details:start -->
+### Other Changes
+
+* Dispatch: stay on mission page instead of opening the details panel ([#108](https://github.com/NatesHonor/MissionchiefBot-X/issues/108)) ([18f60ba](https://github.com/NatesHonor/MissionchiefBot-X/commit/18f60baaa7025ccebff20fd23155c86ae356e149)) @NatesHonor
+<!-- mission-auto-release-bot:release-details:end -->
 
 ## [3.3.0](https://github.com/NatesHonor/MissionchiefBot-X/compare/v3.2.0...v3.3.0) (2026-11-08)
 
