@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import time
 
 from utils.pretty_print import display_error, display_info
@@ -16,7 +17,7 @@ from utils.vehicle_data import gather_vehicle_data
 from .auth import login_all
 from .browser import BrowserPool
 from .buildings import gather_building_data
-from .data_store import document_has_records
+from .data_store import document_has_records, document_updated_at
 from .dispatching import navigate_and_dispatch
 from .mission_collector import check_and_grab_missions
 from .regions import RegionProfile, get_region_profile
@@ -26,8 +27,9 @@ from .webui import BotWebUI
 
 
 # How often the player's vehicles and buildings are re-gathered while the bot
-# runs. Buildings change less often than vehicles.
-VEHICLE_REFRESH_SECONDS = 15 * 60
+# runs. Stored timestamps carry over restarts, so data still within these
+# windows is reused at startup instead of being re-gathered.
+VEHICLE_REFRESH_SECONDS = 60 * 60
 BUILDING_REFRESH_SECONDS = 60 * 60
 
 
@@ -105,6 +107,15 @@ def _cache_has_records(path) -> bool:
         return False
 
 
+def _stored_at(path: str | os.PathLike[str]) -> float:
+    """Wall-clock time the document was last stored, or 0.0 if unknown."""
+
+    try:
+        return float(document_updated_at(path) or 0.0)
+    except (OSError, TypeError, ValueError):
+        return 0.0
+
+
 async def run_transport_loop(context, profile: RegionProfile, settings: Settings, stop_event):
     display_info("Starting transportation logic.")
     while not stop_event.is_set():
@@ -134,16 +145,18 @@ async def run_mission_loop(
     stop_event,
 ):
     display_info("Starting mission logic.")
-    vehicles_gathered_at = 0.0
-    buildings_gathered_at = 0.0
+    # Seed from the stored documents' timestamps so a restart doesn't
+    # re-gather data that is still fresh.
+    vehicles_gathered_at = _stored_at(profile.vehicle_file)
+    buildings_gathered_at = _stored_at(profile.building_file)
     while not stop_event.is_set():
         try:
             # Vehicles change as the player buys, sells, or moves them, so the
-            # list is gathered at startup and then refreshed on an interval,
-            # not only when the database has none stored.
+            # list is refreshed on an interval, not only when the database has
+            # none stored.
             if (
                 not _cache_has_records(profile.vehicle_file)
-                or time.monotonic() - vehicles_gathered_at >= VEHICLE_REFRESH_SECONDS
+                or time.time() - vehicles_gathered_at >= VEHICLE_REFRESH_SECONDS
             ):
                 if await gather_vehicle_data(
                     grabbing_contexts,
@@ -151,12 +164,12 @@ async def run_mission_loop(
                     profile.base_url,
                     profile.vehicle_file,
                 ):
-                    vehicles_gathered_at = time.monotonic()
+                    vehicles_gathered_at = time.time()
                     # The dispatcher reads a cached copy; reload it from SQLite.
                     state.refresh()
             if (
                 not _cache_has_records(profile.building_file)
-                or time.monotonic() - buildings_gathered_at >= BUILDING_REFRESH_SECONDS
+                or time.time() - buildings_gathered_at >= BUILDING_REFRESH_SECONDS
             ):
                 if await gather_building_data(
                     grabbing_contexts,
@@ -164,7 +177,7 @@ async def run_mission_loop(
                     profile.base_url,
                     profile=profile,
                 ):
-                    buildings_gathered_at = time.monotonic()
+                    buildings_gathered_at = time.time()
             await check_and_grab_missions(
                 grabbing_contexts,
                 len(grabbing_contexts),
